@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   addMember,
@@ -143,9 +143,10 @@ export default function MemberManager({
 }: {
   snapshots: JobSnapshot[];
 }) {
-  const [members, setMembers] = useState<Member[]>(() => listMembers());
+  const [members, setMembers] = useState<Member[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!ok) return;
@@ -153,42 +154,72 @@ export default function MemberManager({
     return () => clearTimeout(t);
   }, [ok]);
 
-  function refresh() {
-    setMembers(listMembers());
-  }
-
-  function handleAdd(data: { name: string; access_code: string }) {
-    setErr(null);
+  const refresh = useCallback(async () => {
     try {
-      addMember(data.name, data.access_code);
-      refresh();
+      const list = await listMembers();
+      setMembers(list);
+    } catch (e) {
+      setErr((e as Error).message);
+      setMembers([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  async function handleAdd(data: { name: string; access_code: string }): Promise<boolean> {
+    setErr(null);
+    setBusy(true);
+    try {
+      await addMember(data.name, data.access_code);
+      await refresh();
       setOk(`✓ Anggota "${data.name}" ditambahkan`);
       return true;
     } catch (e) {
       setErr((e as Error).message);
       return false;
+    } finally {
+      setBusy(false);
     }
   }
 
-  function handleUpdate(name: string, patch: { name?: string; access_code?: string }) {
+  async function handleUpdate(
+    id: string,
+    patch: { name?: string; access_code?: string }
+  ): Promise<boolean> {
     setErr(null);
+    setBusy(true);
     try {
-      updateMember(name, patch);
-      refresh();
+      await updateMember(id, patch);
+      await refresh();
       setOk(`✓ Anggota diupdate`);
       return true;
     } catch (e) {
       setErr((e as Error).message);
       return false;
+    } finally {
+      setBusy(false);
     }
   }
 
-  function handleDelete(name: string) {
+  async function handleDelete(id: string, name: string) {
     if (!confirm(`Hapus anggota "${name}"?`)) return;
-    deleteMember(name);
-    refresh();
-    setOk(`✓ Anggota "${name}" dihapus`);
+    setErr(null);
+    setBusy(true);
+    try {
+      await deleteMember(id);
+      await refresh();
+      setOk(`✓ Anggota "${name}" dihapus`);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
+
+  const loading = members === null;
+  const visibleMembers = members ?? [];
 
   return (
     <main className="mx-auto max-w-3xl p-4 md:p-6 space-y-6">
@@ -251,7 +282,10 @@ export default function MemberManager({
         </div>
       )}
 
-      <OverviewSection snapshots={snapshots} memberNames={members.map((m) => m.name)} />
+      <OverviewSection
+        snapshots={snapshots}
+        memberNames={visibleMembers.map((m) => m.name)}
+      />
 
       <section className="card space-y-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-muted">
@@ -260,7 +294,7 @@ export default function MemberManager({
           </span>
           Tambah Anggota
         </h2>
-        <AddMemberForm onSubmit={handleAdd} />
+        <AddMemberForm onSubmit={handleAdd} disabled={busy} />
       </section>
 
       <section className="card space-y-3">
@@ -270,29 +304,36 @@ export default function MemberManager({
           </span>
           Daftar Anggota
           <span className="ml-auto text-xs text-muted normal-case tracking-normal">
-            {members.length} anggota
+            {loading ? "memuat..." : `${visibleMembers.length} anggota`}
           </span>
         </h2>
 
-        {members.length === 0 && (
+        {loading && (
+          <div className="flex items-center gap-2 text-sm text-muted">
+            <Loader2 size={14} className="animate-spin text-accent" /> Memuat daftar anggota...
+          </div>
+        )}
+
+        {!loading && visibleMembers.length === 0 && (
           <div className="text-sm text-muted italic">
             Belum ada anggota. Tambah anggota pertama di form atas.
           </div>
         )}
 
         <div className="space-y-2">
-          {members.map((m) => {
+          {visibleMembers.map((m) => {
             const mine = snapshots.filter(
               (s) => s.job.assignee.toLowerCase() === m.name.toLowerCase()
             );
             return (
               <MemberRow
-                key={m.name}
+                key={m.id}
                 member={m}
                 summary={buildSummary(snapshots, m.name)}
                 snapshots={mine}
-                onUpdate={(patch) => handleUpdate(m.name, patch)}
-                onDelete={() => handleDelete(m.name)}
+                disabled={busy}
+                onUpdate={(patch) => handleUpdate(m.id, patch)}
+                onDelete={() => handleDelete(m.id, m.name)}
               />
             );
           })}
@@ -422,20 +463,29 @@ function MiniStat({
 }
 
 function AddMemberForm({
-  onSubmit
+  onSubmit,
+  disabled
 }: {
-  onSubmit: (data: { name: string; access_code: string }) => boolean;
+  onSubmit: (data: { name: string; access_code: string }) => Promise<boolean>;
+  disabled?: boolean;
 }) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [show, setShow] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
-    const ok = onSubmit({ name: name.trim(), access_code: code.trim() });
-    if (ok) {
-      setName("");
-      setCode("");
+    if (saving) return;
+    setSaving(true);
+    try {
+      const ok = await onSubmit({ name: name.trim(), access_code: code.trim() });
+      if (ok) {
+        setName("");
+        setCode("");
+      }
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -480,9 +530,17 @@ function AddMemberForm({
         <button
           type="submit"
           className="btn btn-accent w-full"
-          disabled={!name.trim() || !code.trim()}
+          disabled={!name.trim() || !code.trim() || saving || disabled}
         >
-          <Plus size={14} /> Tambah
+          {saving ? (
+            <>
+              <Loader2 size={14} className="animate-spin" /> Menyimpan...
+            </>
+          ) : (
+            <>
+              <Plus size={14} /> Tambah
+            </>
+          )}
         </button>
       </div>
     </form>
@@ -493,13 +551,15 @@ function MemberRow({
   member,
   summary,
   snapshots,
+  disabled,
   onUpdate,
   onDelete
 }: {
   member: Member;
   summary: MemberSummary;
   snapshots: JobSnapshot[];
-  onUpdate: (patch: { name?: string; access_code?: string }) => boolean;
+  disabled?: boolean;
+  onUpdate: (patch: { name?: string; access_code?: string }) => Promise<boolean>;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -552,12 +612,12 @@ function MemberRow({
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              const ok = onUpdate({ name, access_code: code });
+            onClick={async () => {
+              const ok = await onUpdate({ name, access_code: code });
               if (ok) setEditing(false);
             }}
             className="btn btn-accent"
-            disabled={!name.trim() || !code.trim()}
+            disabled={!name.trim() || !code.trim() || disabled}
           >
             <Check size={14} /> Simpan
           </button>
@@ -631,14 +691,16 @@ function MemberRow({
         )}
         <button
           onClick={() => setEditing(true)}
-          className="text-muted hover:text-accent transition"
+          disabled={disabled}
+          className="text-muted hover:text-accent transition disabled:opacity-30"
           title="Edit anggota"
         >
           <Pencil size={14} />
         </button>
         <button
           onClick={onDelete}
-          className="text-muted hover:text-late transition"
+          disabled={disabled}
+          className="text-muted hover:text-late transition disabled:opacity-30"
           title="Hapus anggota"
         >
           <Trash2 size={14} />

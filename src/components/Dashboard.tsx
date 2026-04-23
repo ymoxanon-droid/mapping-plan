@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import JobCard from "./JobCard";
 import WorkflowFlow from "./WorkflowFlow";
@@ -24,19 +24,34 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
   const [view, setView] = useState<View>("both");
   const [highlightTaskId, setHighlightTaskId] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const [registeredNames, setRegisteredNames] = useState<string[]>([]);
   const navigate = useNavigate();
   const flowSectionRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await listMembers();
+        if (!cancelled) setRegisteredNames(list.map((m) => m.name));
+      } catch {
+        if (!cancelled) setRegisteredNames([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const members = useMemo(() => {
-    const registered = listMembers().map((m) => m.name);
     const fromJobs = snapshots.map((s) => s.job.assignee);
     const seen = new Map<string, string>();
-    for (const name of [...registered, ...fromJobs]) {
+    for (const name of [...registeredNames, ...fromJobs]) {
       const key = name.toLowerCase();
       if (!seen.has(key)) seen.set(key, name);
     }
     return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
-  }, [snapshots]);
+  }, [snapshots, registeredNames]);
 
   const visibleSnapshots = useMemo(() => {
     if (!selectedMember) return snapshots;
