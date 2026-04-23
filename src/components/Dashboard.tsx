@@ -11,9 +11,7 @@ import {
   Rocket,
   Briefcase,
   Settings,
-  Pencil,
-  UserCircle2,
-  X
+  Pencil
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listMembers } from "@/lib/members";
@@ -139,58 +137,6 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
         </div>
       </header>
 
-      {members.length > 0 && (
-        <section className="card p-4">
-          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted">
-              <Users size={14} className="text-accent" /> Anggota
-            </div>
-            <span className="text-[11px] text-muted">
-              Klik nama untuk lihat data anggota tersebut
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            {members.map((name) => {
-              const hasJob = snapshots.some(
-                (s) => s.job.assignee.toLowerCase() === name.toLowerCase()
-              );
-              const active = selectedMember?.toLowerCase() === name.toLowerCase();
-              return (
-                <button
-                  key={name}
-                  onClick={() => handleMemberClick(name)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition",
-                    active
-                      ? "border-accent bg-accent/20 text-accent"
-                      : "border-ink-700 bg-ink-800/60",
-                    !active && hasJob && "hover:bg-accent/15 hover:text-accent",
-                    !active && !hasJob && "text-muted hover:text-ink-50"
-                  )}
-                  title={
-                    hasJob
-                      ? `Lihat data ${name}`
-                      : `Belum ada jobdesk — buka input untuk ${name}`
-                  }
-                >
-                  <UserCircle2 size={14} />
-                  <span className="font-medium">{name}</span>
-                </button>
-              );
-            })}
-            {selectedMember && (
-              <button
-                onClick={() => setSelectedMember(null)}
-                className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink-50 transition ml-1"
-                title="Kembali ke tampilan semua"
-              >
-                <X size={12} /> tampilkan semua
-              </button>
-            )}
-          </div>
-        </section>
-      )}
-
       <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatBlock
           icon={<Users size={18} />}
@@ -231,7 +177,14 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
 
       {(view === "flow" || view === "both") && (
         <div ref={flowSectionRef} className="scroll-mt-6">
-          <WorkflowFlow snapshots={visibleSnapshots} onNodeClick={handleNodeClick} />
+          <WorkflowFlow
+            snapshots={visibleSnapshots}
+            onNodeClick={handleNodeClick}
+            members={members}
+            selectedMember={selectedMember}
+            onMemberClick={handleMemberClick}
+            onClearMember={() => setSelectedMember(null)}
+          />
         </div>
       )}
 
