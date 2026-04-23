@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminClient from "@/components/admin/AdminClient";
+import AdminGate from "@/components/admin/AdminGate";
 import { getAllSnapshots } from "@/lib/snapshots";
 import { isSupabaseReady } from "@/lib/supabase";
 import type { JobSnapshot } from "@/lib/types";
@@ -30,5 +31,9 @@ export default function AdminPage() {
     );
   }
 
-  return <AdminClient snapshots={snapshots} supabaseReady={ready} reload={load} />;
+  return (
+    <AdminGate>
+      <AdminClient snapshots={snapshots} supabaseReady={ready} reload={load} />
+    </AdminGate>
+  );
 }

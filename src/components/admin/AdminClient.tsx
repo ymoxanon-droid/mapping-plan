@@ -24,9 +24,11 @@ import {
   X,
   Pencil,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { lockAdmin } from "@/components/admin/AdminGate";
 
 type Kind = NonNullable<Task["kind"]>;
 
@@ -198,8 +200,20 @@ export default function AdminClient({ snapshots, supabaseReady, reload }: Props)
         >
           <ArrowLeft size={16} /> Kembali ke dashboard
         </Link>
-        <div className="flex items-center gap-2 text-xs text-muted">
-          <Settings size={14} /> Admin Panel
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <Settings size={14} /> Admin Panel
+          </div>
+          <button
+            onClick={() => {
+              lockAdmin();
+              window.location.reload();
+            }}
+            className="flex items-center gap-1.5 text-xs text-muted hover:text-late transition"
+            title="Kunci admin panel"
+          >
+            <Lock size={12} /> Kunci
+          </button>
         </div>
       </header>
 
