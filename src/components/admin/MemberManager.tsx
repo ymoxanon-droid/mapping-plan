@@ -565,8 +565,7 @@ function MemberRow({
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState(member.name);
-  const [code, setCode] = useState(member.access_code);
-  const [showCode, setShowCode] = useState(false);
+  const [newCode, setNewCode] = useState("");
 
   const jobDetails = useMemo(
     () =>
@@ -581,10 +580,12 @@ function MemberRow({
 
   useEffect(() => {
     setName(member.name);
-    setCode(member.access_code);
-  }, [member.name, member.access_code]);
+    setNewCode("");
+  }, [member.name]);
 
   if (editing) {
+    const nameChanged = name.trim() !== member.name;
+    const codeChanged = newCode.trim() !== "";
     return (
       <div className="border border-ink-700 rounded-lg p-3 space-y-2 bg-ink-900/60">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -601,30 +602,42 @@ function MemberRow({
           </label>
           <label className="block">
             <span className="block text-[11px] uppercase tracking-widest text-muted mb-1">
-              Kode Akses
+              Kode Akses Baru
             </span>
             <input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
+              type="password"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              placeholder="kosongkan bila tidak diubah"
               className="input w-full"
             />
+            <span className="block text-[10px] text-muted mt-1">
+              Kode lama tidak dapat ditampilkan — isi di sini untuk reset.
+            </span>
           </label>
         </div>
         <div className="flex gap-2">
           <button
             onClick={async () => {
-              const ok = await onUpdate({ name, access_code: code });
+              const patch: { name?: string; access_code?: string } = {};
+              if (nameChanged) patch.name = name;
+              if (codeChanged) patch.access_code = newCode;
+              if (Object.keys(patch).length === 0) {
+                setEditing(false);
+                return;
+              }
+              const ok = await onUpdate(patch);
               if (ok) setEditing(false);
             }}
             className="btn btn-accent"
-            disabled={!name.trim() || !code.trim() || disabled}
+            disabled={!name.trim() || disabled || (!nameChanged && !codeChanged)}
           >
             <Check size={14} /> Simpan
           </button>
           <button
             onClick={() => {
               setName(member.name);
-              setCode(member.access_code);
+              setNewCode("");
               setEditing(false);
             }}
             className="btn"
@@ -665,19 +678,9 @@ function MemberRow({
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted mt-0.5">
             <KeyRound size={11} />
-            <code className="font-mono">
-              {showCode
-                ? member.access_code
-                : "•".repeat(Math.max(6, member.access_code.length))}
-            </code>
-            <button
-              type="button"
-              onClick={() => setShowCode((s) => !s)}
-              className="hover:text-ink-50 transition"
-              title={showCode ? "Sembunyikan kode" : "Tampilkan kode"}
-            >
-              {showCode ? <EyeOff size={11} /> : <Eye size={11} />}
-            </button>
+            <span className="italic text-muted/70">
+              kode akses tersimpan — edit untuk reset
+            </span>
           </div>
         </div>
         {summary.status !== "no-jobs" && (
