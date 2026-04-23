@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import AdminClient from "@/components/admin/AdminClient";
 import AdminGate from "@/components/admin/AdminGate";
+import MemberManager from "@/components/admin/MemberManager";
 import { getAllSnapshots } from "@/lib/snapshots";
 import { isSupabaseReady } from "@/lib/supabase";
 import type { JobSnapshot } from "@/lib/types";
@@ -15,8 +15,12 @@ export default function AdminPage() {
       setSnapshots([]);
       return;
     }
-    const data = await getAllSnapshots();
-    setSnapshots(data);
+    try {
+      const data = await getAllSnapshots();
+      setSnapshots(data);
+    } catch {
+      setSnapshots([]);
+    }
   }, [ready]);
 
   useEffect(() => {
@@ -33,7 +37,7 @@ export default function AdminPage() {
 
   return (
     <AdminGate>
-      <AdminClient snapshots={snapshots} supabaseReady={ready} reload={load} />
+      <MemberManager snapshots={snapshots} />
     </AdminGate>
   );
 }

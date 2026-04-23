@@ -36,6 +36,18 @@ interface Props {
   snapshots: JobSnapshot[];
   supabaseReady: boolean;
   reload: () => Promise<void>;
+  /** If set, batasi tampilan ke jobdesk milik owner ini dan auto-assign jobdesk baru ke owner ini. */
+  ownerFilter?: string;
+  /** Override default owner untuk jobdesk baru (pakai ownerFilter kalau diisi). */
+  defaultOwner?: string;
+  /** Title & subtitle header (opsional) */
+  title?: string;
+  subtitle?: string;
+  /** Link kiri atas */
+  backLink?: { to: string; label: string };
+  /** Tombol lock di kanan atas */
+  onLock?: () => void;
+  lockLabel?: string;
 }
 
 const STATUSES: TaskStatus[] = ["pending", "in_progress", "done", "cancelled"];
@@ -112,10 +124,28 @@ function GroupPicker({
   );
 }
 
-export default function AdminClient({ snapshots, supabaseReady, reload }: Props) {
+export default function AdminClient({
+  snapshots,
+  supabaseReady,
+  reload,
+  ownerFilter,
+  defaultOwner,
+  title,
+  subtitle,
+  backLink,
+  onLock,
+  lockLabel
+}: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+
+  const effectiveOwner = (ownerFilter ?? defaultOwner ?? DEFAULT_OWNER).toLowerCase();
+  const visibleSnapshots = ownerFilter
+    ? snapshots.filter(
+        (s) => s.job.assignee.toLowerCase() === ownerFilter.toLowerCase()
+      )
+    : snapshots;
 
   useEffect(() => {
     if (!ok) return;
@@ -160,7 +190,7 @@ export default function AdminClient({ snapshots, supabaseReady, reload }: Props)
   }) {
     const job = await run<Job>(
       "create job",
-      () => createJob({ name: data.name, assignee: DEFAULT_OWNER }),
+      () => createJob({ name: data.name, assignee: effectiveOwner }),
       { refresh: false }
     );
     if (!job) return false;
@@ -195,33 +225,50 @@ export default function AdminClient({ snapshots, supabaseReady, reload }: Props)
     <main className="mx-auto max-w-5xl p-4 md:p-6 space-y-6">
       <header className="flex items-center justify-between gap-4 flex-wrap">
         <Link
-          to="/"
+          to={backLink?.to ?? "/"}
           className="flex items-center gap-2 text-sm text-muted hover:text-ink-50 transition"
         >
-          <ArrowLeft size={16} /> Kembali ke dashboard
+          <ArrowLeft size={16} /> {backLink?.label ?? "Kembali ke dashboard"}
         </Link>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-xs text-muted">
-            <Settings size={14} /> Admin Panel
+            <Settings size={14} /> {title ?? "Admin Panel"}
           </div>
-          <button
-            onClick={() => {
-              lockAdmin();
-              window.location.reload();
-            }}
-            className="flex items-center gap-1.5 text-xs text-muted hover:text-late transition"
-            title="Kunci admin panel"
-          >
-            <Lock size={12} /> Kunci
-          </button>
+          {onLock ? (
+            <button
+              onClick={onLock}
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-late transition"
+              title="Kunci panel"
+            >
+              <Lock size={12} /> {lockLabel ?? "Kunci"}
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                lockAdmin();
+                window.location.reload();
+              }}
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-late transition"
+              title="Kunci admin panel"
+            >
+              <Lock size={12} /> Kunci
+            </button>
+          )}
         </div>
       </header>
 
       <div>
-        <h1 className="text-2xl font-semibold">Admin Panel</h1>
+        <h1 className="text-2xl font-semibold">{title ?? "Admin Panel"}</h1>
         <p className="text-sm text-muted">
-          Kelola jobdesk & task. Task dengan <em>grup</em> sama akan sejajar horizontal di flow.
+          {subtitle ??
+            "Kelola jobdesk & task. Task dengan grup sama akan sejajar horizontal di flow."}
         </p>
+        {ownerFilter && (
+          <div className="mt-2 text-xs text-muted">
+            Jobdesk baru otomatis di-assign ke{" "}
+            <span className="chip bg-accent/15 text-accent">{effectiveOwner}</span>
+          </div>
+        )}
       </div>
 
       {!supabaseReady && (
@@ -281,10 +328,14 @@ export default function AdminClient({ snapshots, supabaseReady, reload }: Props)
         />
 
         <div className="space-y-3 mt-4">
-          {snapshots.length === 0 && (
-            <div className="text-sm text-muted italic">Belum ada jobdesk.</div>
+          {visibleSnapshots.length === 0 && (
+            <div className="text-sm text-muted italic">
+              {ownerFilter
+                ? `Belum ada jobdesk untuk ${ownerFilter}.`
+                : "Belum ada jobdesk."}
+            </div>
           )}
-          {snapshots.map((snap) => (
+          {visibleSnapshots.map((snap) => (
             <JobBlock
               key={snap.job.id}
               snap={snap}

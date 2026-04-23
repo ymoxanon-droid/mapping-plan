@@ -1,25 +1,79 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import JobCard from "./JobCard";
 import WorkflowFlow from "./WorkflowFlow";
 import type { JobSnapshot, Task } from "@/lib/types";
-import { Users, CheckCircle2, Activity, Sparkles, Rocket, Briefcase, Settings } from "lucide-react";
+import {
+  Users,
+  CheckCircle2,
+  Activity,
+  Sparkles,
+  Rocket,
+  Briefcase,
+  Settings,
+  Pencil,
+  UserCircle2,
+  X
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { listMembers } from "@/lib/members";
 
 type View = "flow" | "assignee" | "both";
 
 export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
   const [view, setView] = useState<View>("both");
   const [highlightTaskId, setHighlightTaskId] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const flowSectionRef = useRef<HTMLDivElement | null>(null);
 
-  const totalTasks = snapshots.reduce((a, s) => a + (s.progress?.total_tasks ?? 0), 0);
-  const doneTasks = snapshots.reduce((a, s) => a + (s.progress?.done_tasks ?? 0), 0);
-  const uniqueAssignees = new Set(snapshots.map((s) => s.job.assignee.toLowerCase())).size;
-  const avgProgress = snapshots.length
+  const members = useMemo(() => {
+    const registered = listMembers().map((m) => m.name);
+    const fromJobs = snapshots.map((s) => s.job.assignee);
+    const seen = new Map<string, string>();
+    for (const name of [...registered, ...fromJobs]) {
+      const key = name.toLowerCase();
+      if (!seen.has(key)) seen.set(key, name);
+    }
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+  }, [snapshots]);
+
+  const visibleSnapshots = useMemo(() => {
+    if (!selectedMember) return snapshots;
+    return snapshots.filter(
+      (s) => s.job.assignee.toLowerCase() === selectedMember.toLowerCase()
+    );
+  }, [snapshots, selectedMember]);
+
+  const totalTasks = visibleSnapshots.reduce(
+    (a, s) => a + (s.progress?.total_tasks ?? 0),
+    0
+  );
+  const doneTasks = visibleSnapshots.reduce(
+    (a, s) => a + (s.progress?.done_tasks ?? 0),
+    0
+  );
+  const uniqueAssignees = selectedMember ? 1 : members.length;
+  const avgProgress = visibleSnapshots.length
     ? Math.round(
-        snapshots.reduce((a, s) => a + (s.progress?.percent_done ?? 0), 0) / snapshots.length
+        visibleSnapshots.reduce((a, s) => a + (s.progress?.percent_done ?? 0), 0) /
+          visibleSnapshots.length
       )
     : 0;
+
+  function handleMemberClick(name: string) {
+    const hasJob = snapshots.some(
+      (s) => s.job.assignee.toLowerCase() === name.toLowerCase()
+    );
+    if (!hasJob) {
+      navigate(`/input?member=${encodeURIComponent(name)}`);
+      return;
+    }
+    setSelectedMember(name);
+    setTimeout(() => {
+      flowSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
 
   function handleNodeClick(task: Task, assignee: string) {
     if (view === "flow") setView("both");
@@ -51,11 +105,11 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
         </div>
         <div className="flex items-center gap-3">
           <ViewSwitcher view={view} onChange={setView} />
-          <Link
-            to="/admin"
-            className="btn text-xs"
-            title="Admin Panel"
-          >
+          <Link to="/input" className="btn text-xs" title="Input Data (anggota)">
+            <Pencil size={14} />
+            <span className="hidden md:inline">Input Data</span>
+          </Link>
+          <Link to="/admin" className="btn text-xs" title="Admin Panel">
             <Settings size={14} />
             <span className="hidden md:inline">Admin</span>
           </Link>
@@ -70,9 +124,69 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
         </div>
       </header>
 
+      {members.length > 0 && (
+        <section className="card p-4">
+          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted">
+              <Users size={14} className="text-accent" /> Anggota
+            </div>
+            <span className="text-[11px] text-muted">
+              Klik nama untuk lihat data anggota tersebut
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            {members.map((name) => {
+              const hasJob = snapshots.some(
+                (s) => s.job.assignee.toLowerCase() === name.toLowerCase()
+              );
+              const active = selectedMember?.toLowerCase() === name.toLowerCase();
+              return (
+                <button
+                  key={name}
+                  onClick={() => handleMemberClick(name)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition",
+                    active
+                      ? "border-accent bg-accent/20 text-accent"
+                      : "border-ink-700 bg-ink-800/60",
+                    !active && hasJob && "hover:bg-accent/15 hover:text-accent",
+                    !active && !hasJob && "text-muted hover:text-ink-50"
+                  )}
+                  title={
+                    hasJob
+                      ? `Lihat data ${name}`
+                      : `Belum ada jobdesk — buka input untuk ${name}`
+                  }
+                >
+                  <UserCircle2 size={14} />
+                  <span className="font-medium">{name}</span>
+                </button>
+              );
+            })}
+            {selectedMember && (
+              <button
+                onClick={() => setSelectedMember(null)}
+                className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink-50 transition ml-1"
+                title="Kembali ke tampilan semua"
+              >
+                <X size={12} /> tampilkan semua
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
       <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatBlock icon={<Users size={18} />} label="Anggota" value={uniqueAssignees} />
-        <StatBlock icon={<Briefcase size={18} />} label="Job" value={snapshots.length} />
+        <StatBlock
+          icon={<Users size={18} />}
+          label={selectedMember ? "Anggota" : "Anggota"}
+          value={uniqueAssignees}
+        />
+        <StatBlock
+          icon={<Briefcase size={18} />}
+          label="Job"
+          value={visibleSnapshots.length}
+        />
         <StatBlock icon={<Activity size={18} />} label="Total Task" value={totalTasks} />
         <StatBlock
           icon={<CheckCircle2 size={18} />}
@@ -84,17 +198,31 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
           icon={<Sparkles size={18} />}
           label="Avg Progress"
           value={`${avgProgress}%`}
-          color={avgProgress >= 80 ? "text-ok" : avgProgress >= 40 ? "text-warn" : "text-late"}
+          color={
+            avgProgress >= 80 ? "text-ok" : avgProgress >= 40 ? "text-warn" : "text-late"
+          }
         />
       </section>
 
+      {selectedMember && (
+        <div className="flex items-center gap-2 text-xs text-muted">
+          Menampilkan data untuk{" "}
+          <span className="chip bg-accent/15 text-accent">{selectedMember}</span>
+          {visibleSnapshots.length === 0 && (
+            <span className="text-late">— belum ada jobdesk.</span>
+          )}
+        </div>
+      )}
+
       {(view === "flow" || view === "both") && (
-        <WorkflowFlow snapshots={snapshots} onNodeClick={handleNodeClick} />
+        <div ref={flowSectionRef} className="scroll-mt-6">
+          <WorkflowFlow snapshots={visibleSnapshots} onNodeClick={handleNodeClick} />
+        </div>
       )}
 
       {(view === "assignee" || view === "both") && (
         <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          {snapshots.map((s) => (
+          {visibleSnapshots.map((s) => (
             <div
               key={s.job.id}
               id={`job-${s.job.assignee.toLowerCase()}`}

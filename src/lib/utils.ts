@@ -40,3 +40,17 @@ export function formatDateTime(iso: string) {
     minute: "2-digit"
   });
 }
+
+export function formatDuration(startIso: string, endIso: string): string {
+  const diff = new Date(endIso).getTime() - new Date(startIso).getTime();
+  if (diff < 0) return "—";
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  if (days > 0) return hours > 0 ? `${days} hari ${hours} jam` : `${days} hari`;
+  if (hours > 0) {
+    const mins = Math.floor((diff % 3600000) / 60000);
+    return mins > 0 ? `${hours} jam ${mins} menit` : `${hours} jam`;
+  }
+  const mins = Math.floor(diff / 60000);
+  return `${Math.max(mins, 1)} menit`;
+}
