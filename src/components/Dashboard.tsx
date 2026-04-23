@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import JobCard from "./JobCard";
 import WorkflowFlow from "./WorkflowFlow";
 import type { JobSnapshot, Task } from "@/lib/types";
-import { Users, CheckCircle2, Activity, Sparkles, Briefcase, Settings } from "lucide-react";
+import { Users, CheckCircle2, Activity, Sparkles, Rocket, Briefcase, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type View = "flow" | "assignee" | "both";
@@ -40,10 +40,10 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
       <header className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center">
-            <Sparkles size={20} className="text-accent" />
+            <Rocket size={20} className="text-accent" />
           </div>
           <div>
-            <h1 className="text-lg md:text-xl font-semibold">Workflow Dashboard</h1>
+            <h1 className="text-lg md:text-xl font-semibold">Mapping Plan</h1>
             <p className="text-xs text-muted">
               Flow dependensi + progres harian per assignee
             </p>
