@@ -686,10 +686,11 @@ function MemberRow({
         {summary.status !== "no-jobs" && (
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="text-muted hover:text-accent transition"
-            title={expanded ? "Tutup detail" : "Lihat detail & log"}
+            className="flex items-center gap-1 text-xs text-muted hover:text-accent transition rounded-md border border-ink-700 px-2 py-1"
+            title={expanded ? "Tutup detail" : "Lihat detail & log jobdesk"}
           >
-            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            <span>{expanded ? "Tutup" : "Detail"}</span>
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
         )}
         <button
