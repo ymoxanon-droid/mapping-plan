@@ -48,6 +48,8 @@ interface Props {
   /** Tombol lock di kanan atas */
   onLock?: () => void;
   lockLabel?: string;
+  /** Slot di bawah judul, mis. tab switcher */
+  headerSlot?: React.ReactNode;
 }
 
 const STATUSES: TaskStatus[] = ["pending", "in_progress", "done", "cancelled"];
@@ -134,7 +136,8 @@ export default function AdminClient({
   subtitle,
   backLink,
   onLock,
-  lockLabel
+  lockLabel,
+  headerSlot
 }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -270,6 +273,8 @@ export default function AdminClient({
           </div>
         )}
       </div>
+
+      {headerSlot}
 
       {!supabaseReady && (
         <div className="card border-late/60 bg-late/10 flex items-start gap-3">

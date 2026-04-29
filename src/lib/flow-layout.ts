@@ -2,9 +2,9 @@ import dagre from "dagre";
 import { Position, type Edge, type Node } from "reactflow";
 
 const NODE_W = 240;
-const NODE_H = 78;
+const NODE_H = 104;
 const TRIGGER_W = 220;
-const TRIGGER_H = 70;
+const TRIGGER_H = 88;
 
 export function layoutFlow(
   nodes: Node[],
@@ -21,8 +21,8 @@ export function layoutFlow(
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: direction,
-    nodesep: opts.nodesep ?? 36,
-    ranksep: opts.ranksep ?? 70,
+    nodesep: opts.nodesep ?? 56,
+    ranksep: opts.ranksep ?? 96,
     marginx: 20,
     marginy: 20
   });

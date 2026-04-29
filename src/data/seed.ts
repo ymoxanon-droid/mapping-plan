@@ -84,6 +84,8 @@ function mkTask(
     perspective: seed.perspective,
     depends_on: (seed.deps ?? []).map((n) => taskId(jobId, n)),
     kind: seed.kind ?? "task",
+    group_key: null,
+    completed_at: status === "done" ? ts : null,
     created_at: ts,
     updated_at: ts,
     deleted_at: null

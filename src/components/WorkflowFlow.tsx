@@ -16,6 +16,7 @@ import TaskNode from "./flow/TaskNode";
 import TriggerNode from "./flow/TriggerNode";
 import type { JobSnapshot, Task } from "@/lib/types";
 import { layoutFlow } from "@/lib/flow-layout";
+import { assignJobColors } from "@/lib/flow-colors";
 import { getTaskDates } from "@/lib/task-dates";
 import { UserCircle2, X, ChevronDown, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -115,7 +116,9 @@ function WorkflowFlowInner({
               const st = (n.data as { task?: Task })?.task?.status;
               if (st === "done") return "#22c55e";
               if (st === "in_progress") return "#eab308";
-              if (n.type === "trigger") return "#7c5cff";
+              if (n.type === "trigger") {
+                return (n.data as { color?: string })?.color ?? "#7c5cff";
+              }
               return "#3f3f46";
             }}
             maskColor="rgba(11,11,16,0.8)"
@@ -152,19 +155,25 @@ function buildGraph(
     byAssignee.set(key, list);
   });
 
+  // Warna trigger dialokasikan global di level dashboard, supaya tidak ada
+  // dua job berbeda yang dapat warna sama dalam render yang sama.
+  const colorMap = assignJobColors(
+    snapshots.map((s) => s.job.id || s.job.name)
+  );
+
   const allNodes: Node[] = [];
   const allEdges: Edge[] = [];
   let yCursor = 0;
-  const GROUP_GAP = 120;
+  const GROUP_GAP = 168;
 
   byAssignee.forEach((group) => {
-    const { nodes, edges } = buildGroupGraph(group, onNodeClick);
+    const { nodes, edges } = buildGroupGraph(group, colorMap, onNodeClick);
     if (nodes.length === 0) return;
 
     const laid = layoutFlow(nodes, edges, { direction: "LR" });
 
     const ys = laid.nodes.map((n) => n.position.y);
-    const heights = laid.nodes.map((n) => (n.type === "trigger" ? 70 : 78));
+    const heights = laid.nodes.map((n) => (n.type === "trigger" ? 88 : 104));
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys.map((y, i) => y + heights[i]));
 
@@ -184,6 +193,7 @@ function buildGraph(
 
 function buildGroupGraph(
   snapshots: JobSnapshot[],
+  colorMap: Map<string, string>,
   onNodeClick?: (t: Task, a: string) => void
 ) {
   const nodes: Node[] = [];
@@ -201,11 +211,17 @@ function buildGroupGraph(
 
   snapshots.forEach((snap) => {
     const triggerId = `trigger-${snap.job.id}`;
+    const triggerColor =
+      colorMap.get(snap.job.id || snap.job.name) ?? "#7c5cff";
     nodes.push({
       id: triggerId,
       type: "trigger",
       position: { x: 0, y: 0 },
-      data: { label: snap.job.name, assignee: snap.job.assignee }
+      data: {
+        label: snap.job.name,
+        assignee: snap.job.assignee,
+        color: triggerColor
+      }
     });
 
     const active = snap.tasks.filter((t) => !t.deleted_at);
@@ -336,9 +352,10 @@ function TeamPicker({
   return (
     <div ref={ref} className="flex items-center gap-2 flex-wrap">
       {teamGroups.map(({ team, members: list }) => {
-        const active = selectedMember
-          ? list.some((n) => n.toLowerCase() === selectedMember.toLowerCase())
-          : false;
+        const activeMember = selectedMember
+          ? list.find((n) => n.toLowerCase() === selectedMember.toLowerCase()) ?? null
+          : null;
+        const active = activeMember !== null;
         const open = openTeam === team;
         return (
           <div key={team} className="relative">
@@ -350,10 +367,21 @@ function TeamPicker({
                   ? "border-accent bg-accent/20 text-accent"
                   : "border-ink-700 bg-ink-800/60 hover:bg-accent/10 hover:text-accent"
               )}
-              title={`Anggota team ${team}`}
+              title={
+                activeMember
+                  ? `Team ${team} — ${activeMember} terpilih`
+                  : `Anggota team ${team}`
+              }
             >
               <span className="font-semibold">{team}</span>
-              <span className="text-muted/80 tabular-nums">({list.length})</span>
+              {activeMember ? (
+                <>
+                  <span className="text-accent/60">·</span>
+                  <span className="font-medium">{activeMember}</span>
+                </>
+              ) : (
+                <span className="text-muted/80 tabular-nums">({list.length})</span>
+              )}
               <Users size={12} />
               <ChevronDown
                 size={12}
