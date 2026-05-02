@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Job, JobSnapshot, Perspective, Task, TaskStatus } from "@/lib/types";
 import { PERSPECTIVE_META } from "@/lib/types";
@@ -156,10 +156,6 @@ export default function AdminClient({
     return () => clearTimeout(t);
   }, [ok]);
 
-  useEffect(() => {
-    if (err || ok) window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [err, ok]);
-
   function flash(msg: string) {
     setErr(null);
     setOk(msg);
@@ -290,34 +286,36 @@ export default function AdminClient({
         </div>
       )}
 
-      {err && (
-        <div className="card border-late/60 bg-late/10 flex items-start gap-3 animate-in fade-in">
-          <X size={18} className="text-late shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm">
-            <div className="font-semibold text-late mb-1">Gagal menyimpan</div>
-            <div className="text-muted break-all">{err}</div>
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2 max-w-sm pointer-events-none">
+        {err && (
+          <div className="pointer-events-auto card border-late/60 bg-ink-900/95 backdrop-blur shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
+            <X size={18} className="text-late shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm">
+              <div className="font-semibold text-late mb-1">Gagal menyimpan</div>
+              <div className="text-muted break-all">{err}</div>
+            </div>
+            <button
+              onClick={() => setErr(null)}
+              className="text-muted hover:text-ink-50 transition"
+            >
+              <X size={14} />
+            </button>
           </div>
-          <button
-            onClick={() => setErr(null)}
-            className="text-muted hover:text-ink-50 transition"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
+        )}
 
-      {ok && (
-        <div className="card border-ok/60 bg-ok/10 flex items-start gap-3 animate-in fade-in">
-          <CheckCircle2 size={18} className="text-ok shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm text-ok font-medium">{ok}</div>
-          <button
-            onClick={() => setOk(null)}
-            className="text-ok/60 hover:text-ok transition"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
+        {ok && (
+          <div className="pointer-events-auto card border-ok/60 bg-ink-900/95 backdrop-blur shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
+            <CheckCircle2 size={18} className="text-ok shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm text-ok font-medium">{ok}</div>
+            <button
+              onClick={() => setOk(null)}
+              className="text-ok/60 hover:text-ok transition"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+      </div>
 
       {busy && (
         <div className="fixed bottom-5 left-5 z-40 rounded-full bg-ink-800 border border-ink-700 shadow-lg px-3 py-2 text-xs text-muted flex items-center gap-2">
@@ -345,11 +343,21 @@ export default function AdminClient({
               key={snap.job.id}
               snap={snap}
               disabled={busy !== null || !supabaseReady}
-              onAddTask={(data) =>
+              onAddTask={(rows) =>
                 run(
-                  "create task",
-                  () => createTask({ job_id: snap.job.id, ...data }),
-                  { successMsg: `✓ Task "${data.title}" ditambah` }
+                  "create tasks",
+                  async () => {
+                    for (const data of rows) {
+                      await createTask({ job_id: snap.job.id, ...data });
+                    }
+                    return rows.length;
+                  },
+                  {
+                    successMsg:
+                      rows.length === 1
+                        ? `✓ Task "${rows[0].title}" ditambah`
+                        : `✓ ${rows.length} task ditambah`
+                  }
                 )
               }
               onEditTask={(id, patch) =>
@@ -641,7 +649,7 @@ function JobBlock({
 }: {
   snap: JobSnapshot;
   disabled: boolean;
-  onAddTask: (data: Omit<CreateTaskInput, "job_id">) => void;
+  onAddTask: (rows: Omit<CreateTaskInput, "job_id">[]) => void;
   onEditTask: (id: string, patch: PatchTaskInput) => void;
   onDeleteTask: (id: string) => void;
   onDeleteJob: () => void;
@@ -711,8 +719,8 @@ function JobBlock({
             disabled={disabled}
             existingGroups={existingGroups}
             nextOrderNum={Math.max(0, ...active.map((t) => t.order_num)) + 1}
-            onSubmit={(data) => {
-              onAddTask(data);
+            onSubmit={(rows) => {
+              onAddTask(rows);
               setShowForm(false);
             }}
             onCancel={() => setShowForm(false)}
@@ -969,7 +977,7 @@ function TaskForm({
   disabled: boolean;
   existingGroups: string[];
   nextOrderNum: number;
-  onSubmit: (data: TaskFormData) => void;
+  onSubmit: (rows: TaskFormData[]) => void;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState("");
@@ -977,18 +985,52 @@ function TaskForm({
   const [perspective, setPerspective] = useState<Perspective | "">("");
   const [kind, setKind] = useState<Kind>("task");
   const [groupKey, setGroupKey] = useState("");
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const lines = title
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const isBulk = lines.length >= 2;
+
+  function autoResize(el: HTMLTextAreaElement) {
+    el.style.height = "auto";
+    // grow when content exceeds default 4 rows, cap at 320px
+    el.style.height = Math.min(Math.max(el.scrollHeight, 96), 320) + "px";
+  }
+
+  useEffect(() => {
+    if (taRef.current) autoResize(taRef.current);
+  }, [title]);
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const raw = e.clipboardData.getData("text");
+    if (!raw.includes("\n")) return; // single line — let default paste happen
+    e.preventDefault();
+    const cleaned = raw
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^\s*(?:\d+[.)]?|[-•*])\s*/, "").trim())
+      .filter(Boolean)
+      .join("\n");
+    if (!cleaned) return;
+    const ta = e.currentTarget;
+    const start = ta.selectionStart ?? title.length;
+    const end = ta.selectionEnd ?? title.length;
+    setTitle(title.slice(0, start) + cleaned + title.slice(end));
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
-    onSubmit({
-      title: title.trim(),
+    if (lines.length === 0) return;
+    const rows: TaskFormData[] = lines.map((t, idx) => ({
+      title: t,
       status,
       perspective: perspective || null,
       kind,
-      order_num: nextOrderNum,
+      order_num: nextOrderNum + idx,
       group_key: groupKey.trim() || null
-    });
+    }));
+    onSubmit(rows);
     setTitle("");
   }
 
@@ -997,16 +1039,40 @@ function TaskForm({
       onSubmit={submit}
       className="border border-ink-700 rounded-lg p-3 space-y-2 bg-ink-900/60 mt-2"
     >
-      <Field label="Judul task">
-        <input
+      <label className="block">
+        <span className="flex items-center justify-between gap-2 mb-1">
+          <span className="text-[11px] uppercase tracking-widest text-muted">
+            Judul task{" "}
+            <span className="text-muted/60 normal-case tracking-normal">
+              — 1 baris = 1 task, bisa paste banyak sekaligus
+            </span>
+          </span>
+          {isBulk ? (
+            <span className="chip bg-accent/20 text-accent text-[10px] shrink-0">
+              {lines.length} task akan dibuat
+            </span>
+          ) : (
+            <span className="text-[10px] text-muted/60 shrink-0">
+              {lines.length === 1 ? "1 task" : "kosong"}
+            </span>
+          )}
+        </span>
+        <textarea
+          ref={taRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          required
-          placeholder="Contoh: Setup Cloudflare tunnel"
-          className="input"
+          onPaste={handlePaste}
+          rows={4}
+          placeholder={
+            "Contoh (1 baris = 1 task):\n" +
+            "Setup Cloudflare tunnel\n" +
+            "Konfigurasi DNS nameserver\n" +
+            "Test koneksi end-to-end"
+          }
+          className="input resize-y overflow-auto leading-snug min-h-[96px] font-mono text-[13px]"
           autoFocus
         />
-      </Field>
+      </label>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <Field label="Status">
           <select
@@ -1052,13 +1118,26 @@ function TaskForm({
           />
         </Field>
       </div>
-      <div className="flex gap-2 pt-1">
-        <button type="submit" className="btn btn-accent" disabled={disabled}>
-          <Check size={14} /> Simpan Task
+      <div className="flex gap-2 pt-1 items-center">
+        <button
+          type="submit"
+          className="btn btn-accent"
+          disabled={disabled || lines.length === 0}
+        >
+          <Check size={14} />{" "}
+          {isBulk ? `Simpan ${lines.length} Task` : "Simpan Task"}
         </button>
         <button type="button" onClick={onCancel} className="btn">
           Batal
         </button>
+        {isBulk && groupKey.trim() && (
+          <span className="text-[11px] text-muted/70 ml-1">
+            Semua {lines.length} task akan masuk grup{" "}
+            <span className="chip bg-accent/15 text-accent text-[10px]">
+              {groupKey.trim()}
+            </span>
+          </span>
+        )}
       </div>
     </form>
   );
