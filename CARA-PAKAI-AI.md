@@ -48,8 +48,9 @@ Aturan:
 2. Untuk revisi yang aku kerjakan di sesi ini: isi/lengkapi entrinya dengan
    DETAIL nyata dari diskusi kita — bukan ringkasan satu baris. Tulis apa yang
    diubah, kenapa, file mana, dan hasil konkretnya buat user.
-3. Set Status (✅ Selesai / 🔄 Proses / ⏳ Pending), Waktu (mis. "2 hari"),
-   dan nama Sesi-nya. Kalau ini revisi baru, beri nomor R-XX berikutnya.
+3. Set Proyek (revisi ini milik proyek mana: SEO / Domain / Database / dll),
+   Status (✅ Selesai / 🔄 Proses / ⏳ Pending), Waktu (mis. "2 hari"), dan nama
+   Sesi-nya. Kalau ini revisi baru, beri nomor R-XX berikutnya.
 4. Update juga PRESENTASI-MINGGU-N.md: tambahkan 1–2 baris sorotan minggu ini
    yang menunjuk ke entri R-XX di log (kalau minggu baru, buat file baru dgn
    format yang sama seperti PRESENTASI-MINGGU-1.md).

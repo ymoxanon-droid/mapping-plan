@@ -6,9 +6,14 @@
 
 ## 1. Satu kalimat
 
-**Progress tracker AI-first untuk tim kecil**, di mana **chat adalah pintu masuk utama**: tanya _"sampai mana si X"_ → muncul card visual berisi progress ring, flow tugas, dan riwayat perubahan.
+**Dashboard pusat (AI-first) untuk mencatat tugas & revisi dari SEMUA proyek
+pemilik** (SEO, domain, database, dll) — bukan tracker satu proyek saja.
+**Chat adalah pintu masuk utama**: tanya _"sampai mana si X"_ → muncul card
+visual berisi progress ring, flow tugas, dan riwayat perubahan.
 
-**Kenapa dibuat begini:** atasan minta bentuknya seperti _AI chatbot + visual_, bukan tabel biasa.
+**Kenapa dibuat begini:** atasan minta bentuknya seperti _AI chatbot + visual_,
+bukan tabel biasa. Tiap poin revisi (lihat [REVISI-LOG.md](REVISI-LOG.md))
+ditandai milik **proyek** mana, karena satu dashboard ini melacak banyak proyek.
 
 ---
 
