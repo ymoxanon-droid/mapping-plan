@@ -79,9 +79,10 @@ export default function InputPage() {
         ) : (
           <VisualBuilder
             defaultOwner={member.name}
+            snapshots={snapshots}
             supabaseReady={ready}
-            title={`Visual Builder — ${member.name}`}
-            subtitle="Drag node dari sidebar, hubungkan dengan garis untuk dependency. Klik node untuk edit propertinya."
+            title={`Papan Kanban — ${member.name}`}
+            subtitle="Tarik task antar kolom untuk pindah. Klik task buat edit. Perubahan tersimpan otomatis."
             backLink={{ to: "/", label: "Kembali ke dashboard" }}
             lockLabel="Keluar"
             onLock={lock}
@@ -115,7 +116,7 @@ function ModeTabs({
         onClick={() => onChange("visual")}
         icon={<Boxes size={13} />}
         label="Mode Visual"
-        hint="Drag-drop kanvas ala n8n"
+        hint="Papan Kanban — drag task antar kolom"
       />
     </div>
   );

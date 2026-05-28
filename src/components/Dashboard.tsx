@@ -22,7 +22,7 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
   const [view, setView] = useState<View>("both");
   const [highlightTaskId, setHighlightTaskId] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
-  const [registeredNames, setRegisteredNames] = useState<string[]>([]);
+  const [registeredNames, setRegisteredNames] = useState<string[] | null>(null);
   const navigate = useNavigate();
   const flowSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -42,21 +42,29 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
   }, []);
 
   const members = useMemo(() => {
-    const fromJobs = snapshots.map((s) => s.job.assignee);
+    if (!registeredNames) return [];
     const seen = new Map<string, string>();
-    for (const name of [...registeredNames, ...fromJobs]) {
+    for (const name of registeredNames) {
       const key = name.toLowerCase();
       if (!seen.has(key)) seen.set(key, name);
     }
     return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+  }, [registeredNames]);
+
+  const ownedSnapshots = useMemo(() => {
+    if (registeredNames === null) return snapshots;
+    const memberSet = new Set(registeredNames.map((n) => n.toLowerCase()));
+    return snapshots.filter((s) => memberSet.has(s.job.assignee.toLowerCase()));
   }, [snapshots, registeredNames]);
 
+  const orphanCount = snapshots.length - ownedSnapshots.length;
+
   const visibleSnapshots = useMemo(() => {
-    if (!selectedMember) return snapshots;
-    return snapshots.filter(
+    if (!selectedMember) return ownedSnapshots;
+    return ownedSnapshots.filter(
       (s) => s.job.assignee.toLowerCase() === selectedMember.toLowerCase()
     );
-  }, [snapshots, selectedMember]);
+  }, [ownedSnapshots, selectedMember]);
 
   const totalTasks = visibleSnapshots.reduce(
     (a, s) => a + (s.progress?.total_tasks ?? 0),
@@ -172,6 +180,16 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
           {visibleSnapshots.length === 0 && (
             <span className="text-late">— belum ada jobdesk.</span>
           )}
+        </div>
+      )}
+
+      {orphanCount > 0 && !selectedMember && (
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span className="chip bg-late/15 text-late">{orphanCount} jobdesk yatim</span>
+          disembunyikan — assignee sudah dihapus.{" "}
+          <Link to="/admin" className="text-accent hover:underline">
+            Kelola di Admin
+          </Link>
         </div>
       )}
 

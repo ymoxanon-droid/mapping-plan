@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { JobSnapshot } from "@/lib/types";
 import ProgressRing from "./ProgressRing";
 import TaskTimeline from "./TaskTimeline";
@@ -24,8 +24,30 @@ export default function JobCard({
   highlightTaskId?: string | null;
 }) {
   const { job, progress, tasks, events } = snapshot;
-  const active = tasks.filter((t) => !t.deleted_at).sort((a, b) => a.order_num - b.order_num);
+  const active = useMemo(
+    () => tasks.filter((t) => !t.deleted_at).sort((a, b) => a.order_num - b.order_num),
+    [tasks]
+  );
   const [tab, setTab] = useState<Tab>("tasks");
+
+  const focusTaskId = useMemo(() => {
+    const firstInProgress = active.find((t) => t.status === "in_progress");
+    if (firstInProgress) return firstInProgress.id;
+    const firstPending = active.find((t) => t.status === "pending");
+    return firstPending?.id ?? null;
+  }, [active]);
+
+  const taskListRef = useRef<HTMLUListElement | null>(null);
+
+  useEffect(() => {
+    if (tab !== "tasks" || !focusTaskId) return;
+    const ul = taskListRef.current;
+    if (!ul) return;
+    const target = ul.querySelector<HTMLElement>(`[data-task-id="${focusTaskId}"]`);
+    if (!target) return;
+    const offset = target.offsetTop - ul.offsetTop - 8;
+    ul.scrollTo({ top: Math.max(0, offset), behavior: "auto" });
+  }, [tab, focusTaskId]);
 
   return (
     <div className="card space-y-6">
@@ -67,12 +89,16 @@ export default function JobCard({
         </div>
 
         {tab === "tasks" && (
-          <ul className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+          <ul
+            ref={taskListRef}
+            className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1"
+          >
             {active.map((t) => {
               const dates = getTaskDates(t, events);
               return (
                 <li
                   key={t.id}
+                  data-task-id={t.id}
                   className={cn(
                     "flex items-start gap-3 text-sm p-2 rounded-md transition-colors",
                     highlightTaskId === t.id

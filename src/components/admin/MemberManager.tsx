@@ -367,8 +367,13 @@ function OverviewSection({
     }).length;
     const untouchedJobs = totalJobs - completedJobs - runningJobs;
     const registered = memberNames.length;
-    const assigneesInJobs = new Set(
-      snapshots.map((s) => s.job.assignee.toLowerCase())
+    const memberSet = new Set(memberNames.map((n) => n.toLowerCase()));
+    const assigneeNames = snapshots.map((s) => s.job.assignee.toLowerCase());
+    const activeAssignees = new Set(
+      assigneeNames.filter((a) => memberSet.has(a))
+    ).size;
+    const orphanAssignees = new Set(
+      assigneeNames.filter((a) => !memberSet.has(a))
     ).size;
     return {
       totalJobs,
@@ -379,7 +384,8 @@ function OverviewSection({
       runningJobs,
       untouchedJobs,
       registered,
-      assigneesInJobs
+      activeAssignees,
+      orphanAssignees
     };
   }, [snapshots, memberNames]);
 
@@ -394,9 +400,13 @@ function OverviewSection({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MiniStat
           icon={<Users size={16} />}
-          label="Anggota terdaftar"
+          label="Anggota"
           value={stats.registered}
-          sub={`${stats.assigneesInJobs} aktif di jobdesk`}
+          sub={
+            stats.orphanAssignees > 0
+              ? `${stats.activeAssignees} aktif · ${stats.orphanAssignees} jobdesk yatim`
+              : `${stats.activeAssignees} aktif di jobdesk`
+          }
         />
         <MiniStat
           icon={<Briefcase size={16} />}
@@ -445,19 +455,19 @@ function MiniStat({
   color?: string;
 }) {
   return (
-    <div className="rounded-lg border border-ink-700 bg-ink-900/40 p-3 flex items-start gap-3">
-      <div className="w-8 h-8 rounded-md bg-ink-700 flex items-center justify-center text-accent shrink-0">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <div className={cn("text-xl font-semibold tabular-nums leading-tight", color)}>
-          {value}
-        </div>
-        <div className="text-[10px] uppercase tracking-widest text-muted mt-0.5">
+    <div className="rounded-lg border border-ink-700 bg-ink-900/40 p-3 min-w-0">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="text-[10px] uppercase tracking-widest text-muted truncate">
           {label}
         </div>
-        {sub && <div className="text-[11px] text-muted mt-0.5 truncate">{sub}</div>}
+        <div className="w-7 h-7 rounded-md bg-ink-700/70 flex items-center justify-center text-accent shrink-0">
+          {icon}
+        </div>
       </div>
+      <div className={cn("text-2xl font-semibold tabular-nums leading-none", color)}>
+        {value}
+      </div>
+      {sub && <div className="text-[11px] text-muted mt-1.5 truncate">{sub}</div>}
     </div>
   );
 }

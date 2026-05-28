@@ -4,72 +4,68 @@ import {
   useMemo,
   useRef,
   useState,
-  type DragEvent,
-  type MouseEvent as ReactMouseEvent,
   type ReactNode
 } from "react";
 import { Link } from "react-router-dom";
 import ReactFlow, {
-  ReactFlowProvider,
   Background,
   Controls,
-  MarkerType,
-  addEdge,
-  applyNodeChanges,
-  applyEdgeChanges,
-  useReactFlow,
   Handle,
   Position,
-  type Node,
-  type Edge,
+  ReactFlowProvider,
+  MarkerType,
+  applyEdgeChanges,
+  applyNodeChanges,
+  useReactFlow,
   type Connection,
-  type NodeChange,
+  type Edge,
   type EdgeChange,
-  type NodeProps,
-  type OnSelectionChangeParams
+  type Node,
+  type NodeChange,
+  type NodeProps
 } from "reactflow";
 import "reactflow/dist/style.css";
+import type { Job, JobSnapshot, Task, TaskStatus } from "@/lib/types";
+import {
+  createJob,
+  createTask,
+  deleteJob as apiDeleteJob,
+  patchJob,
+  patchTask,
+  softDeleteTask
+} from "@/lib/api";
+import { layoutFlow } from "@/lib/flow-layout";
+import { assignJobColors } from "@/lib/flow-colors";
 import {
   ArrowLeft,
-  Save,
+  Boxes,
   Lock,
-  CheckCircle2,
+  Plus,
+  Trash2,
   X,
   Loader2,
-  Play,
+  AlertTriangle,
   ListChecks,
   FlaskConical,
   Flag,
-  Trash2,
-  GripVertical,
-  Boxes,
-  AlertTriangle,
+  CheckCircle2,
+  Circle,
+  Cloud,
+  CloudOff,
+  Play,
+  XCircle,
+  Briefcase,
   Pencil,
-  Copy,
-  MousePointer2
+  ChevronRight,
+  LayoutGrid
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Perspective, TaskStatus } from "@/lib/types";
-import { PERSPECTIVE_META } from "@/lib/types";
-import { createJob, createTask, type CreateTaskInput } from "@/lib/api";
 
-type Kind = "task" | "research" | "milestone";
-
-interface VTaskData {
-  title: string;
-  status: TaskStatus;
-  kind: Kind;
-  perspective: Perspective | null;
-  group_key: string | null;
-  description: string;
-}
-
-interface VTriggerData {
-  name: string;
-}
+type Kind = Exclude<NonNullable<Task["kind"]>, "trigger">;
 
 interface Props {
   defaultOwner: string;
+  snapshots: JobSnapshot[];
   supabaseReady: boolean;
   title?: string;
   subtitle?: string;
@@ -77,530 +73,377 @@ interface Props {
   onLock?: () => void;
   lockLabel?: string;
   onSaved?: () => Promise<void>;
-  /** Slot opsional untuk render tab switcher di header */
   headerSlot?: ReactNode;
 }
 
-const TRIGGER_ID = "__trigger__";
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 const STATUSES: TaskStatus[] = ["pending", "in_progress", "done", "cancelled"];
-const PERSPECTIVES: Perspective[] = ["financial", "customer", "internal", "capacity"];
-const KINDS: Kind[] = ["task", "research", "milestone"];
+const KIND_VALUES: Kind[] = ["task", "research", "milestone"];
 
-const KIND_META: Record<
-  Kind,
-  { label: string; Icon: typeof ListChecks; tint: string }
+const STATUS_META: Record<
+  TaskStatus,
+  { Icon: typeof CheckCircle2; ring: string; text: string; tint: string; label: string }
 > = {
-  task: { label: "Task", Icon: ListChecks, tint: "text-ink-50" },
-  research: { label: "Research", Icon: FlaskConical, tint: "text-accent" },
-  milestone: { label: "Milestone", Icon: Flag, tint: "text-ok" }
+  done: {
+    Icon: CheckCircle2,
+    ring: "ring-ok/70",
+    text: "text-ok",
+    tint: "bg-ok/10",
+    label: "Selesai"
+  },
+  in_progress: {
+    Icon: Loader2,
+    ring: "ring-warn/80",
+    text: "text-warn",
+    tint: "bg-warn/10",
+    label: "Jalan"
+  },
+  pending: {
+    Icon: Circle,
+    ring: "ring-ink-700",
+    text: "text-muted",
+    tint: "",
+    label: "Pending"
+  },
+  cancelled: {
+    Icon: XCircle,
+    ring: "ring-muted/60",
+    text: "text-muted",
+    tint: "",
+    label: "Batal"
+  }
 };
 
-const STATUS_RING: Record<TaskStatus, string> = {
-  done: "ring-ok/70",
-  in_progress: "ring-warn/80",
-  pending: "ring-ink-700",
-  cancelled: "ring-muted/60"
+const KIND_META: Record<Kind, { Icon: typeof ListChecks; label: string }> = {
+  task: { Icon: ListChecks, label: "Task" },
+  research: { Icon: FlaskConical, label: "Research" },
+  milestone: { Icon: Flag, label: "Milestone" }
 };
 
-function localId() {
-  return `t_${Math.random().toString(36).slice(2, 10)}`;
+interface PositionMap {
+  [nodeId: string]: { x: number; y: number };
 }
 
-// ─── Node renderers ───────────────────────────────────────────
-function VTriggerNode({ data, selected }: NodeProps<VTriggerData>) {
-  return (
-    <div
-      className={cn(
-        "relative bg-gradient-to-br from-accent/25 to-accent/5 rounded-xl px-3 py-2.5 w-56 shadow-lg ring-1 border transition",
-        selected
-          ? "border-accent ring-accent"
-          : "border-accent/60 ring-accent/30"
-      )}
-    >
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!bg-accent !border-accent !w-2.5 !h-2.5"
-      />
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-6 h-6 rounded-full bg-accent/30 border border-accent/60 flex items-center justify-center shrink-0">
-          <Play size={12} className="text-accent fill-accent" />
-        </div>
-        <span className="text-[9px] uppercase tracking-widest text-accent/90">
-          Trigger
-        </span>
-      </div>
-      <div className="text-sm font-semibold leading-snug line-clamp-2">
-        {data.name || (
-          <span className="text-muted italic font-normal">(nama jobdesk)</span>
-        )}
-      </div>
-    </div>
-  );
+function posKey(owner: string, jobId: string) {
+  return `vbuilder_pos_v2_${owner.toLowerCase()}_${jobId}`;
 }
 
-function VTaskNode({ data, selected }: NodeProps<VTaskData>) {
-  const meta = KIND_META[data.kind];
-  const Icon = meta.Icon;
-  return (
-    <div
-      className={cn(
-        "relative bg-ink-800 rounded-xl px-3 py-2.5 w-56 shadow-lg ring-1 border transition",
-        STATUS_RING[data.status],
-        selected
-          ? "border-accent ring-accent"
-          : "border-ink-700"
-      )}
-    >
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="!bg-ink-700 !border-ink-600 !w-2.5 !h-2.5"
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!bg-ink-700 !border-ink-600 !w-2.5 !h-2.5"
-      />
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Icon size={12} className={cn("shrink-0", meta.tint)} />
-        <span className="text-[9px] uppercase tracking-wider text-muted">
-          {meta.label}
-        </span>
-        {data.group_key && (
-          <span className="ml-auto chip bg-accent/15 text-accent text-[9px]">
-            {data.group_key}
-          </span>
-        )}
-      </div>
-      <div
-        className={cn(
-          "text-[13px] font-medium leading-snug line-clamp-2",
-          data.status === "done" && "line-through text-muted"
-        )}
-      >
-        {data.title || (
-          <span className="text-muted italic font-normal">(judul task)</span>
-        )}
-      </div>
-      <div className="mt-1.5 text-[10px] text-muted uppercase tracking-wider">
-        {data.status.replace("_", " ")}
-      </div>
-    </div>
-  );
+function loadPositions(owner: string, jobId: string): PositionMap {
+  try {
+    const raw = localStorage.getItem(posKey(owner, jobId));
+    return raw ? (JSON.parse(raw) as PositionMap) : {};
+  } catch {
+    return {};
+  }
 }
 
-const nodeTypes = { vTrigger: VTriggerNode, vTask: VTaskNode };
+function savePositions(owner: string, jobId: string, p: PositionMap) {
+  try {
+    localStorage.setItem(posKey(owner, jobId), JSON.stringify(p));
+  } catch {
+    /* */
+  }
+}
 
-// ─── Main component ──────────────────────────────────────────
+interface Board {
+  job: Job;
+  tasks: Task[];
+}
+
+// ─── Main export ─────────────────────────────────────────────
 export default function VisualBuilder(props: Props) {
   return (
     <ReactFlowProvider>
-      <Inner {...props} />
+      <Outer {...props} />
     </ReactFlowProvider>
   );
 }
 
-function Inner({
-  defaultOwner,
-  supabaseReady,
-  title,
-  subtitle,
-  backLink,
-  onLock,
-  lockLabel,
-  onSaved,
-  headerSlot
-}: Props) {
-  const [jobName, setJobName] = useState("");
-  const [nodes, setNodes] = useState<Node[]>(() => [
-    {
-      id: TRIGGER_ID,
-      type: "vTrigger",
-      position: { x: 60, y: 220 },
-      data: { name: "" } satisfies VTriggerData,
-      deletable: false
-    }
-  ]);
-  const [edges, setEdges] = useState<Edge[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+function Outer(props: Props) {
+  const ownerKey = props.defaultOwner.toLowerCase();
+
+  const initialBoards = useMemo<Board[]>(() => {
+    return props.snapshots
+      .filter((s) => s.job.assignee.toLowerCase() === ownerKey)
+      .map((s) => ({
+        job: s.job,
+        tasks: s.tasks
+          .filter((t) => !t.deleted_at)
+          .sort((a, b) => a.order_num - b.order_num)
+      }))
+      .sort((a, b) => a.job.name.localeCompare(b.job.name));
+  }, [props.snapshots, ownerKey]);
+
+  const [boards, setBoards] = useState<Board[]>(initialBoards);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
-  const [menu, setMenu] = useState<
-    | {
-        x: number;
-        y: number;
-        flowPos?: { x: number; y: number };
-        nodeId?: string;
-        edgeId?: string;
-      }
-    | null
-  >(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const { screenToFlowPosition } = useReactFlow();
-
-  function changeJobName(name: string) {
-    setJobName(name);
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === TRIGGER_ID ? { ...n, data: { ...n.data, name } } : n
-      )
-    );
-  }
-
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    setNodes((n) => applyNodeChanges(changes, n));
-  }, []);
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    setEdges((e) => applyEdgeChanges(changes, e));
-  }, []);
-  const onConnect = useCallback((conn: Connection) => {
-    if (!conn.source || !conn.target || conn.source === conn.target) return;
-    setEdges((eds) =>
-      addEdge(
-        {
-          ...conn,
-          type: "smoothstep",
-          markerEnd: { type: MarkerType.ArrowClosed, color: "#6b7280" },
-          style: { stroke: "#6b7280", strokeWidth: 1.5 }
-        },
-        eds
-      )
-    );
-  }, []);
-
-  const onSelectionChange = useCallback(
-    ({ nodes: selected }: OnSelectionChangeParams) => {
-      setSelectedId(selected[0]?.id ?? null);
-    },
-    []
-  );
-
-  const onDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const onDrop = useCallback(
-    (e: DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const kind = e.dataTransfer.getData("application/x-vbuilder-kind") as Kind;
-      if (!kind || !KINDS.includes(kind)) return;
-      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-      const id = localId();
-      const newNode: Node<VTaskData> = {
-        id,
-        type: "vTask",
-        position,
-        data: {
-          title: "",
-          status: "pending",
-          kind,
-          perspective: null,
-          group_key: null,
-          description: ""
-        },
-        selected: true
-      };
-      setNodes((nds) => [
-        ...nds.map((n) => ({ ...n, selected: false })),
-        newNode
-      ]);
-      setSelectedId(id);
-    },
-    [screenToFlowPosition]
-  );
-
-  function patchSelected(patch: Partial<VTaskData>) {
-    if (!selectedId) return;
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === selectedId ? { ...n, data: { ...n.data, ...patch } } : n
-      )
-    );
-  }
-
-  function deleteSelected() {
-    if (!selectedId || selectedId === TRIGGER_ID) return;
-    deleteNodeId(selectedId);
-  }
-
-  function deleteNodeId(id: string) {
-    if (id === TRIGGER_ID) return;
-    setNodes((nds) => nds.filter((n) => n.id !== id));
-    setEdges((eds) =>
-      eds.filter((e) => e.source !== id && e.target !== id)
-    );
-    if (selectedId === id) setSelectedId(null);
-  }
-
-  function deleteEdgeId(id: string) {
-    setEdges((eds) => eds.filter((e) => e.id !== id));
-  }
-
-  function addTaskAt(kind: Kind, flowPos: { x: number; y: number }) {
-    const id = localId();
-    const newNode: Node<VTaskData> = {
-      id,
-      type: "vTask",
-      position: flowPos,
-      data: {
-        title: "",
-        status: "pending",
-        kind,
-        perspective: null,
-        group_key: null,
-        description: ""
-      },
-      selected: true
-    };
-    setNodes((nds) => [
-      ...nds.map((n) => ({ ...n, selected: false })),
-      newNode
-    ]);
-    setSelectedId(id);
-  }
-
-  function duplicateNodeId(id: string) {
-    const src = nodes.find((n) => n.id === id);
-    if (!src || src.type !== "vTask") return;
-    const newId = localId();
-    const copy: Node<VTaskData> = {
-      ...src,
-      id: newId,
-      position: { x: src.position.x + 30, y: src.position.y + 30 },
-      data: { ...(src.data as VTaskData) },
-      selected: true
-    };
-    setNodes((nds) => [
-      ...nds.map((n) => ({ ...n, selected: false })),
-      copy
-    ]);
-    setSelectedId(newId);
-  }
-
-  const onPaneContextMenu = useCallback(
-    (e: ReactMouseEvent | MouseEvent) => {
-      e.preventDefault();
-      const flowPos = screenToFlowPosition({
-        x: e.clientX,
-        y: e.clientY
-      });
-      setMenu({ x: e.clientX, y: e.clientY, flowPos });
-    },
-    [screenToFlowPosition]
-  );
-
-  const onNodeContextMenu = useCallback(
-    (e: ReactMouseEvent, node: Node) => {
-      e.preventDefault();
-      setMenu({ x: e.clientX, y: e.clientY, nodeId: node.id });
-    },
-    []
-  );
-
-  const onEdgeContextMenu = useCallback((e: ReactMouseEvent, edge: Edge) => {
-    e.preventDefault();
-    setMenu({ x: e.clientX, y: e.clientY, edgeId: edge.id });
-  }, []);
-
-  const onCanvasDoubleClick = useCallback(
-    (e: ReactMouseEvent<HTMLDivElement>) => {
-      const target = e.target as HTMLElement;
-      // Hanya pas kanvas (pane) yang di-double-click, bukan node/edge
-      if (!target.classList?.contains("react-flow__pane")) return;
-      const flowPos = screenToFlowPosition({
-        x: e.clientX,
-        y: e.clientY
-      });
-      addTaskAt("task", flowPos);
-    },
-    [screenToFlowPosition]
-  );
-
-  // Tutup context menu saat klik di luar / scroll / Escape
   useEffect(() => {
-    if (!menu) return;
-    function onMouseDown(e: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as globalThis.Node)
-      ) {
-        setMenu(null);
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setMenu(null);
-    }
-    document.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menu]);
+    setBoards(initialBoards);
+  }, [initialBoards]);
 
-  function resetCanvas() {
-    setJobName("");
-    setNodes([
-      {
-        id: TRIGGER_ID,
-        type: "vTrigger",
-        position: { x: 60, y: 220 },
-        data: { name: "" } satisfies VTriggerData,
-        deletable: false
-      }
-    ]);
-    setEdges([]);
-    setSelectedId(null);
-  }
+  useEffect(() => {
+    if (saveState !== "saved") return;
+    const t = setTimeout(() => setSaveState("idle"), 1200);
+    return () => clearTimeout(t);
+  }, [saveState]);
 
-  const selectedNode = useMemo(
-    () => (selectedId ? nodes.find((n) => n.id === selectedId) ?? null : null),
-    [selectedId, nodes]
-  );
-
-  const taskNodes = useMemo(
-    () => nodes.filter((n) => n.type === "vTask"),
-    [nodes]
-  );
-
-  const groups = useMemo(() => {
-    const set = new Set<string>();
-    taskNodes.forEach((n) => {
-      const g = (n.data as VTaskData).group_key;
-      if (g) set.add(g);
-    });
-    return Array.from(set);
-  }, [taskNodes]);
-
-  const canSave =
-    supabaseReady && jobName.trim().length > 0 && taskNodes.length > 0 && !saving;
-
-  async function save() {
-    if (!canSave) return;
-    setSaving(true);
+  const pendingOps = useRef(0);
+  const withSave = useCallback(<T,>(fn: () => Promise<T>): Promise<T> => {
+    pendingOps.current++;
+    setSaveState("saving");
     setErr(null);
-    setOk(null);
-
-    try {
-      const job = await createJob({
-        name: jobName.trim(),
-        assignee: defaultOwner
+    return fn()
+      .then((res) => {
+        pendingOps.current = Math.max(0, pendingOps.current - 1);
+        if (pendingOps.current === 0) setSaveState("saved");
+        return res;
+      })
+      .catch((e: Error) => {
+        pendingOps.current = Math.max(0, pendingOps.current - 1);
+        setSaveState("error");
+        setErr(e.message);
+        throw e;
       });
+  }, []);
 
-      // Bangun adjacency dependency: target → [source localIds]
-      const taskMap = new Map<string, Node>(
-        taskNodes.map((n) => [n.id, n])
+  const notify = useCallback(() => {
+    if (props.onSaved) void props.onSaved();
+  }, [props]);
+
+  const selected = useMemo(
+    () => boards.find((b) => b.job.id === selectedJobId) ?? null,
+    [boards, selectedJobId]
+  );
+
+  // ─── CRUD ─────────────────────────────────────────────────
+  const createNewJob = useCallback(
+    async (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return null;
+      try {
+        const job = await withSave(() =>
+          createJob({ name: trimmed, assignee: ownerKey })
+        );
+        setBoards((bs) => [...bs, { job, tasks: [] }]);
+        notify();
+        return job;
+      } catch {
+        return null;
+      }
+    },
+    [ownerKey, withSave, notify]
+  );
+
+  const renameJob = useCallback(
+    async (jobId: string, name: string) => {
+      const orig = boards.find((b) => b.job.id === jobId);
+      if (!orig) return;
+      setBoards((bs) =>
+        bs.map((b) =>
+          b.job.id === jobId ? { ...b, job: { ...b.job, name } } : b
+        )
       );
-      const incoming = new Map<string, string[]>();
-      taskNodes.forEach((n) => incoming.set(n.id, []));
-      edges.forEach((e) => {
-        if (e.source === TRIGGER_ID) return;
-        if (!taskMap.has(e.source) || !taskMap.has(e.target)) return;
-        incoming.get(e.target)!.push(e.source);
-      });
+      try {
+        await withSave(() => patchJob(jobId, { name }));
+        notify();
+      } catch {
+        setBoards((bs) =>
+          bs.map((b) => (b.job.id === jobId ? { ...b, job: orig.job } : b))
+        );
+      }
+    },
+    [boards, withSave, notify]
+  );
 
-      // Topo sort (Kahn) — kalau ada cycle, append sisanya apa adanya
-      const order: string[] = [];
-      const remaining = new Map<string, string[]>();
-      incoming.forEach((parents, id) => remaining.set(id, [...parents]));
-      while (remaining.size > 0) {
-        const ready = Array.from(remaining.entries())
-          .filter(([, parents]) => parents.length === 0)
-          .map(([id]) => id);
-        if (ready.length === 0) {
-          remaining.forEach((_, id) => order.push(id));
-          break;
+  const deleteJobAction = useCallback(
+    async (jobId: string) => {
+      const orig = boards.find((b) => b.job.id === jobId);
+      if (!orig) return;
+      const msg =
+        orig.tasks.length > 0
+          ? `Hapus jobdesk "${orig.job.name}" dan ${orig.tasks.length} task di dalamnya?`
+          : `Hapus jobdesk "${orig.job.name}"?`;
+      if (!confirm(msg)) return;
+      setBoards((bs) => bs.filter((b) => b.job.id !== jobId));
+      if (selectedJobId === jobId) setSelectedJobId(null);
+      try {
+        await withSave(() => apiDeleteJob(jobId));
+        try {
+          localStorage.removeItem(posKey(ownerKey, jobId));
+        } catch {
+          /* */
         }
-        const readySet = new Set(ready);
-        ready.forEach((id) => {
-          order.push(id);
-          remaining.delete(id);
-        });
-        remaining.forEach((parents, id) => {
-          remaining.set(
-            id,
-            parents.filter((p) => !readySet.has(p))
+        notify();
+      } catch {
+        setBoards((bs) => [...bs, orig]);
+      }
+    },
+    [boards, selectedJobId, ownerKey, withSave, notify]
+  );
+
+  const addTask = useCallback(
+    async (jobId: string, parentTaskId: string | null) => {
+      const board = boards.find((b) => b.job.id === jobId);
+      if (!board) return null;
+      const orderNum =
+        (board.tasks.reduce((m, t) => Math.max(m, t.order_num), 0) || 0) + 1;
+      try {
+        const created = await withSave(() =>
+          createTask({
+            job_id: jobId,
+            title: "",
+            status: "pending",
+            kind: "task",
+            order_num: orderNum,
+            depends_on: parentTaskId ? [parentTaskId] : undefined
+          })
+        );
+        setBoards((bs) =>
+          bs.map((b) =>
+            b.job.id === jobId ? { ...b, tasks: [...b.tasks, created] } : b
+          )
+        );
+        notify();
+        return created;
+      } catch {
+        return null;
+      }
+    },
+    [boards, withSave, notify]
+  );
+
+  const updateTask = useCallback(
+    async (taskId: string, patch: Partial<Task>) => {
+      const board = boards.find((b) => b.tasks.some((t) => t.id === taskId));
+      const orig = board?.tasks.find((t) => t.id === taskId);
+      if (!board || !orig) return;
+      const optimistic: Task = { ...orig, ...patch } as Task;
+      setBoards((bs) =>
+        bs.map((b) =>
+          b.job.id === board.job.id
+            ? {
+                ...b,
+                tasks: b.tasks.map((t) => (t.id === taskId ? optimistic : t))
+              }
+            : b
+        )
+      );
+      try {
+        const result = await withSave(() =>
+          patchTask(taskId, {
+            title: patch.title,
+            status: patch.status,
+            kind: patch.kind ?? undefined,
+            depends_on: patch.depends_on ?? undefined,
+            group_key: patch.group_key
+          })
+        );
+        setBoards((bs) =>
+          bs.map((b) =>
+            b.job.id === board.job.id
+              ? {
+                  ...b,
+                  tasks: b.tasks.map((t) => (t.id === taskId ? result : t))
+                }
+              : b
+          )
+        );
+        notify();
+      } catch {
+        setBoards((bs) =>
+          bs.map((b) =>
+            b.job.id === board.job.id
+              ? { ...b, tasks: b.tasks.map((t) => (t.id === taskId ? orig : t)) }
+              : b
+          )
+        );
+      }
+    },
+    [boards, withSave, notify]
+  );
+
+  const deleteTaskAction = useCallback(
+    async (taskId: string) => {
+      const board = boards.find((b) => b.tasks.some((t) => t.id === taskId));
+      const orig = board?.tasks.find((t) => t.id === taskId);
+      if (!board || !orig) return;
+      if (!confirm(`Hapus task "${orig.title || "(tanpa judul)"}"?`)) return;
+      setBoards((bs) =>
+        bs.map((b) =>
+          b.job.id === board.job.id
+            ? { ...b, tasks: b.tasks.filter((t) => t.id !== taskId) }
+            : b
+        )
+      );
+      const dependents = board.tasks.filter((t) =>
+        t.depends_on?.includes(taskId)
+      );
+      try {
+        await withSave(async () => {
+          await softDeleteTask(taskId);
+          await Promise.all(
+            dependents.map((t) =>
+              patchTask(t.id, {
+                depends_on: (t.depends_on ?? []).filter((d) => d !== taskId)
+              })
+            )
           );
         });
+        notify();
+      } catch {
+        setBoards((bs) =>
+          bs.map((b) =>
+            b.job.id === board.job.id ? { ...b, tasks: [...b.tasks, orig] } : b
+          )
+        );
       }
-
-      // Insert tasks satu per satu, mapping localId → realId
-      const localToReal = new Map<string, string>();
-      let orderNum = 1;
-      for (const localTaskId of order) {
-        const node = taskMap.get(localTaskId)!;
-        const data = node.data as VTaskData;
-        const parents = incoming.get(localTaskId) ?? [];
-        const realDeps = parents
-          .map((p) => localToReal.get(p))
-          .filter((x): x is string => Boolean(x));
-
-        const payload: CreateTaskInput = {
-          job_id: job.id,
-          title: data.title.trim() || "(tanpa judul)",
-          status: data.status,
-          kind: data.kind,
-          perspective: data.perspective,
-          group_key: data.group_key,
-          description: data.description.trim() || null,
-          order_num: orderNum++
-        };
-        if (realDeps.length > 0) payload.depends_on = realDeps;
-
-        const created = await createTask(payload);
-        localToReal.set(localTaskId, created.id);
-      }
-
-      setOk(`✓ Jobdesk "${jobName.trim()}" tersimpan dengan ${taskNodes.length} task`);
-      resetCanvas();
-      if (onSaved) await onSaved();
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
+    },
+    [boards, withSave, notify]
+  );
 
   return (
-    <main className="mx-auto max-w-7xl p-4 md:p-6 space-y-5">
+    <main className="mx-auto max-w-7xl p-4 md:p-6 space-y-4">
       <header className="flex items-center justify-between gap-4 flex-wrap">
         <Link
-          to={backLink?.to ?? "/"}
+          to={props.backLink?.to ?? "/"}
           className="flex items-center gap-2 text-sm text-muted hover:text-ink-50 transition"
         >
-          <ArrowLeft size={16} /> {backLink?.label ?? "Kembali ke dashboard"}
+          <ArrowLeft size={16} />{" "}
+          {props.backLink?.label ?? "Kembali ke dashboard"}
         </Link>
         <div className="flex items-center gap-3">
+          <SaveBadge state={saveState} />
           <div className="flex items-center gap-2 text-xs text-muted">
-            <Boxes size={14} /> {title ?? "Visual Builder"}
+            <Boxes size={14} /> {props.title ?? "Visual Builder"}
           </div>
-          {onLock && (
+          {props.onLock && (
             <button
-              onClick={onLock}
+              onClick={props.onLock}
               className="flex items-center gap-1.5 text-xs text-muted hover:text-late transition"
               title="Kunci panel"
             >
-              <Lock size={12} /> {lockLabel ?? "Kunci"}
+              <Lock size={12} /> {props.lockLabel ?? "Kunci"}
             </button>
           )}
         </div>
       </header>
 
       <div>
-        <h1 className="text-2xl font-semibold">{title ?? "Visual Builder"}</h1>
+        <h1 className="text-2xl font-semibold">{props.title ?? "Visual Builder"}</h1>
         <p className="text-sm text-muted">
-          {subtitle ??
-            "Drag node dari sidebar, hubungkan dengan garis untuk dependency. Klik node untuk edit propertinya."}
+          {selected
+            ? `Edit visual flow untuk "${selected.job.name}". Klik node untuk edit, drag bebas posisi.`
+            : props.subtitle ??
+              "Pilih jobdesk untuk diedit, atau buat jobdesk baru."}
         </p>
       </div>
 
-      {headerSlot}
+      {props.headerSlot}
 
-      {!supabaseReady && (
+      {!props.supabaseReady && (
         <div className="card border-late/60 bg-late/10 flex items-start gap-3">
           <AlertTriangle size={18} className="text-late shrink-0 mt-0.5" />
           <div className="text-sm">
@@ -621,7 +464,7 @@ function Inner({
         <div className="card border-late/60 bg-late/10 flex items-start gap-3 animate-in fade-in">
           <X size={18} className="text-late shrink-0 mt-0.5" />
           <div className="flex-1 text-sm">
-            <div className="font-semibold text-late mb-1">Gagal menyimpan</div>
+            <div className="font-semibold text-late mb-1">Gagal</div>
             <div className="text-muted break-all">{err}</div>
           </div>
           <button
@@ -633,556 +476,1019 @@ function Inner({
         </div>
       )}
 
-      {ok && (
-        <div className="card border-ok/60 bg-ok/10 flex items-start gap-3 animate-in fade-in">
-          <CheckCircle2 size={18} className="text-ok shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm text-ok font-medium">{ok}</div>
-          <button
-            onClick={() => setOk(null)}
-            className="text-ok/60 hover:text-ok transition"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
-
-      <div className="card p-0 overflow-hidden">
-        <div className="flex items-end gap-3 p-3 border-b border-ink-700 flex-wrap bg-ink-900/40">
-          <div className="flex-1 min-w-[220px]">
-            <label className="block text-[10px] uppercase tracking-widest text-muted mb-1">
-              Nama Jobdesk
-            </label>
-            <input
-              value={jobName}
-              onChange={(e) => changeJobName(e.target.value)}
-              placeholder="Contoh: SERP Generator V1"
-              className="input"
-              disabled={!supabaseReady}
-            />
-          </div>
-          <div className="text-xs text-muted tabular-nums whitespace-nowrap">
-            {taskNodes.length} task · {edges.length} koneksi
-          </div>
-          <button
-            onClick={save}
-            disabled={!canSave}
-            className="btn btn-accent disabled:opacity-50 disabled:cursor-not-allowed"
-            title={
-              !supabaseReady
-                ? "Supabase belum siap"
-                : taskNodes.length === 0
-                  ? "Tambahkan minimal satu node"
-                  : !jobName.trim()
-                    ? "Isi nama jobdesk"
-                    : "Simpan jobdesk + tasks"
-            }
-          >
-            {saving ? (
-              <>
-                <Loader2 size={14} className="animate-spin" /> Menyimpan...
-              </>
-            ) : (
-              <>
-                <Save size={14} /> Simpan Jobdesk
-              </>
-            )}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-12 gap-0 h-[640px]">
-          <aside className="col-span-12 sm:col-span-3 lg:col-span-2 border-r border-ink-700 bg-ink-900/30 p-3 space-y-2 overflow-y-auto">
-            <div className="text-[10px] uppercase tracking-widest text-muted mb-1">
-              Tambah node
-            </div>
-            {KINDS.map((kind) => (
-              <PaletteItem key={kind} kind={kind} />
-            ))}
-            <div className="mt-4 text-[10px] text-muted leading-relaxed space-y-2">
-              <div>
-                <span className="text-ink-50 font-medium">Cara cepat:</span>
-                <br />
-                <kbd className="px-1 bg-ink-700 rounded text-[10px]">
-                  Klik kanan
-                </kbd>{" "}
-                kanvas → pilih jenis node.
-                <br />
-                <kbd className="px-1 bg-ink-700 rounded text-[10px]">
-                  Dobel-klik
-                </kbd>{" "}
-                kanvas → tambah Task.
-                <br />
-                <kbd className="px-1 bg-ink-700 rounded text-[10px]">
-                  Klik kanan
-                </kbd>{" "}
-                node/edge → hapus / duplikat.
-              </div>
-              <div>
-                <span className="text-ink-50 font-medium">Connect:</span>{" "}
-                tarik dari titik kanan node ke titik kiri node lain.
-              </div>
-              <div>
-                <kbd className="px-1 bg-ink-700 rounded text-[10px]">Del</kbd>{" "}
-                /{" "}
-                <kbd className="px-1 bg-ink-700 rounded text-[10px]">
-                  Backspace
-                </kbd>{" "}
-                hapus item terpilih.
-              </div>
-            </div>
-          </aside>
-
-          <div
-            className="col-span-12 sm:col-span-9 lg:col-span-7 relative bg-ink-900/50"
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onDoubleClick={onCanvasDoubleClick}
-          >
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onSelectionChange={onSelectionChange}
-              onPaneContextMenu={onPaneContextMenu}
-              onNodeContextMenu={onNodeContextMenu}
-              onEdgeContextMenu={onEdgeContextMenu}
-              nodeTypes={nodeTypes}
-              defaultViewport={{ x: 0, y: 0, zoom: 0.9 }}
-              minZoom={0.3}
-              maxZoom={1.6}
-              proOptions={{ hideAttribution: true }}
-              deleteKeyCode={["Backspace", "Delete"]}
-              snapToGrid
-              snapGrid={[20, 20]}
-            >
-              <Background color="#1a1a22" gap={20} size={1} />
-              <Controls
-                className="!bg-ink-800 !border !border-ink-700 !rounded-lg !shadow-lg"
-                showInteractive={false}
-              />
-            </ReactFlow>
-            {taskNodes.length === 0 && (
-              <div className="absolute top-3 right-3 text-xs text-muted bg-ink-800/90 backdrop-blur border border-ink-700 rounded-md px-3 py-2 max-w-[280px] pointer-events-none space-y-1.5">
-                <div className="flex items-center gap-1.5 text-ink-50">
-                  <MousePointer2 size={12} className="text-accent" />
-                  <span className="font-medium">Mulai bikin flow</span>
-                </div>
-                <div>
-                  <kbd className="px-1 bg-ink-700 rounded text-[10px]">
-                    Klik kanan
-                  </kbd>{" "}
-                  di kanvas untuk pilih jenis node, atau{" "}
-                  <kbd className="px-1 bg-ink-700 rounded text-[10px]">
-                    dobel-klik
-                  </kbd>{" "}
-                  untuk tambah Task cepat.
-                </div>
-              </div>
-            )}
-          </div>
-
-          <aside className="col-span-12 lg:col-span-3 border-t lg:border-t-0 lg:border-l border-ink-700 bg-ink-900/30 p-3 overflow-y-auto">
-            <Inspector
-              node={selectedNode}
-              groups={groups}
-              onPatch={patchSelected}
-              onDelete={deleteSelected}
-              disabled={!supabaseReady || saving}
-            />
-          </aside>
-        </div>
-      </div>
-
-      {menu && (
-        <ContextMenu
-          menuRef={menuRef}
-          menu={menu}
-          isTrigger={menu.nodeId === TRIGGER_ID}
-          onAddNode={(kind) => {
-            if (!menu.flowPos) return;
-            addTaskAt(kind, menu.flowPos);
-            setMenu(null);
+      {selected ? (
+        <FlowEditor
+          board={selected}
+          owner={ownerKey}
+          supabaseReady={props.supabaseReady}
+          onBack={() => setSelectedJobId(null)}
+          onRenameJob={(name) => renameJob(selected.job.id, name)}
+          onDeleteJob={() => deleteJobAction(selected.job.id)}
+          onAddTask={(parentId) => addTask(selected.job.id, parentId)}
+          onUpdateTask={updateTask}
+          onDeleteTask={deleteTaskAction}
+          onErr={setErr}
+        />
+      ) : (
+        <JobPicker
+          boards={boards}
+          supabaseReady={props.supabaseReady}
+          onPick={(id) => setSelectedJobId(id)}
+          onCreate={async (name) => {
+            const job = await createNewJob(name);
+            if (job) setSelectedJobId(job.id);
           }}
-          onEditNode={(id) => {
-            setSelectedId(id);
-            setMenu(null);
-          }}
-          onDuplicateNode={(id) => {
-            duplicateNodeId(id);
-            setMenu(null);
-          }}
-          onDeleteNode={(id) => {
-            deleteNodeId(id);
-            setMenu(null);
-          }}
-          onDeleteEdge={(id) => {
-            deleteEdgeId(id);
-            setMenu(null);
-          }}
+          onDelete={deleteJobAction}
+          onRename={renameJob}
         />
       )}
     </main>
   );
 }
 
-// ─── Context Menu ────────────────────────────────────────────
-function ContextMenu({
-  menuRef,
-  menu,
-  isTrigger,
-  onAddNode,
-  onEditNode,
-  onDuplicateNode,
-  onDeleteNode,
-  onDeleteEdge
-}: {
-  menuRef: React.RefObject<HTMLDivElement>;
-  menu: {
-    x: number;
-    y: number;
-    flowPos?: { x: number; y: number };
-    nodeId?: string;
-    edgeId?: string;
-  };
-  isTrigger: boolean;
-  onAddNode: (kind: Kind) => void;
-  onEditNode: (id: string) => void;
-  onDuplicateNode: (id: string) => void;
-  onDeleteNode: (id: string) => void;
-  onDeleteEdge: (id: string) => void;
-}) {
-  // Klamp posisi supaya menu tidak keluar viewport
-  const style: React.CSSProperties = {
-    left: Math.min(menu.x, window.innerWidth - 200),
-    top: Math.min(menu.y, window.innerHeight - 220)
-  };
-
-  return (
-    <div
-      ref={menuRef}
-      style={style}
-      className="fixed z-50 min-w-[180px] rounded-lg border border-ink-700 bg-ink-800 shadow-2xl py-1 text-sm"
-    >
-      {menu.flowPos && !menu.nodeId && !menu.edgeId && (
-        <>
-          <div className="px-3 py-1 text-[10px] uppercase tracking-widest text-muted">
-            Tambah node di sini
-          </div>
-          {KINDS.map((k) => {
-            const meta = KIND_META[k];
-            const Icon = meta.Icon;
-            return (
-              <button
-                key={k}
-                onClick={() => onAddNode(k)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-ink-700 text-left transition"
-              >
-                <Icon size={13} className={meta.tint} />
-                <span>{meta.label}</span>
-              </button>
-            );
-          })}
-        </>
-      )}
-
-      {menu.nodeId && !isTrigger && (
-        <>
-          <button
-            onClick={() => onEditNode(menu.nodeId!)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-ink-700 text-left transition"
-          >
-            <Pencil size={13} className="text-muted" /> Edit
-          </button>
-          <button
-            onClick={() => onDuplicateNode(menu.nodeId!)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-ink-700 text-left transition"
-          >
-            <Copy size={13} className="text-muted" /> Duplikat
-          </button>
-          <div className="border-t border-ink-700 my-1" />
-          <button
-            onClick={() => onDeleteNode(menu.nodeId!)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-ink-700 text-late text-left transition"
-          >
-            <Trash2 size={13} /> Hapus
-          </button>
-        </>
-      )}
-
-      {menu.nodeId && isTrigger && (
-        <div className="px-3 py-2 text-xs text-muted italic">
-          Trigger tidak bisa dihapus.
-          <br />
-          Edit nama jobdesk di kolom atas.
-        </div>
-      )}
-
-      {menu.edgeId && (
-        <button
-          onClick={() => onDeleteEdge(menu.edgeId!)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-ink-700 text-late text-left transition"
-        >
-          <Trash2 size={13} /> Hapus koneksi
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ─── Palette ─────────────────────────────────────────────────
-function PaletteItem({ kind }: { kind: Kind }) {
-  const meta = KIND_META[kind];
-  const Icon = meta.Icon;
-  const onDragStart = (e: DragEvent<HTMLDivElement>) => {
-    e.dataTransfer.setData("application/x-vbuilder-kind", kind);
-    e.dataTransfer.effectAllowed = "move";
-  };
-  return (
-    <div
-      draggable
-      onDragStart={onDragStart}
-      className="flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-800 px-2.5 py-2 cursor-grab active:cursor-grabbing hover:border-accent/60 hover:bg-ink-800/80 transition select-none"
-      title={`Drag '${meta.label}' ke kanvas`}
-    >
-      <GripVertical size={12} className="text-muted shrink-0" />
-      <Icon size={14} className={cn(meta.tint, "shrink-0")} />
-      <span className="text-xs font-medium">{meta.label}</span>
-    </div>
-  );
-}
-
-// ─── Inspector ───────────────────────────────────────────────
-function Inspector({
-  node,
-  groups,
-  onPatch,
+// ─── Job Picker (landing) ────────────────────────────────────
+function JobPicker({
+  boards,
+  supabaseReady,
+  onPick,
+  onCreate,
   onDelete,
-  disabled
+  onRename
 }: {
-  node: Node | null;
-  groups: string[];
-  onPatch: (patch: Partial<VTaskData>) => void;
-  onDelete: () => void;
-  disabled: boolean;
-}) {
-  if (!node) {
-    return (
-      <div>
-        <div className="text-[10px] uppercase tracking-widest text-muted mb-2">
-          Inspector
-        </div>
-        <div className="text-xs text-muted italic">
-          Klik salah satu node untuk mengedit propertinya di sini.
-        </div>
-      </div>
-    );
-  }
-
-  if (node.type === "vTrigger") {
-    const data = node.data as VTriggerData;
-    return (
-      <div className="space-y-2">
-        <div className="text-[10px] uppercase tracking-widest text-muted">
-          Trigger
-        </div>
-        <div className="text-sm font-semibold">
-          {data.name || (
-            <span className="text-muted italic font-normal">
-              (belum ada nama)
-            </span>
-          )}
-        </div>
-        <p className="text-xs text-muted leading-relaxed">
-          Edit nama jobdesk di kolom atas. Trigger hanya satu per jobdesk dan
-          tidak bisa dihapus.
-        </p>
-      </div>
-    );
-  }
-
-  const data = node.data as VTaskData;
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-widest text-muted">
-          Edit Node
-        </div>
-        <button
-          onClick={onDelete}
-          disabled={disabled}
-          className="text-muted hover:text-late text-xs flex items-center gap-1 disabled:opacity-30"
-        >
-          <Trash2 size={12} /> Hapus
-        </button>
-      </div>
-      <Field label="Judul">
-        <input
-          value={data.title}
-          onChange={(e) => onPatch({ title: e.target.value })}
-          placeholder="Judul task"
-          className="input"
-          disabled={disabled}
-        />
-      </Field>
-      <div className="grid grid-cols-2 gap-2">
-        <Field label="Kind">
-          <select
-            value={data.kind}
-            onChange={(e) => onPatch({ kind: e.target.value as Kind })}
-            className="input"
-            disabled={disabled}
-          >
-            {KINDS.map((k) => (
-              <option key={k} value={k}>
-                {KIND_META[k].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Status">
-          <select
-            value={data.status}
-            onChange={(e) =>
-              onPatch({ status: e.target.value as TaskStatus })
-            }
-            className="input"
-            disabled={disabled}
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s.replace("_", " ")}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
-      <Field label="Perspective">
-        <select
-          value={data.perspective ?? ""}
-          onChange={(e) =>
-            onPatch({
-              perspective: (e.target.value || null) as Perspective | null
-            })
-          }
-          className="input"
-          disabled={disabled}
-        >
-          <option value="">— none —</option>
-          {PERSPECTIVES.map((p) => (
-            <option key={p} value={p}>
-              {PERSPECTIVE_META[p].label}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <Field label="Grup (opsional)">
-        <GroupCombo
-          value={data.group_key ?? ""}
-          options={groups}
-          disabled={disabled}
-          onChange={(v) => onPatch({ group_key: v.trim() || null })}
-        />
-      </Field>
-      <Field label="Catatan">
-        <textarea
-          value={data.description}
-          onChange={(e) => onPatch({ description: e.target.value })}
-          placeholder="Catatan tambahan…"
-          className="input min-h-[64px] resize-y"
-          disabled={disabled}
-        />
-      </Field>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className="block text-[10px] uppercase tracking-widest text-muted mb-1">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function GroupCombo({
-  value,
-  options,
-  disabled,
-  onChange
-}: {
-  value: string;
-  options: string[];
-  disabled?: boolean;
-  onChange: (next: string) => void;
+  boards: Board[];
+  supabaseReady: boolean;
+  onPick: (id: string) => void;
+  onCreate: (name: string) => Promise<void>;
+  onDelete: (id: string) => void;
+  onRename: (id: string, name: string) => void;
 }) {
   const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState("");
+  const [name, setName] = useState("");
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
 
-  if (creating) {
-    return (
-      <div className="flex gap-1">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => {
-            const v = draft.trim();
-            if (v) onChange(v);
-            setDraft("");
-            setCreating(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              (e.target as HTMLInputElement).blur();
-            } else if (e.key === "Escape") {
-              setDraft("");
-              setCreating(false);
-            }
-          }}
-          placeholder="nama grup"
-          autoFocus
-          className="input flex-1"
-        />
-        <button
-          type="button"
-          onClick={() => {
-            setCreating(false);
-            setDraft("");
-          }}
-          className="btn px-2"
-        >
-          <X size={12} />
-        </button>
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (creating) inputRef.current?.focus();
+  }, [creating]);
+
+  const sorted = useMemo(
+    () =>
+      [...boards].sort(
+        (a, b) =>
+          new Date(b.job.updated_at).getTime() -
+          new Date(a.job.updated_at).getTime()
+      ),
+    [boards]
+  );
+
+  return (
+    <div className="card space-y-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-muted">
+            <LayoutGrid size={14} className="text-accent" />
+            Pilih Jobdesk
+          </h2>
+          <p className="text-xs text-muted mt-1">
+            Pilih jobdesk yang sudah ada untuk diedit, atau buat baru.
+          </p>
+        </div>
+        {!creating && (
+          <button
+            onClick={() => {
+              setName("");
+              setCreating(true);
+            }}
+            disabled={!supabaseReady}
+            className="btn btn-accent text-xs disabled:opacity-50"
+          >
+            <Plus size={13} /> Jobdesk Baru
+          </button>
+        )}
       </div>
-    );
+
+      {creating && (
+        <div className="rounded-lg border border-accent/40 bg-ink-800/60 p-3 space-y-2">
+          <label className="text-[10px] uppercase tracking-widest text-muted block">
+            Nama jobdesk baru
+          </label>
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Contoh: Onboarding Klien Q2"
+              className="input flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (name.trim()) {
+                    void onCreate(name);
+                    setName("");
+                    setCreating(false);
+                  }
+                } else if (e.key === "Escape") {
+                  setCreating(false);
+                  setName("");
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                if (name.trim()) {
+                  void onCreate(name);
+                  setName("");
+                  setCreating(false);
+                }
+              }}
+              disabled={!name.trim()}
+              className="btn btn-accent text-xs disabled:opacity-50"
+            >
+              <CheckCircle2 size={12} /> Buat & Buka
+            </button>
+            <button
+              onClick={() => {
+                setCreating(false);
+                setName("");
+              }}
+              className="btn text-xs"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
+
+      {sorted.length === 0 && !creating && (
+        <div className="text-center py-10 text-muted space-y-3">
+          <div className="w-14 h-14 mx-auto rounded-full bg-accent/15 flex items-center justify-center">
+            <Briefcase size={24} className="text-accent" />
+          </div>
+          <div>
+            <div className="text-ink-50 font-medium">Belum ada jobdesk</div>
+            <div className="text-xs mt-1">
+              Mulai dengan bikin jobdesk pertama kamu.
+            </div>
+          </div>
+          <button
+            onClick={() => setCreating(true)}
+            disabled={!supabaseReady}
+            className="btn btn-accent text-xs"
+          >
+            <Plus size={14} /> Buat Jobdesk Pertama
+          </button>
+        </div>
+      )}
+
+      {sorted.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {sorted.map((b) => {
+            const done = b.tasks.filter((t) => t.status === "done").length;
+            const running = b.tasks.filter(
+              (t) => t.status === "in_progress"
+            ).length;
+            const total = b.tasks.length;
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            const isRenaming = renamingId === b.job.id;
+            return (
+              <div
+                key={b.job.id}
+                className="group rounded-xl border border-ink-700 bg-ink-800/40 hover:border-accent/60 hover:bg-ink-800/70 transition flex flex-col"
+              >
+                <div className="p-3 flex-1 min-h-[110px]">
+                  <div className="flex items-start gap-2 mb-2">
+                    {isRenaming ? (
+                      <input
+                        autoFocus
+                        value={draftName}
+                        onChange={(e) => setDraftName(e.target.value)}
+                        onBlur={() => {
+                          const v = draftName.trim();
+                          if (v && v !== b.job.name) onRename(b.job.id, v);
+                          setRenamingId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            (e.target as HTMLInputElement).blur();
+                          } else if (e.key === "Escape") {
+                            setRenamingId(null);
+                          }
+                        }}
+                        className="input flex-1 text-sm font-semibold"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => onPick(b.job.id)}
+                        className="flex-1 text-left text-sm font-semibold leading-snug hover:text-accent transition truncate"
+                      >
+                        {b.job.name}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setDraftName(b.job.name);
+                        setRenamingId(b.job.id);
+                      }}
+                      className="text-muted hover:text-accent transition shrink-0 opacity-0 group-hover:opacity-100"
+                      title="Ganti nama"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(b.job.id)}
+                      className="text-muted hover:text-late transition shrink-0 opacity-0 group-hover:opacity-100"
+                      title="Hapus jobdesk"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-muted mb-2">
+                    <span>
+                      <span className="tabular-nums text-ink-50 font-semibold text-xs mr-1">
+                        {total}
+                      </span>
+                      task
+                    </span>
+                    {running > 0 && (
+                      <span className="text-warn">
+                        <span className="tabular-nums font-semibold text-xs mr-1">
+                          {running}
+                        </span>
+                        jalan
+                      </span>
+                    )}
+                    <span className="text-ok">
+                      <span className="tabular-nums font-semibold text-xs mr-1">
+                        {done}
+                      </span>
+                      selesai
+                    </span>
+                  </div>
+
+                  <div className="h-1.5 rounded-full bg-ink-700 overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full transition-all",
+                        pct >= 100
+                          ? "bg-ok"
+                          : pct >= 40
+                            ? "bg-warn"
+                            : pct > 0
+                              ? "bg-accent"
+                              : "bg-ink-700"
+                      )}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => onPick(b.job.id)}
+                  className="flex items-center justify-between gap-2 text-xs text-muted hover:text-accent border-t border-ink-700 px-3 py-2 transition group-hover:text-accent"
+                >
+                  <span>Buka visual editor</span>
+                  <ChevronRight size={12} />
+                </button>
+              </div>
+            );
+          })}
+
+          {!creating && (
+            <button
+              onClick={() => setCreating(true)}
+              disabled={!supabaseReady}
+              className="rounded-xl border-2 border-dashed border-ink-700 hover:border-accent/60 hover:bg-accent/5 text-muted hover:text-accent transition flex flex-col items-center justify-center gap-2 min-h-[140px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={20} />
+              <span className="text-sm font-medium">Jobdesk Baru</span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Flow Editor (single-job canvas) ─────────────────────────
+interface VTriggerData {
+  job: Job;
+  color: string;
+  taskCount: number;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+  onAddTask: () => void;
+}
+
+interface VTaskData {
+  task: Task;
+  onTitle: (title: string) => void;
+  onStatus: (status: TaskStatus) => void;
+  onKind: (kind: Kind) => void;
+  onAddAfter: () => void;
+  onDelete: () => void;
+}
+
+function VTriggerNode({ data, selected }: NodeProps<VTriggerData>) {
+  const c = data.color;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(data.job.name);
+
+  useEffect(() => {
+    setDraft(data.job.name);
+  }, [data.job.name]);
+
+  function commit() {
+    setEditing(false);
+    const v = draft.trim();
+    if (v && v !== data.job.name) data.onRename(v);
+    else setDraft(data.job.name);
   }
 
   return (
-    <select
-      value={value}
-      onChange={(e) => {
-        const v = e.target.value;
-        if (v === "__new__") {
-          setDraft("");
-          setCreating(true);
-        } else {
-          onChange(v);
-        }
+    <div
+      className={cn(
+        "group relative rounded-xl px-3 py-2.5 w-60 shadow-lg ring-1 border transition",
+        selected && "ring-2"
+      )}
+      style={{
+        backgroundImage: `linear-gradient(135deg, ${c}40 0%, ${c}0d 100%)`,
+        borderColor: `${c}99`,
+        boxShadow: `0 0 0 1px ${c}33, 0 8px 20px -8px ${c}55`
       }}
-      disabled={disabled}
-      className="input"
     >
-      <option value="">— no grup —</option>
-      {options.map((g) => (
-        <option key={g} value={g}>
-          {g}
-        </option>
-      ))}
-      <option value="__new__">+ Buat grup baru…</option>
-    </select>
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!w-2.5 !h-2.5"
+        style={{ background: c, borderColor: c }}
+      />
+      <button
+        onClick={data.onDelete}
+        className="nodrag nopan absolute -top-2 -right-2 w-5 h-5 rounded-full bg-late text-white shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:scale-110 transition z-20"
+        title="Hapus jobdesk"
+      >
+        <X size={11} />
+      </button>
+      <div className="flex items-center gap-2 mb-1.5">
+        <div
+          className="w-6 h-6 rounded-full border flex items-center justify-center shrink-0"
+          style={{ background: `${c}4d`, borderColor: `${c}99` }}
+        >
+          <Play size={12} style={{ color: c, fill: c }} />
+        </div>
+        <span
+          className="text-[9px] uppercase tracking-widest"
+          style={{ color: `${c}e6` }}
+        >
+          Trigger
+        </span>
+        <span className="ml-auto chip text-[9px] bg-ink-900/80 text-muted">
+          {data.taskCount} task
+        </span>
+      </div>
+      {editing ? (
+        <input
+          value={draft}
+          autoFocus
+          className="nodrag nopan w-full bg-ink-900/60 border border-accent/60 rounded px-1.5 py-0.5 text-sm font-semibold outline-none"
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            else if (e.key === "Escape") {
+              setDraft(data.job.name);
+              setEditing(false);
+            }
+          }}
+        />
+      ) : (
+        <div
+          onClick={() => setEditing(true)}
+          className="nodrag nopan text-sm font-semibold leading-snug line-clamp-2 cursor-text hover:bg-ink-900/30 rounded px-1 -mx-1 py-0.5 -my-0.5 transition"
+          title="Klik untuk ganti nama jobdesk"
+        >
+          {data.job.name || (
+            <span className="text-muted italic font-normal">(nama jobdesk)</span>
+          )}
+        </div>
+      )}
+      <button
+        onClick={data.onAddTask}
+        className="nodrag nopan mt-2 w-full text-[11px] flex items-center justify-center gap-1 rounded-md py-1 border border-dashed border-ink-700 hover:border-accent hover:bg-accent/10 text-muted hover:text-accent transition"
+        title="Tambah task pertama"
+      >
+        <Plus size={11} /> Task
+      </button>
+    </div>
   );
+}
+
+function VTaskNode({ data, selected }: NodeProps<VTaskData>) {
+  const t = data.task;
+  const s = STATUS_META[t.status];
+  const kind = (t.kind as Kind) ?? "task";
+  const KindIcon = KIND_META[kind].Icon;
+  const StatusIcon = s.Icon;
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(t.title);
+  const [openStatus, setOpenStatus] = useState(false);
+  const [openKind, setOpenKind] = useState(false);
+
+  useEffect(() => {
+    setDraft(t.title);
+  }, [t.title]);
+
+  useEffect(() => {
+    if (!openStatus && !openKind) return;
+    function close() {
+      setOpenStatus(false);
+      setOpenKind(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [openStatus, openKind]);
+
+  function commit() {
+    setEditing(false);
+    const v = draft.trim();
+    if (v && v !== t.title) data.onTitle(v);
+    else setDraft(t.title);
+  }
+
+  return (
+    <div className="group relative w-60">
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!bg-ink-700 !border-ink-600 !w-2 !h-2 z-10"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!bg-ink-700 !border-ink-600 !w-2 !h-2 z-10"
+      />
+
+      <button
+        onClick={data.onDelete}
+        className="nodrag nopan absolute -top-2 -right-2 w-5 h-5 rounded-full bg-late text-white shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:scale-110 transition z-20"
+        title="Hapus task"
+      >
+        <X size={11} />
+      </button>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          data.onAddAfter();
+        }}
+        className="nodrag nopan absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-accent text-white shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 hover:scale-110 transition z-20"
+        title="Tambah task setelah ini"
+      >
+        <Plus size={12} />
+      </button>
+
+      <div
+        className={cn(
+          "relative overflow-hidden border bg-ink-800 rounded-xl px-3 py-2.5 shadow-lg ring-1 transition",
+          s.ring,
+          selected ? "border-accent ring-accent" : "border-ink-700"
+        )}
+      >
+        {s.tint && (
+          <div
+            aria-hidden
+            className={cn("absolute inset-0 pointer-events-none", s.tint)}
+          />
+        )}
+        <div className="relative">
+          <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenKind((v) => !v);
+                setOpenStatus(false);
+              }}
+              className="nodrag nopan p-0.5 rounded hover:bg-ink-700 transition flex items-center"
+              title={`Jenis: ${KIND_META[kind].label}`}
+            >
+              <KindIcon
+                size={12}
+                className={kind === "task" ? "text-muted" : "text-accent"}
+              />
+            </button>
+            {openKind && (
+              <div
+                onMouseDown={(e) => e.stopPropagation()}
+                className="nodrag nopan absolute top-full left-0 mt-1 z-30 rounded-md border border-ink-700 bg-ink-800 shadow-xl py-1 min-w-[120px]"
+              >
+                {KIND_VALUES.map((k) => {
+                  const Ki = KIND_META[k].Icon;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => {
+                        data.onKind(k);
+                        setOpenKind(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2.5 py-1 text-xs hover:bg-ink-700 transition text-left",
+                        kind === k && "text-accent"
+                      )}
+                    >
+                      <Ki size={11} />
+                      {KIND_META[k].label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenStatus((v) => !v);
+                setOpenKind(false);
+              }}
+              className={cn(
+                "nodrag nopan p-0.5 rounded hover:bg-ink-700 transition flex items-center",
+                s.text
+              )}
+              title={`Status: ${s.label}`}
+            >
+              <StatusIcon
+                size={13}
+                className={t.status === "in_progress" ? "animate-spin" : undefined}
+              />
+            </button>
+            {openStatus && (
+              <div
+                onMouseDown={(e) => e.stopPropagation()}
+                className="nodrag nopan absolute top-full left-0 mt-1 z-30 rounded-md border border-ink-700 bg-ink-800 shadow-xl py-1 min-w-[120px]"
+              >
+                {STATUSES.map((st) => {
+                  const Si = STATUS_META[st].Icon;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => {
+                        data.onStatus(st);
+                        setOpenStatus(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2.5 py-1 text-xs hover:bg-ink-700 transition text-left",
+                        STATUS_META[st].text,
+                        t.status === st && "bg-ink-700/50"
+                      )}
+                    >
+                      <Si size={11} />
+                      {STATUS_META[st].label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {t.group_key && (
+            <span className="chip text-[9px] bg-accent/15 text-accent ml-1">
+              {t.group_key}
+            </span>
+          )}
+
+          <span className="ml-auto text-[9px] uppercase tracking-wider text-muted">
+            #{t.order_num}
+          </span>
+        </div>
+
+        {editing ? (
+          <input
+            value={draft}
+            autoFocus
+            className="nodrag nopan w-full bg-ink-900/70 border border-accent/60 rounded px-1.5 py-1 text-[13px] font-medium outline-none"
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              else if (e.key === "Escape") {
+                setDraft(t.title);
+                setEditing(false);
+              }
+            }}
+          />
+        ) : (
+          <div
+            onClick={() => setEditing(true)}
+            className={cn(
+              "nodrag nopan text-[13px] font-medium leading-snug line-clamp-2 cursor-text hover:bg-ink-900/30 rounded px-1 -mx-1 py-0.5 -my-0.5 transition",
+              t.status === "done" && "line-through text-muted"
+            )}
+            title="Klik untuk edit judul"
+          >
+            {t.title || (
+              <span className="text-muted italic font-normal">(judul task)</span>
+            )}
+          </div>
+        )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const nodeTypes = { vTrigger: VTriggerNode, vTask: VTaskNode };
+
+function FlowEditor({
+  board,
+  owner,
+  supabaseReady,
+  onBack,
+  onRenameJob,
+  onDeleteJob,
+  onAddTask,
+  onUpdateTask,
+  onDeleteTask,
+  onErr
+}: {
+  board: Board;
+  owner: string;
+  supabaseReady: boolean;
+  onBack: () => void;
+  onRenameJob: (name: string) => void;
+  onDeleteJob: () => void;
+  onAddTask: (parentId: string | null) => Promise<Task | null>;
+  onUpdateTask: (taskId: string, patch: Partial<Task>) => Promise<void>;
+  onDeleteTask: (taskId: string) => Promise<void>;
+  onErr: (msg: string | null) => void;
+}) {
+  const jobColors = useMemo(() => assignJobColors([board.job.id]), [board.job.id]);
+  const triggerColor = jobColors.get(board.job.id) ?? "#7c5cff";
+  const triggerId = `trigger_${board.job.id}`;
+
+  const [positions, setPositions] = useState<PositionMap>(() =>
+    loadPositions(owner, board.job.id)
+  );
+
+  useEffect(() => {
+    setPositions(loadPositions(owner, board.job.id));
+  }, [owner, board.job.id]);
+
+  const persistPosition = useCallback(
+    (id: string, x: number, y: number) => {
+      setPositions((p) => {
+        const next = { ...p, [id]: { x, y } };
+        savePositions(owner, board.job.id, next);
+        return next;
+      });
+    },
+    [owner, board.job.id]
+  );
+
+  // ─── Build graph (dashboard-compatible logic) ─────────────
+  const { graphNodes, graphEdges } = useMemo(() => {
+    const ns: Node[] = [];
+    const es: Edge[] = [];
+
+    ns.push({
+      id: triggerId,
+      type: "vTrigger",
+      position: { x: 0, y: 0 },
+      deletable: false,
+      data: {
+        job: board.job,
+        color: triggerColor,
+        taskCount: board.tasks.length,
+        onRename: onRenameJob,
+        onDelete: onDeleteJob,
+        onAddTask: () => onAddTask(null)
+      } satisfies VTriggerData
+    });
+
+    // Group_key chains (prev-in-group), matching dashboard
+    const groupMembers = new Map<string, Task[]>();
+    board.tasks.forEach((t) => {
+      if (!t.group_key) return;
+      const list = groupMembers.get(t.group_key) ?? [];
+      list.push(t);
+      groupMembers.set(t.group_key, list);
+    });
+    groupMembers.forEach((list) => list.sort((a, b) => a.order_num - b.order_num));
+
+    const prevInGroup = new Map<string, Task>();
+    groupMembers.forEach((list) => {
+      for (let i = 1; i < list.length; i++) {
+        prevInGroup.set(list[i].id, list[i - 1]);
+      }
+    });
+
+    const taskById = new Map(board.tasks.map((t) => [t.id, t]));
+
+    board.tasks.forEach((task) => {
+      ns.push({
+        id: task.id,
+        type: "vTask",
+        position: { x: 0, y: 0 },
+        data: {
+          task,
+          onTitle: (title: string) => onUpdateTask(task.id, { title }),
+          onStatus: (status: TaskStatus) => onUpdateTask(task.id, { status }),
+          onKind: (kind: Kind) => onUpdateTask(task.id, { kind }),
+          onAddAfter: () => onAddTask(task.id),
+          onDelete: () => onDeleteTask(task.id)
+        } satisfies VTaskData
+      });
+
+      const deps = task.depends_on ?? [];
+      const prev = prevInGroup.get(task.id);
+
+      if (prev) {
+        es.push({
+          id: `${prev.id}->${task.id}`,
+          source: prev.id,
+          target: task.id,
+          type: "smoothstep",
+          animated:
+            task.status === "in_progress" || prev.status === "in_progress",
+          style: edgeStyle(prev.status),
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: edgeStyle(prev.status).stroke as string
+          }
+        });
+      }
+
+      deps.forEach((depId) => {
+        const src = taskById.get(depId);
+        if (!src) return;
+        es.push({
+          id: `${depId}->${task.id}`,
+          source: depId,
+          target: task.id,
+          type: "smoothstep",
+          animated:
+            task.status === "in_progress" || src.status === "in_progress",
+          style: { ...edgeStyle(src.status), strokeDasharray: "4 4" },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: edgeStyle(src.status).stroke as string
+          }
+        });
+      });
+
+      if (!prev && deps.length === 0) {
+        es.push({
+          id: `${triggerId}->${task.id}`,
+          source: triggerId,
+          target: task.id,
+          type: "smoothstep",
+          animated: task.status === "in_progress",
+          style: { stroke: "#4b5563", strokeWidth: 1.5 },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: "#6b7280"
+          }
+        });
+      }
+    });
+
+    return { graphNodes: ns, graphEdges: es };
+  }, [
+    board,
+    triggerColor,
+    triggerId,
+    onRenameJob,
+    onDeleteJob,
+    onAddTask,
+    onUpdateTask,
+    onDeleteTask
+  ]);
+
+  // Auto-layout (dagre LR) with saved-position overrides
+  const positionedNodes = useMemo<Node[]>(() => {
+    if (graphNodes.length === 0) return [];
+    const laid = layoutFlow(graphNodes, graphEdges, { direction: "LR" });
+    return laid.nodes.map((n) => {
+      const saved = positions[n.id];
+      return saved
+        ? { ...n, position: { x: saved.x, y: saved.y } }
+        : n;
+    });
+  }, [graphNodes, graphEdges, positions]);
+
+  const [rfNodes, setRfNodes] = useState<Node[]>(positionedNodes);
+  const [rfEdges, setRfEdges] = useState<Edge[]>(graphEdges);
+
+  useEffect(() => {
+    setRfNodes(positionedNodes);
+  }, [positionedNodes]);
+
+  useEffect(() => {
+    setRfEdges(graphEdges);
+  }, [graphEdges]);
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      setRfNodes((nds) => applyNodeChanges(changes, nds));
+      changes.forEach((c) => {
+        if (c.type === "position" && c.position && !c.dragging) {
+          persistPosition(c.id, c.position.x, c.position.y);
+        }
+      });
+    },
+    [persistPosition]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      setRfEdges((eds) => applyEdgeChanges(changes, eds));
+      changes.forEach((c) => {
+        if (c.type === "remove") {
+          const edge = graphEdges.find((e) => e.id === c.id);
+          if (!edge) return;
+          if (edge.source.startsWith("trigger_")) return;
+          const target = board.tasks.find((t) => t.id === edge.target);
+          if (!target) return;
+          const newDeps = (target.depends_on ?? []).filter(
+            (d) => d !== edge.source
+          );
+          void onUpdateTask(target.id, { depends_on: newDeps });
+        }
+      });
+    },
+    [graphEdges, board.tasks, onUpdateTask]
+  );
+
+  const onConnect = useCallback(
+    (conn: Connection) => {
+      if (!conn.source || !conn.target || conn.source === conn.target) return;
+      if (conn.source.startsWith("trigger_")) return;
+      const target = board.tasks.find((t) => t.id === conn.target);
+      const sourceInJob = board.tasks.some((t) => t.id === conn.source);
+      if (!sourceInJob || !target) {
+        onErr("Dependency hanya boleh antar task di jobdesk ini.");
+        return;
+      }
+      const current = target.depends_on ?? [];
+      if (current.includes(conn.source)) return;
+      void onUpdateTask(target.id, {
+        depends_on: [...current, conn.source]
+      });
+    },
+    [board.tasks, onUpdateTask, onErr]
+  );
+
+  const { fitView } = useReactFlow();
+  const didFitRef = useRef(false);
+  useEffect(() => {
+    didFitRef.current = false;
+  }, [board.job.id]);
+  useEffect(() => {
+    if (didFitRef.current || rfNodes.length === 0) return;
+    didFitRef.current = true;
+    const t = setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 100);
+    return () => clearTimeout(t);
+  }, [rfNodes.length, fitView]);
+
+  const resetLayout = useCallback(() => {
+    if (!confirm("Reset posisi semua node ke layout otomatis?")) return;
+    try {
+      localStorage.removeItem(posKey(owner, board.job.id));
+    } catch {
+      /* */
+    }
+    setPositions({});
+  }, [owner, board.job.id]);
+
+  return (
+    <div className="card p-0 overflow-hidden">
+      <div className="flex items-center justify-between gap-3 p-3 border-b border-ink-700 flex-wrap bg-ink-900/40">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button
+            onClick={onBack}
+            className="btn text-xs"
+            title="Kembali ke daftar jobdesk"
+          >
+            <ArrowLeft size={12} /> Daftar
+          </button>
+          <div className="text-sm font-semibold truncate">{board.job.name}</div>
+          <span className="chip text-[10px] bg-ink-700 text-muted shrink-0">
+            {board.tasks.length} task
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={resetLayout}
+            disabled={!supabaseReady}
+            className="btn text-xs disabled:opacity-50"
+            title="Reset posisi node ke auto-layout"
+          >
+            Reset Posisi
+          </button>
+          <button
+            onClick={() => onAddTask(null)}
+            disabled={!supabaseReady}
+            className="btn btn-accent text-xs disabled:opacity-50"
+          >
+            <Plus size={12} /> Task
+          </button>
+        </div>
+      </div>
+
+      <div className="relative h-[640px] bg-ink-900/50">
+        <ReactFlow
+          nodes={rfNodes}
+          edges={rfEdges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          minZoom={0.25}
+          maxZoom={1.6}
+          proOptions={{ hideAttribution: true }}
+          defaultEdgeOptions={{
+            type: "smoothstep",
+            style: { stroke: "#6b7280", strokeWidth: 1.5 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: "#6b7280" }
+          }}
+          deleteKeyCode={["Backspace", "Delete"]}
+          snapToGrid
+          snapGrid={[16, 16]}
+          fitView
+          fitViewOptions={{ padding: 0.15 }}
+        >
+          <Background color="#1a1a22" gap={20} size={1} />
+          <Controls
+            className="!bg-ink-800 !border !border-ink-700 !rounded-lg !shadow-lg"
+            showInteractive={false}
+          />
+        </ReactFlow>
+
+        {board.tasks.length === 0 && (
+          <div className="absolute top-3 right-3 max-w-[260px] rounded-md border border-ink-700 bg-ink-800/90 backdrop-blur px-3 py-2 text-[11px] text-muted pointer-events-none">
+            Belum ada task. Klik tombol{" "}
+            <kbd className="bg-ink-700 rounded px-1 text-[10px]">+ Task</kbd>{" "}
+            di kanan atas atau di trigger.
+          </div>
+        )}
+      </div>
+
+      <div className="px-3 py-2 border-t border-ink-700 bg-ink-900/40 text-[11px] text-muted flex items-center gap-x-4 gap-y-1 flex-wrap">
+        <span>
+          <kbd className="bg-ink-700 rounded px-1 mr-1 text-[10px]">Klik</kbd>{" "}
+          judul/status/jenis untuk edit
+        </span>
+        <span>
+          <kbd className="bg-ink-700 rounded px-1 mr-1 text-[10px]">Drag</kbd>{" "}
+          node bebas posisi
+        </span>
+        <span>
+          <kbd className="bg-ink-700 rounded px-1 mr-1 text-[10px]">+</kbd>{" "}
+          tambah task setelah ini
+        </span>
+        <span>
+          <kbd className="bg-ink-700 rounded px-1 mr-1 text-[10px]">Tarik garis</kbd>{" "}
+          antar task = dependency
+        </span>
+        <span>
+          <kbd className="bg-ink-700 rounded px-1 mr-1 text-[10px]">Del</kbd>{" "}
+          hapus garis terpilih
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function edgeStyle(srcStatus: TaskStatus): { stroke: string; strokeWidth: number } {
+  if (srcStatus === "done") return { stroke: "#22c55e", strokeWidth: 1.5 };
+  if (srcStatus === "in_progress") return { stroke: "#eab308", strokeWidth: 2 };
+  return { stroke: "#4b5563", strokeWidth: 1.5 };
+}
+
+function SaveBadge({ state }: { state: SaveState }) {
+  if (state === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+        <Loader2 size={12} className="animate-spin text-accent" /> Menyimpan…
+      </span>
+    );
+  }
+  if (state === "saved") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-ok">
+        <Cloud size={12} /> Tersimpan
+      </span>
+    );
+  }
+  if (state === "error") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-late">
+        <CloudOff size={12} /> Gagal sync
+      </span>
+    );
+  }
+  return null;
 }

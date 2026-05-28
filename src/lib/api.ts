@@ -34,6 +34,28 @@ export async function deleteJob(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export interface PatchJobInput {
+  name?: string;
+  description?: string | null;
+  assignee?: string;
+}
+
+export async function patchJob(id: string, patch: PatchJobInput): Promise<Job> {
+  const sb = client();
+  const body: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (patch.name !== undefined) body.name = patch.name;
+  if (patch.description !== undefined) body.description = patch.description;
+  if (patch.assignee !== undefined) body.assignee = patch.assignee.toLowerCase();
+  const { data, error } = await sb
+    .from("jobs")
+    .update(body)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Job;
+}
+
 export interface CreateTaskInput {
   job_id: string;
   title: string;
@@ -82,6 +104,7 @@ export interface PatchTaskInput {
   due_date?: string | null;
   group_key?: string | null;
   completed_at?: string | null;
+  job_id?: string;
 }
 
 export async function patchTask(id: string, patch: PatchTaskInput): Promise<Task> {
