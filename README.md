@@ -1,6 +1,48 @@
-# Workflow Dashboard
+# Workflow Dashboard (mapping-plan)
 
 AI-first progress tracker untuk tim kecil. Chat adalah entry utama — tanya "sampai mana leo" → dashboard langsung memunculkan **card** visual berisi progress ring, timeline horizontal, daftar tugas, dan activity log (revisi, penambahan, penghapusan).
+
+---
+
+## 🐳 Setup Cepat (Devcontainer — pindah komputer? 1 klik)
+
+```bash
+git clone https://github.com/ymoxanon-droid/mapping-plan.git
+cd mapping-plan
+code .                       # VS Code auto-detect devcontainer
+# Klik "Reopen in Container" di popup
+# Tunggu 3-5 menit (sekali aja, build cached)
+# Isi .env.local → npm run dev
+```
+
+Detail: [`.devcontainer/README.md`](.devcontainer/README.md)
+
+---
+
+## 📊 Recap Mingguan (presentasi otomatis)
+
+Bilang ke Claude Code di project ini:
+
+```
+bikin presentasi week NN
+```
+
+Claude auto-load aturan dari [`CLAUDE.md`](CLAUDE.md), pakai template
+[`presentation/_template.html`](presentation/_template.html) sebagai skeleton,
+tanya info via question prompt, generate `presentation/slide-week-NN.html`
+dengan struktur 5-babak konsisten (Reveal.js, emerald accent).
+
+Detail: [`presentation/CARA-PAKAI.md`](presentation/CARA-PAKAI.md)
+
+---
+
+## 🤖 AI Onboarding (untuk session baru di AI mana pun)
+
+Lihat [`CARA-PAKAI-AI.md`](CARA-PAKAI-AI.md) — prompt copy-paste supaya AI langsung paham konsep mapping-plan tanpa harus dijelaskan dari nol.
+
+Untuk **Claude Code spesifik**: file [`CLAUDE.md`](CLAUDE.md) auto-loaded — tidak perlu prompt manual.
+
+---
 
 ## Kenapa begini
 

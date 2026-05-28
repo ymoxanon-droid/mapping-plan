@@ -1,0 +1,52 @@
+{
+  "name": "Workflow Dashboard (mapping-plan)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "denoland.vscode-deno",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "supabase.vscode-supabase",
+        "ms-vscode.vscode-typescript-next",
+        "yzhang.markdown-all-in-one"
+      ],
+      "settings": {
+        "editor.formatOnSave": false,
+        "editor.tabSize": 2,
+        "files.eol": "\n",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "deno.enable": false,
+        "deno.enablePaths": ["./supabase/functions"]
+      }
+    }
+  },
+
+  "postCreateCommand": ".devcontainer/post-create.sh",
+  "postStartCommand": "echo '✅ Workflow Dashboard devcontainer ready. Jalankan: npm run dev'",
+
+  "remoteUser": "node",
+  "containerEnv": {
+    "TZ": "Asia/Jakarta"
+  },
+
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Vite dev server (Workflow Dashboard)",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached"
+  ]
+}
