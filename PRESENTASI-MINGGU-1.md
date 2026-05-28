@@ -51,7 +51,7 @@ Sebuah **progress tracker AI-first untuk tim kecil**. Bukan dashboard biasa — 
 
 ---
 
-> 🖥️ **Versi visual (slide deck profesional):** buka [presentasi/index.html](presentasi/index.html) di browser — navigasi dengan panah ←/→, bisa full-screen, dan bisa di-print jadi PDF (Ctrl+P).
+> 🖥️ **Versi visual (slide deck profesional):** klik tombol **Presentasi** di header dashboard, atau buka langsung [public/presentasi.html](public/presentasi.html) / `http://localhost:5174/presentasi.html` saat app jalan. Navigasi panah ←/→, bisa full-screen & di-print jadi PDF (Ctrl+P).
 
 ---
 

@@ -11,7 +11,8 @@ import {
   Rocket,
   Briefcase,
   Settings,
-  Pencil
+  Pencil,
+  Presentation
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listMembers } from "@/lib/members";
@@ -126,6 +127,16 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
         </div>
         <div className="flex items-center gap-3">
           <ViewSwitcher view={view} onChange={setView} />
+          <a
+            href="/presentasi.html"
+            target="_blank"
+            rel="noopener"
+            className="btn text-xs"
+            title="Buka slide presentasi mingguan"
+          >
+            <Presentation size={14} />
+            <span className="hidden md:inline">Presentasi</span>
+          </a>
           <Link to="/input" className="btn text-xs" title="Input Data (anggota)">
             <Pencil size={14} />
             <span className="hidden md:inline">Input Data</span>
