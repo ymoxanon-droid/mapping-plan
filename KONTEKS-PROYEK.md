@@ -144,4 +144,19 @@ Coba di chat: `sampai mana claude-staff` · `log aktivitas` · `list job` · `he
 
 ---
 
-_Ringkasan progres per minggu ada di [PRESENTASI-MINGGU-1.md](PRESENTASI-MINGGU-1.md)._
+## 10. Dokumentasi & alur antar-sesi (penting buat AI)
+
+Proyek ini punya 4 dokumen yang saling terhubung:
+
+| File | Fungsi |
+|------|--------|
+| [CARA-PAKAI-AI.md](CARA-PAKAI-AI.md) | Prompt awal & akhir sesi (pintu masuk manusia) |
+| [KONTEKS-PROYEK.md](KONTEKS-PROYEK.md) | Konsep proyek (file ini) |
+| [REVISI-LOG.md](REVISI-LOG.md) | **Arsip detail tiap revisi (R-XX)** — sumber kebenaran |
+| [PRESENTASI-MINGGU-N.md](PRESENTASI-MINGGU-1.md) | Sorotan mingguan untuk presentasi, menunjuk ke R-XX |
+
+**Aturan untuk AI di akhir sesi:** setiap revisi yang dikerjakan WAJIB
+didokumentasikan detail di `REVISI-LOG.md` mengikuti format `## R-XX` di sana —
+jangan ringkasan satu baris. Tujuannya: saat presentasi, detail kerja tiap poin
+revisi bisa ditelusuri, bukan sekadar status "selesai". Lihat prompt ② di
+[CARA-PAKAI-AI.md](CARA-PAKAI-AI.md).

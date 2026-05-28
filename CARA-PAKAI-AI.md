@@ -33,23 +33,31 @@ Atau ambil teks mentahnya:
 
 ---
 
-## ② DI AKHIR SESI — biar AI merangkum kerjaannya sendiri
+## ② DI AKHIR SESI — biar AI menulis DETAIL revisi yang dikerjakan
+
+> Tujuannya: jangan cuma "OTP sudah ya". Tangkap **detail apa yang benar-benar
+> dikerjakan** dari sesi ini, biar saat presentasi ke bos nilai kerjanya kelihatan.
 
 Tempel ini sebelum menutup sesi:
 
 ```
-Sebelum kita tutup, rangkum apa yang kamu kerjakan di sesi ini.
+Sebelum kita tutup, dokumentasikan revisi yang kamu kerjakan di sesi ini.
 Aturan:
-1. Baca PRESENTASI-MINGGU-1.md untuk lihat format & gaya yang sudah ada.
-2. Tambahkan ringkasan kerjaan sesi ini ke file presentasi minggu yang
-   sesuai (kalau minggu baru, buat PRESENTASI-MINGGU-N.md dengan format sama).
-3. Tulis: apa yang berubah, file mana yang disentuh, dan status (selesai/
-   setengah jalan/ada yang pending).
-4. Bahasa Indonesia, ringkas, fokus hasil bukan proses. Jangan mengarang —
-   kalau tidak yakin tanggalnya, kosongkan dan tandai untuk aku isi.
-5. Kalau ada konsep baru yang penting buat sesi lain, update juga
-   KONTEKS-PROYEK.md bagian yang relevan.
-6. Setelah itu, commit & push ke repo (git add -A, commit, git push origin main).
+1. Buka REVISI-LOG.md. Ikuti PERSIS format entri "## R-XX" yang ada di sana
+   (Permintaan / Yang dikerjakan (detail) / File-area / Hasil / Sisa).
+2. Untuk revisi yang aku kerjakan di sesi ini: isi/lengkapi entrinya dengan
+   DETAIL nyata dari diskusi kita — bukan ringkasan satu baris. Tulis apa yang
+   diubah, kenapa, file mana, dan hasil konkretnya buat user.
+3. Set Status (✅ Selesai / 🔄 Proses / ⏳ Pending), Waktu (mis. "2 hari"),
+   dan nama Sesi-nya. Kalau ini revisi baru, beri nomor R-XX berikutnya.
+4. Update juga PRESENTASI-MINGGU-N.md: tambahkan 1–2 baris sorotan minggu ini
+   yang menunjuk ke entri R-XX di log (kalau minggu baru, buat file baru dgn
+   format yang sama seperti PRESENTASI-MINGGU-1.md).
+5. Bahasa Indonesia, padat-berisi, fokus hasil. JANGAN mengarang — kalau ada
+   yang tidak kamu ketahui (tanggal, detail di luar sesi ini), kosongkan dan
+   tandai "(isi)".
+6. Kalau ada konsep baru yang penting buat sesi lain, update KONTEKS-PROYEK.md.
+7. Terakhir: commit & push (git add -A, commit, git push origin main).
 ```
 
 ---
@@ -58,9 +66,11 @@ Aturan:
 
 ```
 AWAL  →  tempel prompt ①  →  AI baca KONTEKS, langsung paham
-KERJA →  kerjakan tugasmu seperti biasa
-AKHIR →  tempel prompt ②  →  AI tulis ringkasan + push ke repo
+KERJA →  kerjakan revisinya seperti biasa
+AKHIR →  tempel prompt ②  →  AI tulis DETAIL ke REVISI-LOG.md
+                              + sorotan ke PRESENTASI-MINGGU-N.md + push
 ```
 
-Dengan pola ini, setiap sesi AI baru otomatis "nyambung" dengan sesi sebelumnya
-lewat repo — tanpa kamu jelasin ulang dari nol.
+Dengan pola ini, tiap revisi terdokumentasi detail otomatis. Saat presentasi:
+buka `PRESENTASI-MINGGU-N.md` untuk sorotan, dan `REVISI-LOG.md` kalau bos minta
+detail — kamu tidak perlu mengingat-ingat apa yang dikerjakan tiap poin.

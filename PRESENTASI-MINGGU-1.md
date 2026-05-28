@@ -49,4 +49,7 @@ Sebuah **progress tracker AI-first untuk tim kecil**. Bukan dashboard biasa — 
 
 ---
 
-_Detail teknis lengkap untuk siapa pun (atau sesi AI mana pun) yang mau lanjut: baca [KONTEKS-PROYEK.md](KONTEKS-PROYEK.md)._
+---
+
+> 📒 **Detail tiap revisi** (apa yang benar-benar dikerjakan per poin) ada di [REVISI-LOG.md](REVISI-LOG.md) — file ini cukup sorotannya saja.
+> 🧠 **Konsep proyek** untuk sesi AI mana pun: [KONTEKS-PROYEK.md](KONTEKS-PROYEK.md).
