@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mapping Plan — Laporan Mingguan</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#0e1530; --panel:#121a35; --panel2:#0f1730;
+    --line:#243056; --line2:#1a2342;
+    --ink:#eef2ff; --muted:#94a3c4; --faint:#6b779e;
+    --accent:#6366f1; --accent2:#22d3ee; --ok:#34d399; --warn:#fbbf24; --late:#fb7185;
+    --r:18px; --shadow:0 20px 60px rgba(0,0,0,.45);
+    --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--font); color:var(--ink); overflow:hidden;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(99,102,241,.18), transparent 60%),
+      radial-gradient(900px 500px at -5% 110%, rgba(34,211,238,.12), transparent 55%),
+      var(--bg);
+  }
+  /* top progress bar */
+  .pbar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:50;transition:width .4s ease;box-shadow:0 0 12px rgba(99,102,241,.7)}
+
+  .deck{position:relative;height:100vh;width:100vw}
+  .slide{
+    position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    padding:6vh 7vw;opacity:0;visibility:hidden;transform:translateY(18px) scale(.99);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none}
+
+  .kicker{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--accent2);font-weight:600;margin-bottom:18px}
+  .kicker .dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
+  h1{font-size:clamp(34px,5.4vw,68px);line-height:1.02;letter-spacing:-.02em;font-weight:800}
+  h2{font-size:clamp(26px,3.6vw,44px);line-height:1.06;letter-spacing:-.02em;font-weight:780;margin-bottom:10px}
+  .lead{color:var(--muted);font-size:clamp(15px,1.5vw,19px);max-width:60ch;line-height:1.55;margin-top:14px}
+  .sub{color:var(--faint);font-size:13.5px;margin-top:26px}
+
+  /* footer brand */
+  .brand{position:fixed;left:7vw;bottom:26px;display:flex;align-items:center;gap:11px;z-index:20}
+  .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#06122b;box-shadow:var(--shadow)}
+  .brand .t{font-weight:700;font-size:14px}
+  .brand .s{color:var(--faint);font-size:11.5px}
+  .counter{position:fixed;right:7vw;bottom:26px;color:var(--faint);font-size:13px;z-index:20;font-variant-numeric:tabular-nums}
+  .nav{position:fixed;right:7vw;bottom:58px;display:flex;gap:8px;z-index:20}
+  .nav button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);cursor:pointer;font-size:16px;transition:.2s}
+  .nav button:hover{border-color:var(--accent);background:var(--panel2);transform:translateY(-1px)}
+
+  /* generic layout helpers */
+  .grid{display:grid;gap:18px}
+  .cards4{grid-template-columns:repeat(4,1fr)}
+  .cards3{grid-template-columns:repeat(3,1fr)}
+  .col2{grid-template-columns:1.1fr .9fr;align-items:center;gap:48px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:var(--r);padding:22px 22px;box-shadow:var(--shadow)}
+
+  .kpi .big{font-size:clamp(34px,4.2vw,52px);font-weight:820;letter-spacing:-.02em;line-height:1}
+  .kpi .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.13em;margin-top:10px}
+  .kpi .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;margin-bottom:16px;
+    background:rgba(99,102,241,.14);border:1px solid rgba(99,102,241,.3)}
+  .accentbar{height:4px;border-radius:99px;margin-top:18px;background:var(--line)}
+  .accentbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+  /* donut */
+  .donutwrap{display:flex;align-items:center;gap:30px}
+  .donut{position:relative;width:210px;height:210px;flex:none}
+  .donut .ctr{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .donut .ctr b{font-size:44px;font-weight:820;letter-spacing:-.02em}
+  .donut .ctr span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.14em;margin-top:4px}
+  .legend{display:flex;flex-direction:column;gap:14px}
+  .legend .row{display:flex;align-items:center;gap:12px;font-size:15px}
+  .legend .sw{width:13px;height:13px;border-radius:4px}
+  .legend .n{margin-left:auto;font-weight:740;font-variant-numeric:tabular-nums;color:var(--ink)}
+
+  /* kanban */
+  .kanban{grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+  .colhd{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-weight:740;font-size:15px}
+  .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;margin-left:auto;font-variant-numeric:tabular-nums}
+  .kcol{background:rgba(255,255,255,.02);border:1px solid var(--line2);border-radius:16px;padding:16px;min-height:54vh}
+  .titem{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:12px;padding:13px 14px;margin-bottom:11px;font-size:13.5px;line-height:1.4;position:relative}
+  .titem .tag{display:inline-block;font-size:10.5px;color:var(--faint);margin-top:7px;letter-spacing:.06em;text-transform:uppercase}
+  .edge{position:absolute;left:0;top:11px;bottom:11px;width:3px;border-radius:99px}
+
+  /* flow steps */
+  .flow{display:flex;align-items:stretch;gap:0;margin-top:6px}
+  .step{flex:1;background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:14px;padding:20px;position:relative}
+  .step .num{font-size:12px;color:var(--accent2);font-weight:800;letter-spacing:.1em}
+  .step h3{font-size:16px;margin:8px 0 8px;font-weight:740}
+  .step p{color:var(--muted);font-size:13px;line-height:1.5}
+  .arrow{align-self:center;color:var(--faint);font-size:22px;padding:0 12px}
+
+  /* bars */
+  .bars{display:flex;flex-direction:column;gap:16px;margin-top:6px}
+  .bar .top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:7px}
+  .bar .track{height:14px;border-radius:99px;background:var(--line2);overflow:hidden}
+  .bar .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .bar .cnt{color:var(--muted);font-variant-numeric:tabular-nums}
+
+  /* timeline */
+  .timeline{position:relative;margin-top:18px;padding-left:8px}
+  .timeline::before{content:"";position:absolute;left:14px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  .tl{display:flex;gap:18px;align-items:flex-start;margin-bottom:16px;position:relative}
+  .tl .node{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:800;
+    background:var(--panel);border:1px solid var(--line);z-index:2;color:var(--accent2)}
+  .tl .body{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:12px;padding:13px 16px;flex:1}
+  .tl .body b{font-size:14.5px}
+  .tl .body span{color:var(--muted);font-size:12.5px}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .deep h3{font-size:15px;color:var(--accent2);margin-bottom:10px;letter-spacing:.04em}
+  .deep ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .deep li{font-size:14px;color:var(--ink);padding-left:22px;position:relative;line-height:1.45}
+  .deep li::before{content:"";position:absolute;left:2px;top:7px;width:8px;height:8px;border-radius:50%;
+    background:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.18)}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+  .chip{font-size:12px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+  .chip b{color:var(--ink)}
+
+  .note{position:fixed;left:7vw;bottom:64px;font-size:11px;color:var(--faint);max-width:46ch;z-index:15}
+  @media (max-width:880px){.cards4{grid-template-columns:repeat(2,1fr)}.col2,.two,.kanban,.flow{grid-template-columns:1fr;display:grid}.flow{gap:12px}.arrow{display:none}}
+  @media print{.nav,.note{display:none}.slide{position:relative;opacity:1;visibility:visible;transform:none;page-break-after:always;height:100vh}}
+</style>
+</head>
+<body>
+<div class="pbar" id="pbar"></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 — COVER -->
+  <section class="slide active">
+    <div class="kicker"><span class="dot"></span> Laporan Mingguan · Internal</div>
+    <h1>Progress &amp; Revisi<br>Minggu Ini</h1>
+    <p class="lead">Ringkasan eksekutif pekerjaan lintas proyek (SEO · Domain · Database) yang dilacak melalui dashboard <b>Mapping Plan</b>. Tiap revisi terdokumentasi detail — bukan sekadar status "selesai".</p>
+    <p class="sub">Periode: <b>(isi tanggal)</b> &nbsp;·&nbsp; Disusun via Mapping Plan</p>
+  </section>
+
+  <!-- 2 — EXECUTIVE SUMMARY -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Ringkasan Eksekutif</div>
+    <h2>Angka minggu ini</h2>
+    <div class="grid cards4" style="margin-top:26px">
+      <div class="card kpi"><div class="ic">✅</div><div class="big" style="color:var(--ok)">8</div><div class="lbl">Revisi Selesai</div><div class="accentbar"><i style="width:88%"></i></div></div>
+      <div class="card kpi"><div class="ic">🔄</div><div class="big" style="color:var(--warn)">1</div><div class="lbl">Sedang Proses</div><div class="accentbar"><i style="width:12%;background:var(--warn)"></i></div></div>
+      <div class="card kpi"><div class="ic">⏳</div><div class="big" style="color:var(--late)">8</div><div class="lbl">Antrian Berikut</div><div class="accentbar"><i style="width:50%;background:var(--late)"></i></div></div>
+      <div class="card kpi"><div class="ic">📈</div><div class="big">~50</div><div class="lbl">Total Revisi (akumulasi)</div><div class="accentbar"><i style="width:100%"></i></div></div>
+    </div>
+    <p class="lead" style="margin-top:24px">Fokus minggu ini: <b style="color:var(--ink)">keamanan</b> (OTP/2FA + IP whitelist), perbaikan <b style="color:var(--ink)">UI/UX</b>, dan stabilitas <b style="color:var(--ink)">data</b> pada dashboard.</p>
+  </section>
+
+  <!-- 3 — STATUS DONUT -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Status Penyelesaian</div>
+    <h2>Distribusi status</h2>
+    <div class="grid col2" style="margin-top:30px">
+      <div class="card">
+        <div class="donutwrap">
+          <div class="donut">
+            <svg width="210" height="210" viewBox="0 0 42 42">
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#1a2342" stroke-width="6"/>
+              <!-- selesai 47% ok, proses 6% warn, pending 47% late -->
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#34d399" stroke-width="6" stroke-dasharray="47 53" stroke-dashoffset="25" stroke-linecap="round"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#fbbf24" stroke-width="6" stroke-dasharray="6 94" stroke-dashoffset="-22" stroke-linecap="round"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#fb7185" stroke-width="6" stroke-dasharray="47 53" stroke-dashoffset="-28" stroke-linecap="round"/>
+            </svg>
+            <div class="ctr"><div><b>47%</b><span>Selesai</span></div></div>
+          </div>
+          <div class="legend">
+            <div class="row"><span class="sw" style="background:var(--ok)"></span> Selesai <span class="n">8</span></div>
+            <div class="row"><span class="sw" style="background:var(--warn)"></span> Proses <span class="n">1</span></div>
+            <div class="row"><span class="sw" style="background:var(--late)"></span> Pending <span class="n">8</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h2 style="font-size:30px">Momentum stabil</h2>
+        <p class="lead">Dari 17 revisi aktif minggu ini, <b style="color:var(--ok)">47% tuntas</b>. Sisanya sudah masuk antrian terjadwal dengan detail tersimpan di Revisi Log — tidak ada pekerjaan yang "hilang konteks".</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 — KANBAN -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Papan Kerja</div>
+    <h2>Alur revisi: Antri → Proses → Selesai</h2>
+    <div class="grid kanban" style="margin-top:20px">
+      <div>
+        <div class="colhd">⏳ Antrian <span class="pill" style="background:rgba(251,113,133,.16);color:var(--late)">8</span></div>
+        <div class="kcol">
+          <div class="titem"><span class="edge" style="background:var(--late)"></span>Trigger server-side untuk aksi tinggi-risiko<span class="tag">R-43 · Keamanan</span></div>
+          <div class="titem"><span class="edge" style="background:var(--late)"></span>admin_audit_log jangan dibaca client<span class="tag">R-44 · Keamanan</span></div>
+          <div class="titem"><span class="edge" style="background:var(--late)"></span>Promote string literal ke ACTIONS<span class="tag">R-45 · Cleanup</span></div>
+          <div class="titem"><span class="edge" style="background:var(--late)"></span>Filter "exclude noise"<span class="tag">R-48 · Dashboard</span></div>
+          <div class="titem"><span class="edge" style="background:var(--late)"></span>Group by session · Breadcrumb<span class="tag">R-49 / R-50</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd">🔄 Proses <span class="pill" style="background:rgba(251,191,36,.16);color:var(--warn)">1</span></div>
+        <div class="kcol">
+          <div class="titem"><span class="edge" style="background:var(--warn)"></span>Investigasi lag hover dashboard (performa)<span class="tag">Performa</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd">✅ Selesai <span class="pill" style="background:rgba(52,211,153,.16);color:var(--ok)">8</span></div>
+        <div class="kcol">
+          <div class="titem"><span class="edge" style="background:var(--ok)"></span>Aktifkan OTP/2FA + IP whitelist<span class="tag">Keamanan · ~2 hari</span></div>
+          <div class="titem"><span class="edge" style="background:var(--ok)"></span>Perbaiki UI/UX halaman configuration<span class="tag">UI/UX</span></div>
+          <div class="titem"><span class="edge" style="background:var(--ok)"></span>Expand baris domain → tabel bersarang<span class="tag">UI/UX</span></div>
+          <div class="titem"><span class="edge" style="background:var(--ok)"></span>Fix urutan loading data disavow<span class="tag">Data</span></div>
+          <div class="titem"><span class="edge" style="background:var(--ok)"></span>Fix warna dark mode baris filter<span class="tag">UI/UX</span></div>
+          <div class="titem"><span class="edge" style="background:var(--ok)"></span>Debug timestamp hilang + Fix AdminPage<span class="tag">Bug fix</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 — DEEP DIVE -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Sorotan · Bukan sekadar "sudah ya"</div>
+    <h2>Deep-dive: Aktifkan OTP (2FA) + IP whitelist</h2>
+    <div class="meta">
+      <span class="chip">Proyek: <b>(isi)</b></span>
+      <span class="chip">Status: <b style="color:var(--ok)">Selesai</b></span>
+      <span class="chip">Waktu: <b>~2 hari</b></span>
+      <span class="chip">Ref: <b>R-?? · Revisi Log</b></span>
+    </div>
+    <div class="flow" style="margin-top:14px">
+      <div class="step"><div class="num">01 · PERMINTAAN</div><h3>Amankan login admin</h3><p>Bos minta dashboard tidak cukup hanya password — perlu lapis kedua.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">02 · SOLUSI</div><h3>OTP via email</h3><p>Flow kode sekali-pakai saat login, verifikasi di sisi server (bukan client).</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">03 · HARDENING</div><h3>IP whitelist</h3><p>Hanya IP terdaftar yang boleh mengakses panel admin.</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="num">04 · HASIL</div><h3>Akses terkunci</h3><p>Admin wajib OTP + dari IP sah. Sisa: backup code → revisi berikutnya.</p></div>
+    </div>
+    <p class="note" style="position:static;margin-top:18px">Inilah pola tiap revisi: <b>Permintaan → Solusi → Hasil → Sisa</b>, sehingga nilai kerja tiap poin terlihat saat presentasi.</p>
+  </section>
+
+  <!-- 6 — DISTRIBUTION -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Komposisi Pekerjaan</div>
+    <h2>Revisi berdasarkan kategori</h2>
+    <div class="card" style="margin-top:26px">
+      <div class="bars">
+        <div class="bar"><div class="top"><span>🎨 UI / UX</span><span class="cnt">4</span></div><div class="track"><div class="fill" style="width:80%"></div></div></div>
+        <div class="bar"><div class="top"><span>🔒 Keamanan</span><span class="cnt">3</span></div><div class="track"><div class="fill" style="width:60%;background:linear-gradient(90deg,#fb7185,#f59e0b)"></div></div></div>
+        <div class="bar"><div class="top"><span>🐛 Bug &amp; Data</span><span class="cnt">3</span></div><div class="track"><div class="fill" style="width:60%;background:linear-gradient(90deg,#22d3ee,#34d399)"></div></div></div>
+        <div class="bar"><div class="top"><span>🧹 Cleanup kode</span><span class="cnt">2</span></div><div class="track"><div class="fill" style="width:40%"></div></div></div>
+        <div class="bar"><div class="top"><span>⚡ Performa</span><span class="cnt">1</span></div><div class="track"><div class="fill" style="width:20%;background:linear-gradient(90deg,#fbbf24,#fb7185)"></div></div></div>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:22px">Mayoritas energi minggu ini ke <b style="color:var(--ink)">pengalaman pengguna</b> dan <b style="color:var(--ink)">keamanan</b> — dua hal yang paling terasa oleh stakeholder.</p>
+  </section>
+
+  <!-- 7 — ROADMAP -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Rencana Berikutnya</div>
+    <h2>Antrian minggu depan</h2>
+    <div class="timeline" style="margin-top:8px">
+      <div class="tl"><div class="node">43</div><div class="body"><b>Trigger server-side untuk aksi tinggi-risiko</b> &nbsp;<span>· Keamanan</span></div></div>
+      <div class="tl"><div class="node">44</div><div class="body"><b>Proteksi tabel admin_audit_log dari client</b> &nbsp;<span>· Keamanan</span></div></div>
+      <div class="tl"><div class="node">46</div><div class="body"><b>Warna kategori untuk action baru</b> &nbsp;<span>· Dashboard</span></div></div>
+      <div class="tl"><div class="node">48</div><div class="body"><b>Filter "exclude noise" &amp; Group by session</b> &nbsp;<span>· Dashboard</span></div></div>
+      <div class="tl"><div class="node">50</div><div class="body"><b>Breadcrumb navigasi</b> &nbsp;<span>· UX</span></div></div>
+    </div>
+  </section>
+
+  <!-- 8 — CLOSING -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Penutup</div>
+    <h1 style="font-size:clamp(30px,4.6vw,58px)">Setiap revisi<br>terdokumentasi.</h1>
+    <p class="lead">Detail tiap poin ada di <b style="color:var(--ink)">Revisi Log</b>; ringkasan ini di <b style="color:var(--ink)">Presentasi Mingguan</b>. Konteks tidak pernah hilang antar sesi maupun antar minggu.</p>
+    <p class="sub">Terima kasih · Mapping Plan</p>
+  </section>
+
+</div>
+
+<div class="brand"><div class="logo">M</div><div><div class="t">Mapping Plan</div><div class="s">Central revision tracker</div></div></div>
+<div class="nav"><button id="prev" aria-label="Sebelumnya">‹</button><button id="next" aria-label="Berikutnya">›</button></div>
+<div class="counter"><span id="cur">1</span> / <span id="tot">8</span></div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const pbar=document.getElementById('pbar');
+  const cur=document.getElementById('cur'), tot=document.getElementById('tot');
+  let i=0; tot.textContent=slides.length;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    cur.textContent=i+1;
+    pbar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown')show(i+1);
+    if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1);
+    if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);
+  });
+  // swipe
+  let x0=null;
+  addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+  addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)show(i+(dx<0?1:-1));x0=null;});
+  show(0);
+</script>
+</body>
+</html>

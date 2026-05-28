@@ -51,5 +51,9 @@ Sebuah **progress tracker AI-first untuk tim kecil**. Bukan dashboard biasa — 
 
 ---
 
+> 🖥️ **Versi visual (slide deck profesional):** buka [presentasi/index.html](presentasi/index.html) di browser — navigasi dengan panah ←/→, bisa full-screen, dan bisa di-print jadi PDF (Ctrl+P).
+
+---
+
 > 📒 **Detail tiap revisi** (apa yang benar-benar dikerjakan per poin) ada di [REVISI-LOG.md](REVISI-LOG.md) — file ini cukup sorotannya saja.
 > 🧠 **Konsep proyek** untuk sesi AI mana pun: [KONTEKS-PROYEK.md](KONTEKS-PROYEK.md).
