@@ -63,6 +63,42 @@ Aturan:
 
 ---
 
+## ③ ISI DATA REAL — backfill dari sesi yang sudah mengerjakan
+
+> Detail asli tiap revisi ada di **sesi chat tempat kerjaan itu dilakukan**
+> (bukan di chat ini). Buka kembali sesi tersebut, lalu tempel prompt ini:
+
+```
+Baca KONTEKS-PROYEK.md lebih dulu. Di sesi ini kamu mengerjakan revisi
+berjudul "<TEMPEL JUDUL REVISI, mis. Add 2FA and IP whitelist>".
+
+Tugasmu: dokumentasikan DETAIL NYATA pekerjaan itu ke REVISI-LOG.md.
+Aturan:
+1. Cari/buat entri "## R-XX" untuk revisi ini (R-XX = nomor di daftar revisiku;
+   kalau aku belum kasih nomor, tanyakan atau pakai placeholder R-??).
+2. Isi PERSIS format yang ada: Proyek (SEO/Domain/Database/dll), Status, Waktu,
+   Sesi, lalu Permintaan / Yang dikerjakan (detail) / File-area / Hasil / Sisa.
+3. Ambil isinya HANYA dari diskusi nyata di sesi ini — JANGAN mengarang. Yang
+   tidak diketahui, tulis "(isi)".
+4. Commit & push (git add -A, commit, git push origin main).
+```
+
+Ulangi untuk tiap judul di gambar/daftarmu sampai semua entri terisi real.
+
+## ④ SINKRONKAN SLIDE dengan data real
+
+> Setelah REVISI-LOG.md terisi, suruh AI menyesuaikan deck visual:
+
+```
+Baca REVISI-LOG.md. Lalu update blok DATA di public/presentasi.html supaya
+cocok dengan log (ini satu-satunya bagian yang perlu diubah — slide otomatis
+menyesuaikan). Sesuaikan: periode, totalAkumulasi, isi kanban (pending/proses/
+selesai), deepdive (pilih 1 revisi paling penting minggu ini), kategori, dan
+roadmap. Jangan ubah bagian lain. Lalu commit & push.
+```
+
+---
+
 ## Alur singkat tiap sesi
 
 ```
