@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pusat Presentasi — Mapping Plan</title>
+<style>
+  :root{
+    --bg:#0b1020;--panel:#121a35;--panel2:#0f1730;--line:#243056;--line2:#1a2342;
+    --ink:#eef2ff;--muted:#94a3c4;--faint:#6b779e;
+    --accent:#6366f1;--accent2:#22d3ee;--ok:#34d399;--warn:#fbbf24;--late:#fb7185;
+    --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);color:var(--ink);min-height:100vh;
+    background:radial-gradient(1200px 600px at 85% -10%,rgba(99,102,241,.18),transparent 60%),
+      radial-gradient(900px 500px at -5% 110%,rgba(34,211,238,.12),transparent 55%),var(--bg)}
+  .wrap{max-width:1080px;margin:0 auto;padding:7vh 6vw 12vh}
+  .kicker{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent2);font-weight:600;margin-bottom:16px}
+  .kicker .dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
+  h1{font-size:clamp(30px,4.4vw,52px);line-height:1.05;letter-spacing:-.02em;font-weight:800}
+  .lead{color:var(--muted);font-size:16px;max-width:64ch;line-height:1.6;margin-top:14px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:30px 0 22px}
+  .chipf{font-size:12.5px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;transition:.18s}
+  .chipf:hover{border-color:var(--accent);color:var(--ink)}
+  .chipf.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+  .card{display:flex;flex-direction:column;background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:16px;padding:20px;text-decoration:none;color:inherit;
+    box-shadow:0 14px 40px rgba(0,0,0,.35);transition:.2s;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
+  .card:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .pill{align-self:flex-start;font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.08em}
+  .card h3{font-size:18px;font-weight:760;margin:14px 0 6px;letter-spacing:-.01em;line-height:1.25}
+  .meta{color:var(--faint);font-size:12.5px;display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:14px}
+  .meta b{color:var(--muted);font-weight:600}
+  .open{display:inline-flex;align-items:center;gap:6px;margin-top:16px;color:var(--accent2);font-weight:700;font-size:13.5px}
+  .empty{grid-column:1/-1;text-align:center;color:var(--faint);padding:60px 0;border:1px dashed var(--line);border-radius:16px}
+  .foot{margin-top:40px;color:var(--faint);font-size:12px;line-height:1.7}
+  .foot code{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--accent2)}
+  .brand{display:flex;align-items:center;gap:11px;margin-bottom:26px}
+  .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#06122b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="logo">M</div><div><div style="font-weight:700">Mapping Plan</div><div style="color:var(--faint);font-size:12px">Central revision tracker</div></div></div>
+  <div class="kicker"><span class="dot"></span> Pusat Presentasi</div>
+  <h1>Semua Presentasi<br>di Satu Tempat</h1>
+  <p class="lead">Tiap revisi / proyek punya presentasinya sendiri (dibuat oleh AI yang mengerjakan). Halaman ini hanya mendaftarkan & menautkan semuanya — klik kartu untuk membuka.</p>
+
+  <div class="toolbar" id="filters"></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="foot">
+    <b style="color:var(--muted)">Cara menambah presentasi (untuk AI / kamu):</b><br>
+    1. Simpan file deck di folder ini, mis. <code>public/presentasi/&lt;nama&gt;.html</code> — atau pakai URL eksternal (deck yang sudah dideploy).<br>
+    2. Tambahkan SATU entri ke array <code>DECKS</code> di bawah (lihat komentar di &lt;script&gt;). Kartu muncul otomatis.<br>
+    3. Commit &amp; push.
+  </div>
+</div>
+
+<script>
+/* ╔══════════════════════════════════════════════════════════════════╗
+   ║  DAFTAR PRESENTASI — tambahkan satu objek per deck di sini.        ║
+   ║  url: nama file lokal (mis. "mingguan.html") ATAU URL https lengkap.║
+   ║  status: "Selesai" | "Proses" | "Draft"                            ║
+   ╚══════════════════════════════════════════════════════════════════╝ */
+const DECKS = [
+  {
+    title:  "Laporan Mingguan — Ringkasan semua revisi",
+    proyek: "Mapping Plan",
+    tanggal:"(isi minggu)",
+    status: "Selesai",
+    url:    "mingguan.html",
+  },
+  {
+    title:  "2FA (TOTP) + IP Whitelist — Studi Kasus",
+    proyek: "Dashboard admin",
+    tanggal:"(isi)",
+    status: "Draft",
+    url:    "#",   // ← ganti dengan file/URL deck reveal.js bila sudah jadi
+  },
+  // ➕ Tambah presentasi baru di bawah ini:
+  // { title:"...", proyek:"...", tanggal:"...", status:"Selesai", url:"..." },
+];
+/* ── akhir DECKS ── */
+
+const COLOR = { Selesai:"var(--ok)", Proses:"var(--warn)", Draft:"var(--faint)" };
+const BG    = { Selesai:"rgba(52,211,153,.16)", Proses:"rgba(251,191,36,.16)", Draft:"rgba(148,163,196,.16)" };
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let filter = "Semua";
+
+function render(){
+  const grid = document.getElementById("grid");
+  const list = DECKS.filter(d => filter==="Semua" || d.proyek===filter);
+  grid.innerHTML = list.length ? list.map(d=>{
+    const dis = !d.url || d.url==="#";
+    return `<a class="card" ${dis?'style="opacity:.6;cursor:not-allowed" onclick="return false"':`href="${esc(d.url)}" target="_blank" rel="noopener"`}>
+      <span class="pill" style="color:${COLOR[d.status]||'var(--faint)'};background:${BG[d.status]||'rgba(148,163,196,.16)'}">${esc(d.status||'—')}</span>
+      <h3>${esc(d.title)}</h3>
+      <div class="meta"><span><b>Proyek:</b> ${esc(d.proyek||'—')}</span><span>·</span><span>${esc(d.tanggal||'')}</span></div>
+      <span class="open">${dis?'Belum tersedia':'Buka presentasi →'}</span>
+    </a>`;
+  }).join("") : `<div class="empty">Belum ada presentasi. Tambahkan entri di array <code>DECKS</code>.</div>`;
+}
+function renderFilters(){
+  const proyek = ["Semua", ...new Set(DECKS.map(d=>d.proyek).filter(Boolean))];
+  document.getElementById("filters").innerHTML = proyek.map(p=>
+    `<button class="chipf ${p===filter?'active':''}" data-p="${esc(p)}">${esc(p)}</button>`).join("");
+  document.querySelectorAll(".chipf").forEach(b=>b.onclick=()=>{filter=b.dataset.p;renderFilters();render();});
+}
+renderFilters(); render();
+</script>
+</body>
+</html>

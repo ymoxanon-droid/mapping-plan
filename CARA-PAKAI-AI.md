@@ -85,17 +85,23 @@ Aturan:
 
 Ulangi untuk tiap judul di gambar/daftarmu sampai semua entri terisi real.
 
-## ④ SINKRONKAN SLIDE dengan data real
+## ④ BUAT PRESENTASI & DAFTARKAN KE HUB
 
-> Setelah REVISI-LOG.md terisi, suruh AI menyesuaikan deck visual:
+> Tiap AI bikin presentasinya sendiri (format bebas), lalu daftarkan ke pusat
+> presentasi `public/presentasi/index.html` agar muncul di tombol "Presentasi".
 
 ```
-Baca REVISI-LOG.md. Lalu update blok DATA di public/presentasi.html supaya
-cocok dengan log (ini satu-satunya bagian yang perlu diubah — slide otomatis
-menyesuaikan). Sesuaikan: periode, totalAkumulasi, isi kanban (pending/proses/
-selesai), deepdive (pilih 1 revisi paling penting minggu ini), kategori, dan
-roadmap. Jangan ubah bagian lain. Lalu commit & push.
+Buat presentasi untuk revisi yang kamu kerjakan (format bebas: reveal.js, HTML
+slide, dll). Ambil isinya dari entri R-XX di REVISI-LOG.md (jangan mengarang).
+Lalu daftarkan ke hub:
+1. Simpan deck di public/presentasi/<nama>.html (atau pakai URL deploy eksternal).
+2. Tambahkan SATU objek ke array DECKS di public/presentasi/index.html:
+   { title, proyek, tanggal, status: "Selesai"|"Proses"|"Draft", url }.
+3. Jangan ubah bagian lain dari index.html. Commit & push.
 ```
+
+> Deck ringkasan mingguan bawaan ada di `public/presentasi/mingguan.html`
+> (data-driven via blok DATA) — opsional, pakai kalau perlu overview semua revisi.
 
 ---
 

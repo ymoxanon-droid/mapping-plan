@@ -128,11 +128,11 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
         <div className="flex items-center gap-3">
           <ViewSwitcher view={view} onChange={setView} />
           <a
-            href="/presentasi.html"
+            href="/presentasi/"
             target="_blank"
             rel="noopener"
             className="btn text-xs"
-            title="Buka slide presentasi mingguan"
+            title="Buka pusat presentasi"
           >
             <Presentation size={14} />
             <span className="hidden md:inline">Presentasi</span>
