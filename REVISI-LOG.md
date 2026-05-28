@@ -37,15 +37,27 @@ Sisa:        yang belum / follow-up (kalau ada)
 
 # ✅ Selesai / dikerjakan (dari riwayat sesi)
 
-## R-?? — Aktifkan OTP (2FA) + IP whitelist di dashboard
-Proyek: _(isi)_ · Minggu: _(isi)_ · Status: ✅ Selesai · Waktu: ~2 hari · Sesi: "Add 2FA and IP whitelist to dashboard"
+## R-?? — Aktifkan 2FA (TOTP) + IP whitelist di dashboard
+Proyek: Dashboard admin _(sesuaikan)_ · Minggu: _(isi)_ · Status: ✅ Selesai · Waktu: ~2 hari · Sesi: "Add 2FA and IP whitelist to dashboard"
+Deck detail: _(link reveal.js bila ada)_
 
-Permintaan:  _(diisi AI dari sesi terkait)_
+Permintaan:  Dashboard punya 1 super-admin yang diakses dari banyak IP (RDP + laptop + HP)
+             dan dulu hanya diproteksi password. Kalau password bocor → siapa pun bisa
+             masuk, IP tak dikenal bebas akses. Diminta lapis kedua + kontrol IP.
 Yang dikerjakan (detail):
-  - _(diisi: flow OTP-nya, verifikasi di mana, IP whitelist, dst)_
-File/area:   _(diisi)_
-Hasil:       _(diisi)_
-Sisa:        _(diisi)_
+  - Gate 3 lapis: Password → TOTP (authenticator) → IP whitelist, plus recovery fallback.
+  - DB: tabel admin_ip_whitelist, ip_bypass_tokens, ip_bypass_requests + RPC functions.
+  - Edge Functions: check-access, send-ip-bypass, verify-ip-bypass.
+  - Frontend: MfaChallenge, IpGate, IpWhitelistManager, tab Security di admin panel.
+  - Tantangan: deploy via RDP (outbound TCP diblok → Management API + PAT + proxy 8803);
+    bug schema (STABLE→VOLATILE, ambiguous column, pgcrypto schema); flash dashboard saat
+    refresh → optimistic skip pakai flag localStorage.
+  - Constraint: full budget gratis (Supabase free + Vercel free).
+File/area:   Supabase Auth + Edge Functions + Postgres RPC; React (Vercel)
+Hasil:       Admin wajib lewat MFA + IpGate; permintaan IP baru lewat approval (badge merah,
+             pending approval). Semua lapis berjalan.
+Sisa:        Setup Resend untuk email beneran · audit log · dukungan IPv6
+Pelajaran:   Supabase RLS ≠ GRANT · pentingnya hygiene ambiguous-column
 
 ## R-?? — Debug timestamp hilang di history
 Proyek: _(isi)_ · Minggu: _(isi)_ · Status: ✅ Selesai · Sesi: "Debug missing timestamps in history"

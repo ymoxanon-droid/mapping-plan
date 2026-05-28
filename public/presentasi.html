@@ -123,13 +123,13 @@ const DATA = {
 
   // Sorotan 1 revisi (deep-dive). Ambil dari entri R-XX di REVISI-LOG.md.
   deepdive: {
-    title: "Aktifkan OTP (2FA) + IP whitelist",
-    proyek: "(isi)", status: "Selesai", waktu: "~2 hari", ref: "R-?? · Revisi Log",
+    title: "2FA (TOTP) + IP whitelist di dashboard",
+    proyek: "Dashboard admin", status: "Selesai", waktu: "~2 hari", ref: "R-?? · Revisi Log",
     steps: [
-      { k: "01 · PERMINTAAN", h: "Amankan login admin",  p: "Bos minta dashboard tidak cukup hanya password — perlu lapis kedua." },
-      { k: "02 · SOLUSI",     h: "OTP via email",         p: "Kode sekali-pakai saat login, verifikasi di sisi server (bukan client)." },
-      { k: "03 · HARDENING",  h: "IP whitelist",          p: "Hanya IP terdaftar yang boleh mengakses panel admin." },
-      { k: "04 · HASIL",      h: "Akses terkunci",        p: "Admin wajib OTP + dari IP sah. Sisa: backup code → berikutnya." },
+      { k: "01 · MASALAH",        h: "1 admin, banyak IP", p: "Akses dari RDP + laptop + HP, dulu cuma password. Bocor = siapa pun bisa masuk." },
+      { k: "02 · PENDEKATAN",     h: "Gate 3 lapis",       p: "Password → TOTP (authenticator) → IP whitelist, plus recovery. Budget gratis." },
+      { k: "03 · IMPLEMENTASI",   h: "Auth + Edge + RPC",  p: "Supabase Auth, Edge Functions (check-access, ip-bypass), tabel whitelist; UI MfaChallenge & IpGate." },
+      { k: "04 · HASIL",          h: "Akses terkunci",     p: "Wajib MFA + IP sah; IP baru via approval. Sisa: email Resend, audit log, IPv6." },
     ],
   },
 
