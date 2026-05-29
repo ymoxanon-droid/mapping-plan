@@ -195,19 +195,39 @@ export async function deletePresentation(id: string): Promise<void> {
 }
 
 /**
+ * Detect MIME type berdasarkan ekstensi file. Browser kadang gak detect
+ * file.type dengan benar untuk .html (jadi text/plain) — kita force.
+ */
+function detectMimeType(filename: string, fallback?: string): string {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) {
+    return "text/html; charset=utf-8";
+  }
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (fallback && fallback.length > 0 && fallback !== "text/plain") {
+    return fallback;
+  }
+  return "application/octet-stream";
+}
+
+/**
  * Upload deck file ke bucket `decks` di folder `presentations/`.
  * Prefix dengan epoch ms supaya unique meskipun nama file sama.
  * Return storage_path (relative ke bucket).
+ *
+ * Force contentType ke text/html untuk .html biar browser render
+ * sebagai HTML (bukan tampilkan source code mentah).
  */
 export async function uploadDeck(file: File, filename: string): Promise<string> {
   const sb = client();
   const clean = filename.trim() || file.name;
   const safe = clean.replace(/[^\w.\-]+/g, "_");
   const path = `${DECK_FOLDER}/${Date.now()}_${safe}`;
+  const contentType = detectMimeType(clean, file.type);
   const { error } = await sb.storage.from(DECK_BUCKET).upload(path, file, {
     cacheControl: "3600",
     upsert: false,
-    contentType: file.type || undefined,
+    contentType,
   });
   if (error) throw new Error(error.message || "Gagal upload deck");
   return path;
