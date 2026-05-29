@@ -243,7 +243,28 @@ export async function uploadDeck(file: File, filename: string): Promise<string> 
   return path;
 }
 
+/**
+ * Public URL untuk deck file.
+ *
+ * Pakai proxy /api/deck karena Supabase Storage public URL kasih:
+ *   - Content-Type: text/plain (browser tampilin source code mentah)
+ *   - Content-Security-Policy: sandbox (block all scripts, Reveal.js gak jalan)
+ *
+ * Proxy /api/deck:
+ *   - Fetch dari Supabase
+ *   - Re-serve dengan Content-Type proper berdasar ekstensi
+ *   - Tanpa CSP sandbox → script bisa jalan
+ */
 export function getDeckPublicUrl(storage_path: string): string {
+  if (!storage_path) return "";
+  return `/api/deck?path=${encodeURIComponent(storage_path)}`;
+}
+
+/**
+ * Direct Supabase URL (kalau perlu, mis. untuk download).
+ * Biasanya pakai getDeckPublicUrl yang lewat proxy.
+ */
+export function getDeckDirectUrl(storage_path: string): string {
   const sb = getSupabase();
   if (!sb) return "";
   return sb.storage.from(DECK_BUCKET).getPublicUrl(storage_path).data.publicUrl;
