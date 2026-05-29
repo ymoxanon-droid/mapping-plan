@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Sistem Presentasi Dashboard Workflow · Week 23</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+
+  <style>
+    :root {
+      --accent: #10b981;
+      --accent-soft: #10b98122;
+      --accent-line: #10b98144;
+      --amber: #f59e0b;
+      --amber-soft: #f59e0b22;
+      --red: #ef4444;
+      --red-soft: #ef444422;
+      --sky: #38bdf8;
+      --sky-soft: #38bdf822;
+      --bg: #0a0c12;
+      --bg-card: #13151d;
+      --bg-card-hover: #181b25;
+      --border: #ffffff14;
+      --border-strong: #ffffff24;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-faint: #64748b;
+    }
+
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
+    body, html, .reveal { background: var(--bg) !important; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
+    .reveal p { line-height: 1.55; margin: 0 0 12px; }
+    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.85em; color: var(--accent); border: 1px solid var(--border); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .reveal a { color: var(--accent); }
+    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
+    .reveal ul li, .reveal ol li { margin: 6px 0; }
+
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
+    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
+    .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
+    .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
+
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-amber  { border-left: 3px solid var(--amber);  }
+    .card-red    { border-left: 3px solid var(--red);    }
+    .card-sky    { border-left: 3px solid var(--sky);    }
+
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+
+    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
+    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
+    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
+    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
+    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
+    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+
+    .layer-stack { display: grid; gap: 10px; }
+    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
+    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .layer .ico svg { width: 18px; height: 18px; stroke-width: 2; }
+    .layer .body { flex: 1; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
+
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .ba-before h4 { color: var(--red); }
+    .ba-after  h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
+    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+
+    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
+    .tl-row { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.1em; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; }
+    .tl-row .fix  { color: var(--text-muted); }
+
+    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+    .title-slide .subtitle { font-size: 1.1em; color: var(--text-muted); margin-bottom: 32px; }
+    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+    .title-slide .meta strong { color: var(--text); font-weight: 700; }
+
+    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
+
+    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 700px; margin-top: 12px; }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ═══════════════ SLIDE 1 · COVER ═══════════════ -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Engineering Report · Week 23 · 2026</div>
+          <h1>Sistem Presentasi<br/>Dashboard Workflow</h1>
+          <p class="subtitle">Migrasi dari deck hardcoded ke arsitektur data-driven dengan upload via UI, listing otomatis per meeting Selasa.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Workflow Dashboard</span>
+            <span><strong>Scope</strong> · Presentation Subsystem</span>
+            <span><strong>Status</strong> · Production Deployed</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ BABAK 01 · KONTEKS ═══════════════ -->
+      <!-- SLIDE 2 -->
+      <section>
+        <div class="section-divider">
+          <div class="num">01</div>
+          <div class="eyebrow">Konteks</div>
+          <h2>Pusat Tracking Lintas Proyek</h2>
+          <p class="desc">Workflow Dashboard (mapping-plan) jadi single source untuk task lintas job. Minggu ini fokus subsistem presentasi: tempat menyimpan & menampilkan slide rekap mingguan.</p>
+        </div>
+      </section>
+
+      <!-- SLIDE 3 -->
+      <section>
+        <div class="eyebrow">Profil Sistem</div>
+        <h2>Skala Saat Ini</h2>
+        <div class="grid grid-4" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Admin</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">1</div>
+            <div class="muted" style="font-size: 0.8em;">super-admin personal use</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Job Aktif</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">4</div>
+            <div class="muted" style="font-size: 0.8em;">Domain Archive, Calender, Mapping Plan, API Report</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Task</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">65+</div>
+            <div class="muted" style="font-size: 0.8em;">aktif lintas job</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Skema</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">3</div>
+            <div class="muted" style="font-size: 0.8em;">jobs / tasks / task_events</div>
+          </div>
+        </div>
+        <div class="takeaway">Sistem sudah punya schema task tracking matang, tapi belum ada layer untuk artefak presentasi mingguan.</div>
+      </section>
+
+      <!-- ═══════════════ BABAK 02 · MASALAH ═══════════════ -->
+      <!-- SLIDE 4 -->
+      <section>
+        <div class="section-divider">
+          <div class="num">02</div>
+          <div class="eyebrow red">Masalah</div>
+          <h2>Deck Hardcoded &amp; Tidak Skalabel</h2>
+          <p class="desc">Tiap deck baru = edit array JS, push, deploy. Dalam seminggu ada 3+ task berbeda — workflow ini gak tahan skala.</p>
+        </div>
+      </section>
+
+      <!-- SLIDE 5 -->
+      <section>
+        <div class="eyebrow red">Empat Pain Point Utama</div>
+        <h2>Apa yang Bikin Workflow Macet</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">Array DECKS Hardcoded</h3>
+            <p class="muted" style="font-size: 0.85em;">Tambah deck = edit JS di <code>public/presentasi/index.html</code>, commit, push, deploy. Tiap kali.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">Tidak Ada Admin UI</h3>
+            <p class="muted" style="font-size: 0.85em;">Tidak ada form CRUD — semua manipulasi data lewat editor kode.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">File HTML Tanpa Storage</h3>
+            <p class="muted" style="font-size: 0.85em;">Tidak ada tempat penyimpanan terstruktur — deck nyangkut di folder lokal & repo terpisah.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">Tidak Relasi ke Job/Task</h3>
+            <p class="muted" style="font-size: 0.85em;">Project list manual, status enum hardcoded, listing tidak bisa di-group otomatis per meeting.</p>
+          </div>
+        </div>
+        <div class="takeaway">Kalau dibiarkan: tiap minggu butuh sentuh kode untuk publikasi rekap — workflow yang hostile untuk operator non-developer.</div>
+      </section>
+
+      <!-- SLIDE 6 -->
+      <section>
+        <div class="eyebrow">Tujuan Proyek</div>
+        <h2>Goal &amp; Constraint</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">Goals</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Data-driven dari Database, bukan array statis</li>
+              <li>Upload deck via UI admin (tanpa edit kode)</li>
+              <li>Auto-group per meeting Selasa, ISO week label</li>
+              <li>Sync dengan jobs/tasks existing</li>
+            </ul>
+          </div>
+          <div class="card card-amber">
+            <h3 style="font-size: 0.95em; color: var(--amber);">Constraints</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Tetap pakai Supabase Free + Vercel Free</li>
+              <li>Stack existing: React + Vite + Supabase</li>
+              <li>Tidak boleh nambah service eksternal berbayar</li>
+              <li>Backward compatible dengan schema jobs/tasks</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Solusi harus murah, ringan, dan plug-in ke arsitektur yang sudah berjalan.</div>
+      </section>
+
+      <!-- ═══════════════ BABAK 03 · PENDEKATAN ═══════════════ -->
+      <!-- SLIDE 7 -->
+      <section>
+        <div class="section-divider">
+          <div class="num">03</div>
+          <div class="eyebrow sky">Pendekatan</div>
+          <h2>Arsitektur 4 Lapisan</h2>
+          <p class="desc">Pisahkan tanggung jawab: Database untuk metadata, Storage untuk file, Lib untuk business logic, Frontend untuk interaksi. Tambah edge proxy untuk render slide.</p>
+        </div>
+      </section>
+
+      <!-- SLIDE 8 -->
+      <section>
+        <div class="eyebrow sky">Arsitektur</div>
+        <h2>Empat Lapisan Sistem</h2>
+        <div class="layer-stack" style="margin-top: 20px;">
+          <div class="layer">
+            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+            </div>
+            <div class="body">
+              <div class="head">Database — Supabase Postgres</div>
+              <div class="desc">Tabel <code>presentations</code> + FK ke jobs/tasks + view <code>v_meetings</code> + CHECK Selasa</div>
+            </div>
+            <span class="pill">2 migrasi</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l2-4h14l2 4M3 7v13a1 1 0 001 1h16a1 1 0 001-1V7M3 7h18M9 11h6"/></svg>
+            </div>
+            <div class="body">
+              <div class="head">Storage — Supabase Bucket <code>decks</code></div>
+              <div class="desc">Public bucket, folder <code>presentations/&lt;timestamp&gt;_&lt;filename&gt;.html</code></div>
+            </div>
+            <span class="pill">Public</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16M6 16l-4-4 4-4M18 8l4 4-4 4"/></svg>
+            </div>
+            <div class="body">
+              <div class="head">Backend Lib — <code>src/lib/presentations.ts</code></div>
+              <div class="desc">11 fungsi: CRUD, listMyJobs, listTasksForJob, uploadDeck, isTuesday</div>
+            </div>
+            <span class="pill">TypeScript</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 20h8M12 18v2"/></svg>
+            </div>
+            <div class="body">
+              <div class="head">Frontend + Edge Proxy</div>
+              <div class="desc"><code>/admin</code> manager + <code>/presentations</code> listing + Vercel Edge <code>/api/deck</code></div>
+            </div>
+            <span class="pill">React + Edge</span>
+          </div>
+        </div>
+        <div class="takeaway">Setiap lapisan punya 1 tanggung jawab — mudah di-debug, mudah di-extend.</div>
+      </section>
+
+      <!-- SLIDE 9 -->
+      <section>
+        <div class="eyebrow sky">User Flow</div>
+        <h2>Dari Upload ke Publikasi</h2>
+        <div class="flow" style="margin-top: 24px;">
+          <div class="flow-node">
+            <div class="title">/admin</div>
+            <div class="sub">Pilih job → tasks auto-load</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="title">Pilih Task</div>
+            <div class="sub">Title + status auto-fill</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="title">Upload .html</div>
+            <div class="sub">Blob wrap → text/html</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node accent">
+            <div class="title">/presentations</div>
+            <div class="sub">Auto grouped per Selasa</div>
+          </div>
+        </div>
+        <div class="grid grid-3" style="margin-top: 24px;">
+          <div class="stat"><div class="num">4</div><div class="lbl">Lapisan Arsitektur</div></div>
+          <div class="stat"><div class="num">2</div><div class="lbl">Halaman UI (admin + public)</div></div>
+          <div class="stat"><div class="num">1</div><div class="lbl">Edge Proxy</div></div>
+        </div>
+      </section>
+
+      <!-- SLIDE 10 -->
+      <section>
+        <div class="eyebrow sky">Skema Inti</div>
+        <h2>Tabel <code>presentations</code> &amp; View <code>v_meetings</code></h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-sky">
+            <h3 style="font-size: 0.9em; color: var(--sky);">Tabel <code>presentations</code></h3>
+            <ul style="font-size: 0.78em;">
+              <li><code>id</code> · uuid pk</li>
+              <li><code>title</code>, <code>description</code>, <code>status</code></li>
+              <li><code>meeting_date</code> · CHECK Selasa</li>
+              <li><code>job_id</code> FK jobs · <code>task_id</code> FK tasks</li>
+              <li><code>source_type</code>: file / external_url</li>
+              <li><code>storage_path</code> atau <code>external_url</code></li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em; color: var(--accent);">View <code>v_meetings</code></h3>
+            <ul style="font-size: 0.78em;">
+              <li><code>meeting_date</code> (Selasa)</li>
+              <li><code>count</code> jumlah deck</li>
+              <li><code>iso_week</code>, <code>year</code>, <code>month</code></li>
+              <li>Auto group by tanggal meeting</li>
+              <li>Sumber listing publik <code>/presentations</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Constraint Selasa di level DB → data tidak mungkin bocor ke hari lain, listing tetap konsisten.</div>
+      </section>
+
+      <!-- ═══════════════ BABAK 04 · IMPLEMENTASI ═══════════════ -->
+      <!-- SLIDE 11 -->
+      <section>
+        <div class="section-divider">
+          <div class="num">04</div>
+          <div class="eyebrow">Implementasi</div>
+          <h2>Eksekusi Per Lapisan</h2>
+          <p class="desc">Dua migrasi SQL, satu lib backend, dua komponen React, dan satu edge function — semuanya idempotent & reversible.</p>
+        </div>
+      </section>
+
+      <!-- SLIDE 12 -->
+      <section>
+        <div class="eyebrow">Database Layer</div>
+        <h2>Dua Migrasi Bertahap</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">005_presentations.sql</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Tabel <code>presentations</code> + index</li>
+              <li>View <code>v_meetings</code> (group by tanggal)</li>
+              <li>RLS + trigger <code>updated_at</code></li>
+              <li>CHECK <code>EXTRACT(DOW FROM meeting_date) = 2</code></li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">006_presentations_link_jobs.sql</h3>
+            <ul style="font-size: 0.78em;">
+              <li>ADD COLUMN <code>job_id</code>, <code>task_id</code> (FK)</li>
+              <li>Drop status <code>Draft</code>, add <code>Pending</code></li>
+              <li>Default status: <code>Proses</code></li>
+              <li>Backfill data legacy</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Iterasi schema kecil-kecil lebih aman dari rewrite besar — tiap migrasi punya rollback jelas.</div>
+      </section>
+
+      <!-- SLIDE 13 -->
+      <section>
+        <div class="eyebrow">Backend Lib</div>
+        <h2>11 Fungsi di <code>presentations.ts</code></h2>
+        <div class="grid grid-3" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Listing</h3>
+            <ul style="font-size: 0.75em;">
+              <li><code>listMeetings()</code></li>
+              <li><code>listPresentationsByMeeting()</code></li>
+              <li><code>listAllPresentations()</code></li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em; color: var(--accent);">CRUD</h3>
+            <ul style="font-size: 0.75em;">
+              <li><code>createPresentation()</code></li>
+              <li><code>updatePresentation()</code></li>
+              <li><code>deletePresentation()</code></li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Source &amp; Util</h3>
+            <ul style="font-size: 0.75em;">
+              <li><code>listMyJobs()</code> · grouped by assignee</li>
+              <li><code>listTasksForJob()</code></li>
+              <li><code>uploadDeck()</code> · Blob wrap</li>
+              <li><code>getDeckPublicUrl()</code> · proxy</li>
+              <li><code>isTuesday()</code> validator</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Semua akses DB dan Storage di-funnel lewat lib ini — komponen UI tetap dumb &amp; predictable.</div>
+      </section>
+
+      <!-- SLIDE 14 -->
+      <section>
+        <div class="eyebrow">Admin UI</div>
+        <h2><code>PresentationManager.tsx</code> di <code>/admin</code></h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Form CRUD Dinamis</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Dropdown <strong>PROJECT</strong> dari <code>jobs</code>, grouped by assignee (optgroup)</li>
+              <li>Dropdown <strong>TITLE</strong> dari tasks: nomor urut + [status] + title</li>
+              <li>Pilih task → title + status auto-fill</li>
+              <li>Toggle Upload File / External URL</li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">UX Polish</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Auto-upload saat submit kalau file dipilih tapi belum di-upload</li>
+              <li>Status mapping: <code>done→Selesai</code>, <code>in_progress→Proses</code>, lainnya <code>→Pending</code></li>
+              <li>Validasi <code>meeting_date</code> harus Selasa di sisi UI</li>
+              <li>Edit / Delete per row inline</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Source of truth dari DB + auto-fill → operator tinggal pilih task, sisanya terisi sendiri.</div>
+      </section>
+
+      <!-- SLIDE 15 -->
+      <section>
+        <div class="eyebrow">Public Page + Edge Proxy</div>
+        <h2><code>/presentations</code> &amp; <code>/api/deck</code></h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">PresentationsPage.tsx</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Header dark theme (indigo + cyan) match hub existing</li>
+              <li>Filter chips per project</li>
+              <li>Loop tiap meeting: heading "Selasa, DD Bulan — Minggu ke-N"</li>
+              <li>Grid card: status pill, title, project, link "Buka presentasi →"</li>
+            </ul>
+          </div>
+          <div class="card card-sky">
+            <h3 style="font-size: 0.9em; color: var(--sky);">api/deck.ts · Edge Runtime</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Fetch dari <code>supabase.co/storage/.../decks/&lt;path&gt;</code></li>
+              <li>Re-serve dengan <code>Content-Type</code> sesuai ekstensi</li>
+              <li>Force <code>text/html</code> untuk .html</li>
+              <li>TIDAK set CSP sandbox → Reveal.js render proper</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Edge proxy adalah jembatan antara storage statis dan HTML interaktif — minimal kode, maksimal kontrol header.</div>
+      </section>
+
+      <!-- ═══════════════ TANTANGAN (lanjutan Babak 04) ═══════════════ -->
+      <!-- SLIDE 16 -->
+      <section>
+        <div class="eyebrow amber">Tantangan #1</div>
+        <h2>Hardcoded vs DB-Driven</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>Sebelum</h4>
+            <ul>
+              <li>Edit array <code>DECKS</code> di JS untuk tiap deck baru</li>
+              <li>Commit → push → deploy untuk publikasi rekap</li>
+              <li>Tidak bisa di-handle non-developer</li>
+              <li>Skala 3+ deck/minggu = bottleneck</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>Sesudah</h4>
+            <ul>
+              <li>Form upload di <code>/admin</code></li>
+              <li>Auto muncul di <code>/presentations</code></li>
+              <li>Tidak butuh sentuh kode</li>
+              <li>Source of truth: DB, bukan repo</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Data-driven UI selalu lebih sustainable daripada hardcoded list — biaya migrasi sekali, benefit selamanya.</div>
+      </section>
+
+      <!-- SLIDE 17 -->
+      <section>
+        <div class="eyebrow amber">Tantangan #2</div>
+        <h2>Content-Type &amp; CSP dari Supabase Storage</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>Sebelum</h4>
+            <ul>
+              <li>File .html dari public URL tampil sebagai source code mentah</li>
+              <li><code>Content-Type: text/plain</code> dipakai default</li>
+              <li>Script Reveal.js diblokir CSP sandbox</li>
+              <li>Slide jadi teks panjang, tidak interaktif</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>Sesudah</h4>
+            <ul>
+              <li>Vercel Edge fetch + re-serve <code>text/html</code></li>
+              <li>Tidak set CSP sandbox</li>
+              <li>Reveal.js render proper, panah & space jalan</li>
+              <li>1 file edge function, 0 dependency tambahan</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Supabase Storage didesain untuk asset statis (PDF/image), bukan HTML interaktif → butuh proxy layer.</div>
+      </section>
+
+      <!-- SLIDE 18 -->
+      <section>
+        <div class="eyebrow amber">Tantangan #3 &amp; Iterasi</div>
+        <h2>Iterative Debugging</h2>
+        <div class="timeline" style="margin-top: 14px;">
+          <div class="tl-row">
+            <div class="num">005</div>
+            <div class="prob">Schema awal: presentations + v_meetings</div>
+            <div class="fix">→ Tambah RLS, trigger updated_at, CHECK Selasa</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">006</div>
+            <div class="prob">Link ke jobs/tasks + status enum tidak match realita</div>
+            <div class="fix">→ ADD FK job_id/task_id, drop Draft, add Pending</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">#3</div>
+            <div class="prob">Browser detect File.type sebagai text/plain</div>
+            <div class="fix">→ Wrap File ke Blob dengan eksplisit <code>text/html; charset=utf-8</code></div>
+          </div>
+          <div class="tl-row">
+            <div class="num">#4</div>
+            <div class="prob">Dropdown PROJECT hardcoded tidak match jobs real</div>
+            <div class="fix">→ Source dari tabel jobs DB, grouped by assignee (optgroup)</div>
+          </div>
+        </div>
+        <div class="takeaway">Setiap iterasi adalah feedback dari user real — bukan asumsi developer.</div>
+      </section>
+
+      <!-- ═══════════════ BABAK 05 · HASIL &amp; REFLEKSI ═══════════════ -->
+      <!-- SLIDE 19 -->
+      <section>
+        <div class="section-divider">
+          <div class="num">05</div>
+          <div class="eyebrow">Hasil</div>
+          <h2>Sistem End-to-End Working</h2>
+          <p class="desc">Dari upload deck via UI sampai render Reveal.js di public — semua otomatis, 0 biaya operasional tambahan.</p>
+        </div>
+      </section>
+
+      <!-- SLIDE 20 -->
+      <section>
+        <div class="eyebrow">Numbers</div>
+        <h2>Capaian Proyek</h2>
+        <div class="grid grid-4" style="margin-top: 32px;">
+          <div class="stat"><div class="num">2</div><div class="lbl">SQL Migration</div></div>
+          <div class="stat"><div class="num">4</div><div class="lbl">File Source Baru</div></div>
+          <div class="stat"><div class="num">11</div><div class="lbl">Fungsi di Lib</div></div>
+          <div class="stat"><div class="num">1</div><div class="lbl">Edge Function</div></div>
+        </div>
+        <div class="grid grid-4" style="margin-top: 28px;">
+          <div class="stat"><div class="num">2</div><div class="lbl">UI Pages (admin + public)</div></div>
+          <div class="stat"><div class="num">4</div><div class="lbl">Tantangan Diselesaikan</div></div>
+          <div class="stat"><div class="num">$0</div><div class="lbl">Biaya Operasional</div></div>
+          <div class="stat"><div class="num">100%</div><div class="lbl">Free Tier (Supabase + Vercel)</div></div>
+        </div>
+        <div class="takeaway">Subsistem presentasi end-to-end working tanpa nambah service eksternal — pure leverage dari stack existing.</div>
+      </section>
+
+      <!-- SLIDE 21 -->
+      <section>
+        <div class="eyebrow">Pembelajaran</div>
+        <h2>Insight Teknis &amp; Operasional</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Storage ≠ Web Host</h3>
+            <p class="muted" style="font-size: 0.78em;">Supabase Storage punya batasan untuk HTML interaktif. Proxy layer di edge function adalah pattern reliable untuk overcome Content-Type & CSP.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Data-Driven Menang</h3>
+            <p class="muted" style="font-size: 0.78em;">Hardcoded list selalu menumpuk technical debt. Investasi 1x untuk schema + UI lebih murah dari maintenance jangka panjang.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Auto-Fill Cegah Drift</h3>
+            <p class="muted" style="font-size: 0.78em;">Auto-mapping task status → presentation status hemat klik & cegah inkonsistensi data entry antar tabel.</p>
+          </div>
+        </div>
+        <div class="takeaway">Tiga insight ini reusable untuk subsistem lain (notifikasi, comments, versioning deck) di iterasi berikutnya.</div>
+      </section>
+
+      <!-- SLIDE 22 -->
+      <section>
+        <div class="eyebrow">Roadmap</div>
+        <h2>Pengembangan Selanjutnya</h2>
+        <div class="grid grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--sky);">Short-term (1-2 minggu)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Sync slide existing dari folder <code>mapping-plan/presentations/</code> ke DB</li>
+              <li>Notifikasi badge "presentasi baru minggu ini" di dashboard</li>
+              <li>Filter status di <code>/presentations</code></li>
+              <li>Search by title</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Mid-term (1-3 bulan)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Export rekap mingguan (compile slide-of-slides)</li>
+              <li>Comments per presentation (review/feedback atasan)</li>
+              <li>Versioning deck (kalau ada update)</li>
+              <li>Stats dashboard: deck per minggu, status distribution</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Pondasi sudah solid — iterasi selanjutnya tinggal tambah layer experience tanpa rombak arsitektur.</div>
+      </section>
+
+      <!-- SLIDE 23 · CLOSING -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Terima Kasih</div>
+          <h1>Pertanyaan?</h1>
+          <p class="subtitle">Sistem presentasi Workflow Dashboard sudah live di production — minggu depan tinggal upload.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Workflow Dashboard</span>
+            <span><strong>Status</strong> · Production Deployed</span>
+            <span><strong>Periode</strong> · 30 Mei - 5 Juni 2026</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      controls: true,
+      progress: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade',
+      center: false,
+      width: 1280,
+      height: 800,
+      margin: 0.04,
+    });
+  </script>
+</body>
+</html>
