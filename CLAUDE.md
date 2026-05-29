@@ -39,42 +39,65 @@ User berbahasa **Indonesia**. Semua komunikasi (chat, commit message, error mess
 
 ---
 
-## 📊 Tugas Rutin: Presentasi Mingguan
+## 📊 Tugas Rutin: Presentasi Per-Task
 
-User secara rutin minta dibuatkan **presentasi mingguan** untuk laporan ke atasan/klien.
+User minta dibuatkan **presentasi terpisah untuk tiap task/kerjaan**, BUKAN 1 presentasi merge multi-task per minggu. Alasan: dalam 1 minggu bisa ada 3+ task berbeda di sesi chat berbeda, dan tiap task butuh laporan sendiri.
 
-> ⚠️ **PENTING**: Slide presentasi disimpan di folder **EKSTERNAL**, BUKAN di repo project ini. Tujuannya: slide tidak ikut ke-push ke repo project (privacy + clean separation).
+**Lokasi slide**: `presentations/` (sub-folder di repo ini)
 
-**Lokasi external folder**: `D:\Users\user07\presentations\` (Windows) atau `~/presentations/` (Linux/macOS)
+> ✅ **mapping-plan adalah repo PRIVATE**, jadi aman menyimpan slide di sini.
+> Repo ini berfungsi sebagai **pusat tracking lintas proyek** — slide presentasi dari semua proyek (Domain Archive, dll) terkumpul di sini.
 
 Struktur:
 ```
-presentations/                         ← Repo Git PRIVATE terpisah
-├── _template.html                     ← Master skeleton (BACA INI sebagai template)
-├── PROMPT-TEMPLATE.md
-├── CARA-PAKAI.md
-└── archive/
-    └── mapping-plan/                  ← OUTPUT slide untuk project ini
-        └── slide-week-NN.html         ← Save output ke sini
+mapping-plan/
+├── (source code workflow dashboard)
+└── presentations/                     ← Sub-folder presentasi
+    ├── _template.html                     ← Master skeleton (BACA INI)
+    ├── PROMPT-TEMPLATE.md
+    ├── CARA-PAKAI.md
+    └── archive/
+        ├── domain-archive/                ← Slide untuk project Domain Archive
+        │   ├── slide-week-22-2fa-ip-whitelist.html
+        │   └── slide-week-NN-<task>.html
+        └── mapping-plan/                  ← Slide untuk project ini
+            └── slide-week-NN-<task>.html  ← Save output ke sini
 ```
 
-**Saat user minta:**
+### Naming convention WAJIB
+
+**Format**: `slide-week-NN-<task-slug>.html`
+
+- `NN` = nomor minggu (2 digit, mis. `22`, `23`)
+- `<task-slug>` = nama task dalam kebab-case (lowercase, dash-separated)
+
+**Contoh:**
+- `slide-week-23-event-sourcing-trigger.html`
+- `slide-week-23-chat-parser-upgrade.html`
+- `slide-week-23-multi-project-tagging.html`
+
+### Saat user minta presentasi
+
+**Trigger phrase:**
 - "bikin presentasi week NN"
-- "bikin recap minggu ini"
-- "buatkan slide mingguan"
+- "bikin recap"
+- "buatkan slide untuk task <X>"
 - "presentasi untuk laporan minggu ini"
 
 **Lakukan IMMEDIATELY:**
 
-1. Baca template dari `D:\Users\user07\presentations\_template.html` (BUKAN dari repo ini)
-2. Kalau user belum kasih info lengkap, **tanya pakai AskUserQuestion** untuk dapat:
-   - Yang dikerjakan minggu ini (3-5 item)
-   - Masalah utama yang diselesaikan
-   - Tantangan teknis (kalau ada)
-   - Hasil konkret (angka)
-   - Rencana minggu depan
-3. Save output ke `D:\Users\user07\presentations\archive\mapping-plan\slide-week-NN.html`
-4. `cd` ke `D:\Users\user07\presentations\` lalu commit + push ke remote repo presentations (BUKAN repo project ini)
+1. **Tanya nama task DULU** (kalau belum disebut user):
+   - "Task apa yang mau dipresentasiin? (Misal: 'event sourcing trigger', 'chat parser', dll)"
+2. Convert ke slug kebab-case untuk file name
+3. Baca template dari `presentations/_template.html`
+4. Tanya pakai AskUserQuestion untuk konteks 5 hal:
+   - Apa task ini & kenapa (context)
+   - Masalah yang diselesaikan task ini
+   - Tantangan teknis specific task ini
+   - Hasil konkret task ini
+   - Next steps untuk task ini
+5. Save output ke `presentations/archive/mapping-plan/slide-week-NN-<task-slug>.html`
+6. Commit + push ke origin
 
 ### Aturan WAJIB struktur presentasi
 

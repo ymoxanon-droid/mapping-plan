@@ -19,25 +19,28 @@ Detail: [`.devcontainer/README.md`](.devcontainer/README.md)
 
 ---
 
-## 📊 Recap Mingguan (presentasi otomatis)
+## 📊 Recap Per-Task (presentasi otomatis)
 
-Bilang ke Claude Code di project ini:
+Repo ini berisi **sub-folder `presentations/`** untuk slide laporan dari **semua proyek**.
+Karena mapping-plan adalah pusat tracking lintas proyek, slide juga terkumpul di sini.
+
+**Bikin slide untuk task tertentu** — bilang ke Claude Code di project mana pun:
 
 ```
-bikin presentasi week NN
+bikin presentasi week 23 untuk task mobile redesign
 ```
 
-Claude auto-load aturan dari [`CLAUDE.md`](CLAUDE.md), pakai template dari
-**repo presentations terpisah** (`D:\Users\user07\presentations\`), generate slide
-dengan struktur 5-babak konsisten (Reveal.js, emerald accent).
+Claude akan:
+1. Tanya nama task kalau belum disebut
+2. Pakai template di [`presentations/_template.html`](presentations/_template.html)
+3. Generate slide dengan struktur 5-babak konsisten (Reveal.js, emerald accent)
+4. Save ke `presentations/archive/<project-name>/slide-week-NN-<task-slug>.html`
 
-> **Penting**: Slide presentasi disimpan di repo **PRIVATE TERPISAH** (`presentations`),
-> bukan di repo ini. Source code project bersih dari konten slide pribadi.
+**Naming**: `slide-week-NN-<task-slug>.html` — 1 file per task (1 minggu bisa banyak slide).
 
-**Setup awal repo presentations** (sekali aja):
-```bash
-git clone https://github.com/ymoxanon-droid/presentations.git
-```
+Detail: [`presentations/README.md`](presentations/README.md) dan [`presentations/CARA-PAKAI.md`](presentations/CARA-PAKAI.md).
+
+> Repo ini **PRIVATE**, jadi slide aman disimpan di sini.
 
 ---
 
