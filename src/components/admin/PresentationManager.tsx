@@ -162,13 +162,32 @@ export default function PresentationManager() {
     }
 
     const usingUpload = form.sourceMode === "upload";
-    const storagePath = usingUpload ? form.storage_path : null;
+    let storagePath = usingUpload ? form.storage_path : null;
     const externUrl = usingUpload ? null : externalUrl || null;
 
+    // Auto-upload: kalau user pilih file tapi belum klik tombol Upload,
+    // otomatis upload sekarang sebelum submit. Hilangkan UX trap "klik
+    // Upload dulu baru submit".
+    if (usingUpload && !storagePath && file) {
+      setBusy(true);
+      setUploading(true);
+      try {
+        storagePath = await uploadDeck(file, file.name);
+        setForm((f) => ({ ...f, storage_path: storagePath }));
+      } catch (e) {
+        setBusy(false);
+        setUploading(false);
+        return setErr(`Gagal upload file: ${(e as Error).message}`);
+      } finally {
+        setUploading(false);
+      }
+    }
+
     if (!storagePath && !externUrl) {
+      setBusy(false);
       return setErr(
         usingUpload
-          ? "Upload file deck dulu, atau switch ke External URL."
+          ? "Pilih file .html dulu (klik Choose File), atau switch ke External URL."
           : "Isi External URL dulu, atau switch ke Upload File."
       );
     }
@@ -476,12 +495,16 @@ export default function PresentationManager() {
                       className="ml-auto text-muted hover:text-late shrink-0"
                       title="Hapus deck tersimpan"
                     >
-                      <X size={12} />
+                      <X size={14} />
                     </button>
+                  </div>
+                ) : file ? (
+                  <div className="text-[11px] text-accent italic">
+                    ✓ File siap. Tinggal klik "Tambah Presentasi" — auto-upload otomatis. (Atau klik tombol "Upload" di atas kalau mau upload duluan.)
                   </div>
                 ) : (
                   <div className="text-[11px] text-muted italic">
-                    Belum ada file terupload. Pilih file .html lalu klik Upload.
+                    Pilih file .html dulu. Setelah pilih, langsung klik "Tambah Presentasi" (auto-upload), atau klik tombol Upload di atas.
                   </div>
                 )}
               </div>
