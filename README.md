@@ -27,12 +27,17 @@ Bilang ke Claude Code di project ini:
 bikin presentasi week NN
 ```
 
-Claude auto-load aturan dari [`CLAUDE.md`](CLAUDE.md), pakai template
-[`presentation/_template.html`](presentation/_template.html) sebagai skeleton,
-tanya info via question prompt, generate `presentation/slide-week-NN.html`
+Claude auto-load aturan dari [`CLAUDE.md`](CLAUDE.md), pakai template dari
+**repo presentations terpisah** (`D:\Users\user07\presentations\`), generate slide
 dengan struktur 5-babak konsisten (Reveal.js, emerald accent).
 
-Detail: [`presentation/CARA-PAKAI.md`](presentation/CARA-PAKAI.md)
+> **Penting**: Slide presentasi disimpan di repo **PRIVATE TERPISAH** (`presentations`),
+> bukan di repo ini. Source code project bersih dari konten slide pribadi.
+
+**Setup awal repo presentations** (sekali aja):
+```bash
+git clone https://github.com/ymoxanon-droid/presentations.git
+```
 
 ---
 

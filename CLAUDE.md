@@ -43,23 +43,38 @@ User berbahasa **Indonesia**. Semua komunikasi (chat, commit message, error mess
 
 User secara rutin minta dibuatkan **presentasi mingguan** untuk laporan ke atasan/klien.
 
+> ⚠️ **PENTING**: Slide presentasi disimpan di folder **EKSTERNAL**, BUKAN di repo project ini. Tujuannya: slide tidak ikut ke-push ke repo project (privacy + clean separation).
+
+**Lokasi external folder**: `D:\Users\user07\presentations\` (Windows) atau `~/presentations/` (Linux/macOS)
+
+Struktur:
+```
+presentations/                         ← Repo Git PRIVATE terpisah
+├── _template.html                     ← Master skeleton (BACA INI sebagai template)
+├── PROMPT-TEMPLATE.md
+├── CARA-PAKAI.md
+└── archive/
+    └── mapping-plan/                  ← OUTPUT slide untuk project ini
+        └── slide-week-NN.html         ← Save output ke sini
+```
+
 **Saat user minta:**
 - "bikin presentasi week NN"
 - "bikin recap minggu ini"
 - "buatkan slide mingguan"
 - "presentasi untuk laporan minggu ini"
 
-**Lakukan IMMEDIATELY tanpa tanya struktur lagi:**
+**Lakukan IMMEDIATELY:**
 
-1. Baca `presentation/_template.html` sebagai SKELETON (jangan bikin dari nol)
+1. Baca template dari `D:\Users\user07\presentations\_template.html` (BUKAN dari repo ini)
 2. Kalau user belum kasih info lengkap, **tanya pakai AskUserQuestion** untuk dapat:
    - Yang dikerjakan minggu ini (3-5 item)
    - Masalah utama yang diselesaikan
    - Tantangan teknis (kalau ada)
    - Hasil konkret (angka)
    - Rencana minggu depan
-3. Save sebagai `presentation/slide-week-NN.html` (NN = nomor minggu)
-4. Commit + push ke origin
+3. Save output ke `D:\Users\user07\presentations\archive\mapping-plan\slide-week-NN.html`
+4. `cd` ke `D:\Users\user07\presentations\` lalu commit + push ke remote repo presentations (BUKAN repo project ini)
 
 ### Aturan WAJIB struktur presentasi
 
