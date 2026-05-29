@@ -26,7 +26,7 @@ const STATUS_PILL: Record<PresentationStatus | "default", string> = {
     "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-400/30",
   Proses:
     "bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-400/30",
-  Draft: "bg-slate-500/15 text-slate-300 ring-1 ring-inset ring-slate-400/30",
+  Pending: "bg-slate-500/15 text-slate-300 ring-1 ring-inset ring-slate-400/30",
   default:
     "bg-slate-500/15 text-slate-300 ring-1 ring-inset ring-slate-400/30",
 };

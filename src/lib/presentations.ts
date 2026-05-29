@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 
-export type PresentationStatus = "Selesai" | "Proses" | "Draft";
+export type PresentationStatus = "Selesai" | "Proses" | "Pending";
 
 export interface Presentation {
   id: string;
@@ -12,6 +12,8 @@ export interface Presentation {
   storage_path: string | null;
   external_url: string | null;
   description: string | null;
+  job_id: string | null;
+  task_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,10 +35,26 @@ export interface NewPresentation {
   storage_path?: string | null;
   external_url?: string | null;
   description?: string | null;
+  job_id?: string | null;
+  task_id?: string | null;
+}
+
+/** Job dari DB — untuk dropdown project di form presentasi */
+export interface JobOption {
+  id: string;
+  name: string;
+  assignee: string;
+}
+
+/** Task dari DB — untuk picker title di form presentasi */
+export interface TaskOption {
+  id: string;
+  title: string;
+  status: string;
 }
 
 const SELECT_COLS =
-  "id,title,project,meeting_date,topic_order,status,storage_path,external_url,description,created_at,updated_at";
+  "id,title,project,meeting_date,topic_order,status,storage_path,external_url,description,job_id,task_id,created_at,updated_at";
 
 const DECK_BUCKET = "decks";
 const DECK_FOLDER = "presentations";
@@ -114,6 +132,8 @@ export async function createPresentation(
   if (input.storage_path !== undefined) payload.storage_path = input.storage_path;
   if (input.external_url !== undefined) payload.external_url = input.external_url;
   if (input.description !== undefined) payload.description = input.description;
+  if (input.job_id !== undefined) payload.job_id = input.job_id;
+  if (input.task_id !== undefined) payload.task_id = input.task_id;
 
   const sb = client();
   const { data, error } = await sb
@@ -150,6 +170,8 @@ export async function updatePresentation(
   if (patch.storage_path !== undefined) update.storage_path = patch.storage_path;
   if (patch.external_url !== undefined) update.external_url = patch.external_url;
   if (patch.description !== undefined) update.description = patch.description;
+  if (patch.job_id !== undefined) update.job_id = patch.job_id;
+  if (patch.task_id !== undefined) update.task_id = patch.task_id;
 
   if (Object.keys(update).length === 0) {
     throw new Error("Tidak ada perubahan.");
@@ -199,4 +221,42 @@ export function getDeckPublicUrl(storage_path: string): string {
 
 export function isTuesday(date: string): boolean {
   return new Date(date).getDay() === 2;
+}
+
+/**
+ * Ambil semua jobs (untuk dropdown PROJECT di form presentasi).
+ * Sort by assignee, then name.
+ * Filter optional ke assignee tertentu (default: semua).
+ */
+export async function listMyJobs(assignee?: string): Promise<JobOption[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+  let q = sb
+    .from("jobs")
+    .select("id,name,assignee")
+    .order("assignee", { ascending: true })
+    .order("name", { ascending: true });
+  if (assignee && assignee.trim()) {
+    q = q.ilike("assignee", assignee.trim());
+  }
+  const { data, error } = await q;
+  if (error) mapError(error, "Gagal mengambil daftar job");
+  return (data ?? []) as JobOption[];
+}
+
+/**
+ * Ambil tasks dari job tertentu (untuk picker TITLE di form presentasi).
+ * Sort by order_num. Exclude soft-deleted (deleted_at IS NULL).
+ */
+export async function listTasksForJob(job_id: string): Promise<TaskOption[]> {
+  const sb = getSupabase();
+  if (!sb || !job_id) return [];
+  const { data, error } = await sb
+    .from("tasks")
+    .select("id,title,status")
+    .eq("job_id", job_id)
+    .is("deleted_at", null)
+    .order("order_num", { ascending: true });
+  if (error) mapError(error, "Gagal mengambil daftar task");
+  return (data ?? []) as TaskOption[];
 }

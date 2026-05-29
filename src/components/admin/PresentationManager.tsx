@@ -7,8 +7,12 @@ import {
   uploadDeck,
   isTuesday,
   getDeckPublicUrl,
+  listMyJobs,
+  listTasksForJob,
   type Presentation,
   type PresentationStatus,
+  type JobOption,
+  type TaskOption,
 } from "@/lib/presentations";
 import {
   Check,
@@ -26,20 +30,15 @@ import {
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 
-const PROJECT_OPTIONS = [
-  "Domain Archive",
-  "Workflow Dashboard",
-  "SEO",
-  "Other",
-] as const;
-
-const STATUS_OPTIONS: PresentationStatus[] = ["Selesai", "Proses", "Draft"];
+const STATUS_OPTIONS: PresentationStatus[] = ["Proses", "Pending", "Selesai"];
 
 type SourceMode = "upload" | "url";
 
 interface FormState {
   title: string;
   project: string;
+  job_id: string | null;
+  task_id: string | null;
   meeting_date: string;
   status: PresentationStatus;
   sourceMode: SourceMode;
@@ -50,9 +49,11 @@ interface FormState {
 
 const EMPTY_FORM: FormState = {
   title: "",
-  project: PROJECT_OPTIONS[0],
+  project: "",
+  job_id: null,
+  task_id: null,
   meeting_date: "",
-  status: "Draft",
+  status: "Proses",
   sourceMode: "upload",
   storage_path: null,
   external_url: "",
@@ -65,7 +66,7 @@ function statusChip(status: PresentationStatus) {
       return "bg-ok/15 text-ok";
     case "Proses":
       return "bg-warn/15 text-warn";
-    case "Draft":
+    case "Pending":
     default:
       return "bg-ink-700 text-muted";
   }
@@ -78,6 +79,10 @@ export default function PresentationManager() {
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+
+  // Jobs & tasks dropdown source (dari DB asli)
+  const [jobs, setJobs] = useState<JobOption[]>([]);
+  const [tasks, setTasks] = useState<TaskOption[]>([]);
 
   // file upload state
   const [file, setFile] = useState<File | null>(null);
@@ -99,6 +104,38 @@ export default function PresentationManager() {
     }
   }, []);
 
+  // Load jobs sekali on mount (semua jobs — admin god mode)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await listMyJobs();
+        if (!cancelled) setJobs(list);
+      } catch {
+        if (!cancelled) setJobs([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Load tasks setiap kali job_id berubah
+  useEffect(() => {
+    if (!form.job_id) {
+      setTasks([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await listTasksForJob(form.job_id!);
+        if (!cancelled) setTasks(list);
+      } catch {
+        if (!cancelled) setTasks([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [form.job_id]);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -114,6 +151,8 @@ export default function PresentationManager() {
     setForm({
       title: p.title,
       project: p.project,
+      job_id: p.job_id,
+      task_id: p.task_id,
       meeting_date: p.meeting_date,
       status: p.status,
       sourceMode: p.storage_path ? "upload" : "url",
@@ -198,6 +237,8 @@ export default function PresentationManager() {
         await updatePresentation(editingId, {
           title,
           project,
+          job_id: form.job_id,
+          task_id: form.task_id,
           meeting_date,
           status: form.status,
           storage_path: storagePath,
@@ -209,6 +250,8 @@ export default function PresentationManager() {
         await createPresentation({
           title,
           project,
+          job_id: form.job_id,
+          task_id: form.task_id,
           meeting_date,
           status: form.status,
           storage_path: storagePath,
@@ -326,39 +369,106 @@ export default function PresentationManager() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* PROJECT — dropdown dari tabel jobs, group by assignee */}
             <label className="block">
               <span className="block text-[11px] uppercase tracking-widest text-muted mb-1">
-                Judul
-              </span>
-              <input
-                value={form.title}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, title: e.target.value }))
-                }
-                required
-                placeholder="Contoh: Strategi domain Q3"
-                className="input w-full"
-              />
-            </label>
-
-            <label className="block">
-              <span className="block text-[11px] uppercase tracking-widest text-muted mb-1">
-                Project
+                Project (Job)
               </span>
               <select
-                value={form.project}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, project: e.target.value }))
-                }
+                value={form.job_id ?? ""}
+                onChange={(e) => {
+                  const jobId = e.target.value || null;
+                  const job = jobs.find((j) => j.id === jobId) ?? null;
+                  setForm((f) => ({
+                    ...f,
+                    job_id: jobId,
+                    project: job?.name ?? "",
+                    task_id: null,           // reset task pas ganti job
+                  }));
+                }}
                 required
                 className="input w-full"
               >
-                {PROJECT_OPTIONS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
+                <option value="">— pilih job —</option>
+                {(() => {
+                  // Group by assignee
+                  const grouped: Record<string, typeof jobs> = {};
+                  for (const j of jobs) {
+                    (grouped[j.assignee] ??= []).push(j);
+                  }
+                  return Object.entries(grouped).map(([assignee, list]) => (
+                    <optgroup key={assignee} label={assignee}>
+                      {list.map((j) => (
+                        <option key={j.id} value={j.id}>
+                          {j.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ));
+                })()}
               </select>
+              {jobs.length === 0 && (
+                <span className="text-[10px] text-late italic mt-1 block">
+                  Belum ada job. Tambah di /admin (Members &amp; Jobs).
+                </span>
+              )}
+            </label>
+
+            {/* JUDUL — pilih dari tasks job tsb, atau ketik manual */}
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-widest text-muted mb-1">
+                Judul (pilih task atau ketik bebas)
+              </span>
+              {tasks.length > 0 ? (
+                <select
+                  value={form.task_id ?? ""}
+                  onChange={(e) => {
+                    const taskId = e.target.value || null;
+                    if (taskId === "__custom__") {
+                      // Mode custom: kosongkan task_id, biar user ketik di field bawah
+                      setForm((f) => ({ ...f, task_id: null, title: "" }));
+                      return;
+                    }
+                    const t = tasks.find((x) => x.id === taskId);
+                    setForm((f) => ({
+                      ...f,
+                      task_id: taskId,
+                      title: t?.title ?? f.title,
+                    }));
+                  }}
+                  className="input w-full"
+                >
+                  <option value="">— pilih task —</option>
+                  <option value="__custom__">✎ Judul bebas (ketik manual)</option>
+                  {tasks.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      [{t.status}] {t.title}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, title: e.target.value }))
+                  }
+                  required
+                  placeholder={form.job_id ? "Job ini belum punya task — ketik judul bebas" : "Pilih job dulu"}
+                  disabled={!form.job_id}
+                  className="input w-full"
+                />
+              )}
+              {tasks.length > 0 && !form.task_id && (
+                <input
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, title: e.target.value }))
+                  }
+                  required
+                  placeholder="Ketik judul bebas..."
+                  className="input w-full mt-2"
+                />
+              )}
             </label>
 
             <label className="block">
