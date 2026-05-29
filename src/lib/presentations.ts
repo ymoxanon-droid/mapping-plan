@@ -217,6 +217,10 @@ function detectMimeType(filename: string, fallback?: string): string {
  *
  * Force contentType ke text/html untuk .html biar browser render
  * sebagai HTML (bukan tampilkan source code mentah).
+ *
+ * IMPORTANT: Wrap dalam Blob dengan explicit MIME type karena Supabase
+ * Storage kadang override contentType option pakai File.type yang
+ * di-detect browser (yang seringnya salah untuk .html di Windows).
  */
 export async function uploadDeck(file: File, filename: string): Promise<string> {
   const sb = client();
@@ -224,7 +228,13 @@ export async function uploadDeck(file: File, filename: string): Promise<string> 
   const safe = clean.replace(/[^\w.\-]+/g, "_");
   const path = `${DECK_FOLDER}/${Date.now()}_${safe}`;
   const contentType = detectMimeType(clean, file.type);
-  const { error } = await sb.storage.from(DECK_BUCKET).upload(path, file, {
+
+  // Wrap file dalam Blob baru dengan explicit MIME type
+  // (bukan File yang type-nya bisa salah dari browser)
+  const buffer = await file.arrayBuffer();
+  const blob = new Blob([buffer], { type: contentType });
+
+  const { error } = await sb.storage.from(DECK_BUCKET).upload(path, blob, {
     cacheControl: "3600",
     upsert: false,
     contentType,
