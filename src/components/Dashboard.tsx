@@ -127,16 +127,14 @@ export default function Dashboard({ snapshots }: { snapshots: JobSnapshot[] }) {
         </div>
         <div className="flex items-center gap-3">
           <ViewSwitcher view={view} onChange={setView} />
-          <a
-            href="/presentasi/"
-            target="_blank"
-            rel="noopener"
+          <Link
+            to="/presentations"
             className="btn text-xs"
             title="Buka pusat presentasi"
           >
             <Presentation size={14} />
             <span className="hidden md:inline">Presentasi</span>
-          </a>
+          </Link>
           <Link to="/input" className="btn text-xs" title="Input Data (anggota)">
             <Pencil size={14} />
             <span className="hidden md:inline">Input Data</span>

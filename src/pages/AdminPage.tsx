@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminGate from "@/components/admin/AdminGate";
 import MemberManager from "@/components/admin/MemberManager";
+import PresentationManager from "@/components/admin/PresentationManager";
 import { getAllSnapshots } from "@/lib/snapshots";
 import { isSupabaseReady } from "@/lib/supabase";
 import type { JobSnapshot } from "@/lib/types";
@@ -38,6 +39,7 @@ export default function AdminPage() {
   return (
     <AdminGate>
       <MemberManager snapshots={snapshots} />
+      <PresentationManager />
     </AdminGate>
   );
 }
