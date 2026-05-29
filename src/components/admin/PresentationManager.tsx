@@ -430,19 +430,28 @@ export default function PresentationManager() {
                       return;
                     }
                     const t = tasks.find((x) => x.id === taskId);
+                    // Auto-mapping status task → status presentation
+                    // done → Selesai, in_progress → Proses, lainnya → Pending
+                    const autoStatus: PresentationStatus =
+                      t?.status === "done"
+                        ? "Selesai"
+                        : t?.status === "in_progress"
+                        ? "Proses"
+                        : "Pending";
                     setForm((f) => ({
                       ...f,
                       task_id: taskId,
                       title: t?.title ?? f.title,
+                      status: t ? autoStatus : f.status,
                     }));
                   }}
                   className="input w-full"
                 >
                   <option value="">— pilih task —</option>
                   <option value="__custom__">✎ Judul bebas (ketik manual)</option>
-                  {tasks.map((t) => (
+                  {tasks.map((t, i) => (
                     <option key={t.id} value={t.id}>
-                      [{t.status}] {t.title}
+                      {i + 1}. [{t.status}] {t.title}
                     </option>
                   ))}
                 </select>
