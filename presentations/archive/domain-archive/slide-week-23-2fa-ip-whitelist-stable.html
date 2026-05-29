@@ -395,6 +395,72 @@
         <div class="takeaway">Friction conditional jauh lebih palatable daripada friction selalu. Itu kunci adopsi.</div>
       </section>
 
+      <!-- 12 · User flow 2 skenario login -->
+      <section>
+        <div class="eyebrow sky">User Flow</div>
+        <h2>2 Skenario Login.</h2>
+
+        <!-- Happy path -->
+        <div style="margin-top: 28px;">
+          <div class="flow">
+            <div class="flow-node accent">
+              <div class="title">Login</div>
+              <div class="sub">Password</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node accent">
+              <div class="title">Cek IP</div>
+              <div class="sub">Server-side</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node accent">
+              <div class="title">Dashboard</div>
+              <div class="sub">IP whitelist ✓</div>
+            </div>
+          </div>
+          <div style="text-align: center; color: var(--text-muted); font-size: 0.85em; margin-top: 10px;">
+            Happy path: IP whitelist → no OTP, langsung masuk
+          </div>
+        </div>
+
+        <!-- Recovery path -->
+        <div style="margin-top: 26px;">
+          <div class="flow">
+            <div class="flow-node">
+              <div class="title">Login</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">
+              <div class="title">Cek IP</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="border-color: #ef444466; background: linear-gradient(180deg, var(--red-soft) 0%, var(--bg-card) 100%);">
+              <div class="title" style="color: var(--red);">IP Blocked</div>
+              <div class="sub">IpGate</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="border-color: #f59e0b66; background: linear-gradient(180deg, var(--amber-soft) 0%, var(--bg-card) 100%);">
+              <div class="title" style="color: var(--amber);">Input OTP</div>
+              <div class="sub">dari roket</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="border-color: #f59e0b66; background: linear-gradient(180deg, var(--amber-soft) 0%, var(--bg-card) 100%);">
+              <div class="title" style="color: var(--amber);">Pending</div>
+              <div class="sub">approval</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node accent">
+              <div class="title">Approved</div>
+            </div>
+          </div>
+          <div style="text-align: center; color: var(--text-muted); font-size: 0.85em; margin-top: 10px;">
+            Recovery path: IP baru → OTP → admin approve → dashboard
+          </div>
+        </div>
+
+        <div class="takeaway">2 path, 1 gerbang IP. Daily use cuma 1 klik, akses dari device baru tetap bisa dengan audit trail lengkap.</div>
+      </section>
+
       <!-- ═══════════════ SECTION 4 — IMPLEMENTASI ═══════════════ -->
       <section>
         <div class="section-divider">
