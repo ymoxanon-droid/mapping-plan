@@ -138,6 +138,26 @@ mapping-plan/
 - Minimal 1 visual elemen (card / diagram / stat / before-after)
 - `.takeaway` box hijau ★ di bawah konten (1 kalimat takeaway)
 
+### 📊 Katalog visual pattern (fleksibel lintas tema job)
+
+Pakai pattern berikut kalau aplikabel ke topik minggu itu. **JANGAN drop pas iterasi/re-generate** — kalau iterasi sebelumnya pakai pattern ini & masih relevan, pertahankan atau improve.
+
+| Pattern | Class CSS | Cocok untuk |
+|---|---|---|
+| **User flow horizontal** | `.flow` + `.flow-node` + `.flow-arrow` | Login flow, approval flow, data flow, payment flow, onboarding — APAPUN step sequence. Pakai baris ganda untuk happy path vs alternative path |
+| **Before/After card** | grid 2-4 kolom + accent vs neutral | Slide Value di babak 05 — show perubahan konkret |
+| **N-lapis / N-pilar card** | grid horizontal | Arsitektur layered, defense in depth, N komponen sejajar |
+| **Timeline iterasi** | vertikal atau horizontal | Show evolution week-by-week atau version-by-version |
+| **Diagram arsitektur boxed** | boxes + lines + accent connector | Component relationship & data flow antar layer |
+| **Stats grid** | 2x2 atau 4x1 | Numeric results di babak 05 (count, %, biaya, durasi) |
+
+### 🔄 Re-generate / Iterasi Protocol
+
+Kalau bikin slide untuk topik yang **SUDAH PERNAH ada slide-nya** (mis. iterasi minggu berikutnya untuk task sama):
+1. **BACA slide lama dulu** — identifikasi visual element yang work
+2. **JANGAN drop di versi baru** — pertahankan flow diagram, before-after, dll yang masih relevan
+3. **Improve** kalau ada gap, jangan mulai dari nol
+
 ### JANGAN DILAKUKAN
 
 ❌ Bikin presentasi dari nol — wajib pakai `_template.html` sebagai skeleton
