@@ -90,12 +90,20 @@ mapping-plan/
    - "Task apa yang mau dipresentasiin? (Misal: 'event sourcing trigger', 'chat parser', dll)"
 2. Convert ke slug kebab-case untuk file name
 3. Baca template dari `presentations/_template.html`
-4. Tanya pakai AskUserQuestion untuk konteks 5 hal:
-   - Apa task ini & kenapa (context)
-   - Masalah yang diselesaikan task ini
-   - Tantangan teknis specific task ini
-   - Hasil konkret task ini
-   - Next steps untuk task ini
+4. Tanya pakai AskUserQuestion untuk konteks **8 hal** (4 narrative + 4 teknis) — supaya slide bisa cerita ke audience awam, bukan cuma dokumentasi teknis. Boleh tanya bertahap (mis. 4 narrative dulu, lalu 4 teknis):
+
+   **Narrative (untuk audience awam — atasan, klien, kolega):**
+   - **Origin** — Cerita asal-usul: kenapa kepikiran bikin ini? Kejadian/masalah apa yang mendorong?
+   - **Audience** — Untuk siapa terutama: atasan? klien? tim/kolega? diri sendiri (arsip/portofolio)?
+   - **Vision** — Tujuan jangka panjang: mau jadi apa sistem ini?
+   - **Value** — Apa yang berubah untuk user (before vs after) — pakai bahasa awam, bukan teknis
+
+   **Teknis (untuk dokumentasi engineering):**
+   - **Problem** — Masalah konkret yang diselesaikan (boleh teknis)
+   - **Approach** — Pendekatan/strategi besar solusi
+   - **Result** — Hasil konkret (stats, fitur, file source, biaya)
+   - **Next steps** — Pelajaran + roadmap
+
 5. Save output ke `presentations/archive/mapping-plan/slide-week-NN-<task-slug>.html`
 6. Commit + push ke origin
 
@@ -103,16 +111,18 @@ mapping-plan/
 
 **Struktur 5-babak (urutan TIDAK boleh diubah):**
 
-| Babak | Slide | Konten |
-|---|---|---|
-| 01 · Konteks | 2-3 | Latar belakang, profil sistem |
-| 02 · Masalah | 4-6 | Risiko, Goals & Constraints |
-| 03 · Pendekatan | 7-10 | Arsitektur, komponen |
-| 04 · Implementasi | 11-15 | Detail teknis per layer |
-| (04 · Tantangan) | 16-18 | Before/After, timeline iterasi |
-| 05 · Hasil & Refleksi | 19-22 | Stats, lessons, roadmap, closing |
+| Babak | Slide | Konten | Sumber konteks |
+|---|---|---|---|
+| 01 · Konteks | 2-4 | Cerita asal-usul, audience, tujuan jangka panjang, profil sistem | **Origin + Audience + Vision** |
+| 02 · Masalah | 5-7 | Pain point konkret (bahasa awam), risiko, goals & constraints | **Problem** |
+| 03 · Pendekatan | 8-10 | Strategi besar, arsitektur, komponen | **Approach** |
+| 04 · Implementasi | 11-15 | Detail teknis per layer | **Approach detail** |
+| (04 · Tantangan) | 16-18 | Before/After, timeline iterasi | **Approach detail** |
+| 05 · Hasil & Refleksi | 19-22 | Stats, **value untuk user (before vs after)**, lessons, roadmap, closing | **Value + Result + Next steps** |
 
 **Total: ~22 slide (range 18-25).**
+
+> 💡 **Slide pertama Babak 01 WAJIB** kasih konteks origin story + audience dalam 1-2 slide — bukan langsung profil sistem. Tujuannya: orang awam yang baca pertama kali langsung paham "kenapa ini ada & untuk siapa".
 
 ### Aturan WAJIB design system
 
