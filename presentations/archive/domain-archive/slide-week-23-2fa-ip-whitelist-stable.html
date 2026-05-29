@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Security Hardening Stable · 2FA + IP Whitelist · Week 23</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --accent: #10b981;
+      --accent-soft: #10b98122;
+      --accent-line: #10b98144;
+      --amber: #f59e0b;
+      --amber-soft: #f59e0b22;
+      --red: #ef4444;
+      --red-soft: #ef444422;
+      --sky: #38bdf8;
+      --sky-soft: #38bdf822;
+      --bg: #0a0c12;
+      --bg-card: #13151d;
+      --bg-card-hover: #181b25;
+      --border: #ffffff14;
+      --border-strong: #ffffff24;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-faint: #64748b;
+    }
+
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
+    body, html, .reveal { background: var(--bg) !important; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
+    .reveal p { line-height: 1.55; margin: 0 0 12px; }
+    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.85em; color: var(--accent); border: 1px solid var(--border); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .reveal a { color: var(--accent); }
+    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
+    .reveal ul li, .reveal ol li { margin: 6px 0; }
+
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
+    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
+    .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
+    .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
+
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-amber  { border-left: 3px solid var(--amber);  }
+    .card-red    { border-left: 3px solid var(--red);    }
+    .card-sky    { border-left: 3px solid var(--sky);    }
+
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+    .pill.accent { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+
+    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
+    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
+    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
+    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
+    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
+    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+
+    .layer-stack { display: grid; gap: 10px; }
+    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
+    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: 0.9em; }
+    .layer .body { flex: 1; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
+
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .ba-before h4 { color: var(--red); }
+    .ba-after  h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
+    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+
+    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
+    .tl-row { display: grid; grid-template-columns: 90px 1fr 1.2fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.9em; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; }
+    .tl-row .fix  { color: var(--text-muted); }
+
+    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+    .title-slide .subtitle { font-size: 1.05em; color: var(--text-muted); margin-bottom: 32px; max-width: 900px; }
+    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; flex-wrap: wrap; }
+    .title-slide .meta strong { color: var(--text); font-weight: 700; }
+
+    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
+
+    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 760px; margin-top: 12px; }
+
+    .origin-quote { padding: 22px 26px; border-left: 3px solid var(--accent); background: linear-gradient(90deg, var(--accent-soft) 0%, transparent 80%); border-radius: 0 14px 14px 0; font-size: 1.15em; line-height: 1.5; color: #f3f4f6; margin: 20px 0; max-width: 920px; }
+    .origin-quote .mark { color: var(--accent); font-weight: 800; font-size: 1.2em; line-height: 0; }
+
+    .audience-card { padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .audience-card .role { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 6px; }
+    .audience-card .need { color: var(--text-muted); font-size: 0.82em; line-height: 1.5; }
+    .audience-card .badge { display: inline-block; font-size: 0.65em; padding: 2px 8px; border-radius: 999px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+    .audience-card .badge.a1 { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); }
+    .audience-card .badge.a2 { background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844; }
+    .audience-card .badge.a3 { background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44; }
+
+    .vision-block { padding: 24px 28px; background: linear-gradient(135deg, var(--accent-soft) 0%, transparent 70%); border: 1px solid var(--accent-line); border-radius: 16px; margin-top: 20px; }
+    .vision-block .lbl { font-size: 0.7em; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
+    .vision-block .stmt { font-size: 1.5em; line-height: 1.25; font-weight: 700; color: #fff; }
+    .vision-block .stmt em { color: var(--accent); font-style: normal; }
+
+    .value-card { padding: 18px 20px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg-card); display: grid; gap: 8px; }
+    .value-card .label { font-size: 0.7em; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); font-weight: 800; }
+    .value-card .row { display: grid; grid-template-columns: 56px 1fr; align-items: start; gap: 10px; font-size: 0.84em; line-height: 1.4; }
+    .value-card .row .k { font-size: 0.72em; letter-spacing: 0.12em; text-transform: uppercase; padding-top: 2px; }
+    .value-card .row.before .k { color: var(--red); }
+    .value-card .row.after  .k { color: var(--accent); }
+    .value-card .row.before .v { color: var(--text-muted); text-decoration: line-through; text-decoration-color: #ef444466; }
+    .value-card .row.after  .v { color: #f3f4f6; font-weight: 600; }
+    .value-card hr { border: 0; border-top: 1px dashed var(--border-strong); margin: 4px 0; }
+
+    .smart-diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+    .smart-col { padding: 18px 20px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg-card); }
+    .smart-col h4 { font-size: 0.8em; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; }
+    .smart-col.ok h4   { color: var(--accent); }
+    .smart-col.gate h4 { color: var(--amber); }
+    .smart-col .step { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #00000033; border-radius: 8px; margin-bottom: 6px; font-size: 0.78em; }
+    .smart-col .step .ic { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--text-faint); width: 22px; flex-shrink: 0; }
+    .smart-col .step.pass .ic { color: var(--accent); }
+    .smart-col .step.warn .ic { color: var(--amber); }
+    .smart-col .step.block .ic { color: var(--red); }
+    .smart-col .out { margin-top: 10px; padding: 10px 12px; border-radius: 8px; font-size: 0.82em; font-weight: 700; text-align: center; }
+    .smart-col.ok .out   { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); }
+    .smart-col.gate .out { background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44; }
+
+    .code-snip { background: #00000055; padding: 10px 14px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.72em; color: var(--accent); border: 1px solid var(--border); display: block; line-height: 1.5; white-space: pre; overflow-x: auto; }
+
+    .commit-row { display: grid; grid-template-columns: 100px 1fr; gap: 12px; padding: 9px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; font-size: 0.74em; align-items: center; }
+    .commit-row .sha { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 700; }
+    .commit-row .msg { color: var(--text); }
+    .commit-row .msg .tag { display: inline-block; font-size: 0.72em; padding: 1px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); font-weight: 700; margin-right: 4px; }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ═══════════════ 1 · COVER ═══════════════ -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Engineering Report · Week 23 · 2026</div>
+          <h1>Security Hardening<br/>Stable Release.</h1>
+          <p class="subtitle">2FA + IP Whitelist · 3 lapis defense in depth untuk lindungi data klien dari account takeover — production stable setelah 5 commit stabilisasi.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Domain Archive Dashboard</span>
+            <span><strong>Periode</strong> · 26 Mei – 1 Juni 2026</span>
+            <span><strong>Status</strong> · Production Stable</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 1 — KONTEKS ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">01</div>
+          <div class="eyebrow">Konteks</div>
+          <h2>Kenapa sistem ini ada.</h2>
+          <p class="desc">Asal-usul, siapa yang dilayani, dan visi jangka panjang untuk sistem keamanan Domain Archive.</p>
+        </div>
+      </section>
+
+      <!-- 3 · Origin story (bahasa awam) -->
+      <section>
+        <div class="eyebrow">Origin Story</div>
+        <h2>Data klien terlalu berharga untuk bergantung pada satu password.</h2>
+        <div class="origin-quote">
+          <span class="mark">"</span> Domain Archive nyimpen <strong>data sensitif klien</strong> — daftar domain, info billing, dan catatan internal. Kalau akun bobol, semua itu bisa diambil orang lain dalam hitungan menit. <span class="mark">"</span>
+        </div>
+        <div class="grid grid-3" style="margin-top: 14px;">
+          <div class="card card-red">
+            <div class="eyebrow red" style="margin: 0 0 8px;">Data Berisiko</div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.95em;">Domain klien</div>
+            <div class="muted" style="font-size: 0.78em;">Nama, registrar, expiry</div>
+          </div>
+          <div class="card card-red">
+            <div class="eyebrow red" style="margin: 0 0 8px;">Data Berisiko</div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.95em;">Billing &amp; Invoice</div>
+            <div class="muted" style="font-size: 0.78em;">Transaksi &amp; tagihan</div>
+          </div>
+          <div class="card card-red">
+            <div class="eyebrow red" style="margin: 0 0 8px;">Data Berisiko</div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.95em;">Catatan Internal</div>
+            <div class="muted" style="font-size: 0.78em;">Note privat per klien</div>
+          </div>
+        </div>
+        <div class="takeaway">Single password = single point of failure. Kalau password leak (database publik, phishing, brute force) — pertahanan langsung jebol.</div>
+      </section>
+
+      <!-- 4 · Audience -->
+      <section>
+        <div class="eyebrow">Audience</div>
+        <h2>Tiga lapis pengguna yang dilayani sistem ini.</h2>
+        <div class="grid grid-3" style="margin-top: 18px;">
+          <div class="audience-card">
+            <div class="badge a1">Lapis 1</div>
+            <div class="role">Atasan</div>
+            <div class="need">Butuh kepastian sistem aman secara teknis &amp; operasional. Tertarik pada bukti, bukan janji.</div>
+          </div>
+          <div class="audience-card">
+            <div class="badge a2">Lapis 2</div>
+            <div class="role">Klien</div>
+            <div class="need">Butuh tahu data mereka di-handle dengan security best-practice. Trust = retention.</div>
+          </div>
+          <div class="audience-card">
+            <div class="badge a3">Lapis 3</div>
+            <div class="role">Tim / Kolega</div>
+            <div class="need">Bisa belajar pola 3-lapis ini untuk diterapkan di project mereka sendiri.</div>
+          </div>
+        </div>
+        <div class="takeaway">Audience yang berbeda butuh narasi berbeda — tapi semua butuh satu hal sama: bukti pertahanan berlapis.</div>
+      </section>
+
+      <!-- 5 · Vision -->
+      <section>
+        <div class="eyebrow">Vision · Long-term</div>
+        <h2>Tujuan jangka panjang: stabilitas, bukan ekspansi.</h2>
+        <div class="vision-block">
+          <div class="lbl">Komitmen Arah</div>
+          <div class="stmt">Berhenti di <em>3 lapis</em>. Cukup untuk skala personal &amp; tim kecil. Fokus ke depan: <em>maintain stability + dokumentasi rapi</em> — bukan tambah lapis baru.</div>
+        </div>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Prinsip yang dipegang</h3>
+            <p class="muted" style="font-size: 0.8em;">Security yang sustainable = <strong>simple + reliable</strong>, bukan complex. Tiap lapis tambahan adalah debt operasional baru.</p>
+          </div>
+          <div class="card card-amber">
+            <h3 style="font-size: 0.9em; color: var(--amber);">Yang TIDAK dikejar</h3>
+            <p class="muted" style="font-size: 0.8em;">Tidak tambah lapis 4 (device fingerprint), tidak SMS/push notif. Itu friction tambahan untuk benefit kecil di skala ini.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 2 — MASALAH ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">02</div>
+          <div class="eyebrow red">Masalah</div>
+          <h2>Account takeover risk &amp; friction trade-off.</h2>
+          <p class="desc">Single password tidak cukup, tapi solusi standar (SMS/email OTP) bawa biaya &amp; friction.</p>
+        </div>
+      </section>
+
+      <!-- 7 · Pain point bahasa awam -->
+      <section>
+        <div class="eyebrow red">Pain Point</div>
+        <h2>Lima titik lemah sistem keamanan klasik.</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 0.95em;">Password = satu lapis</h3>
+            <p class="muted" style="font-size: 0.82em;">Bocor sekali (phishing, database leak, brute force) — game over. Tidak ada lapis cadangan.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 0.95em;">SMS 2FA mahal</h3>
+            <p class="muted" style="font-size: 0.82em;">SMS gateway $0.01–0.05 per pesan × banyak login = biaya operasional terus berjalan.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 0.95em;">Email OTP lambat</h3>
+            <p class="muted" style="font-size: 0.82em;">Inbox delay, spam folder, friction tinggi. User mulai cari cara bypass mental.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 0.95em;">Kredensial dipakai bareng</h3>
+            <p class="muted" style="font-size: 0.82em;">Static credentials tersebar antar device susah di-track. Tidak ada visibilitas siapa login dari mana.</p>
+          </div>
+        </div>
+        <div class="takeaway">Tidak ada audit trail — kalau ada login mencurigakan dari device asing, tidak ada catatan untuk forensics.</div>
+      </section>
+
+      <!-- 8 · Goals & Constraints -->
+      <section>
+        <div class="eyebrow">Tujuan Proyek</div>
+        <h2>Goals &amp; Constraints.</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">Goals</h3>
+            <ul style="font-size: 0.8em;">
+              <li>3 lapis defense in depth (password + TOTP + IP)</li>
+              <li>Friction minimal untuk daily use</li>
+              <li>Audit trail lengkap untuk forensics</li>
+              <li>Cost zero — tanpa pihak ketiga berbayar</li>
+              <li>Tanpa SMS gateway atau push provider</li>
+            </ul>
+          </div>
+          <div class="card card-amber">
+            <h3 style="font-size: 0.95em; color: var(--amber);">Constraints</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Stack existing: Supabase Auth + React</li>
+              <li>Schema dedicated: <code>datadomain</code></li>
+              <li>RDP outbound TCP terblok — wajib Management API pattern</li>
+              <li>Tidak boleh maintain infra tambahan</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 3 — PENDEKATAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">03</div>
+          <div class="eyebrow sky">Pendekatan</div>
+          <h2>Defense in depth, dengan trigger pintar.</h2>
+          <p class="desc">3 lapis pertahanan yang aktif kondisional — bukan blanket enforcement.</p>
+        </div>
+      </section>
+
+      <!-- 10 · 3 lapis defense -->
+      <section>
+        <div class="eyebrow sky">Arsitektur</div>
+        <h2>Tiga lapis defense in depth.</h2>
+        <div class="layer-stack" style="margin-top: 18px;">
+          <div class="layer">
+            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">L1</div>
+            <div class="body">
+              <div class="head">Password (Supabase Auth)</div>
+              <div class="desc">Email + password normal lewat Supabase Auth. Hash di Postgres, standar industri.</div>
+            </div>
+            <span class="pill accent">Always-on</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">L2</div>
+            <div class="body">
+              <div class="head">Master TOTP (custom shared secret)</div>
+              <div class="desc">otplib generate 6-digit OTP rolling 30 detik. Secret di-store di <code>datadomain.master_totp</code>.</div>
+            </div>
+            <span class="pill">Conditional</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">L3</div>
+            <div class="body">
+              <div class="head">IP Whitelist (per-user)</div>
+              <div class="desc">Tabel <code>user_ip_whitelist</code> dengan status pending / approved / rejected — di-approve admin.</div>
+            </div>
+            <span class="pill">Trust gate</span>
+          </div>
+        </div>
+        <div class="takeaway">3 lapis yang saling melengkapi: password (apa yang kamu tahu) + TOTP (apa yang kamu punya) + IP (dari mana kamu).</div>
+      </section>
+
+      <!-- 11 · Smart trigger -->
+      <section>
+        <div class="eyebrow sky">Smart Trigger</div>
+        <h2>OTP cuma muncul kalau IP belum whitelist.</h2>
+        <div class="smart-diagram">
+          <div class="smart-col ok">
+            <h4>✓ Device sehari-hari (IP whitelisted)</h4>
+            <div class="step pass"><span class="ic">1.</span><span>Email + password</span></div>
+            <div class="step pass"><span class="ic">2.</span><span>IP dicek → sudah whitelisted</span></div>
+            <div class="step pass"><span class="ic">3.</span><span>MFA challenge di-skip</span></div>
+            <div class="out">Langsung masuk · 1 klik</div>
+          </div>
+          <div class="smart-col gate">
+            <h4>⚠ Device baru (IP belum dikenal)</h4>
+            <div class="step warn"><span class="ic">1.</span><span>Email + password</span></div>
+            <div class="step warn"><span class="ic">2.</span><span>IP dicek → unknown</span></div>
+            <div class="step warn"><span class="ic">3.</span><span>Request whitelist + minta OTP</span></div>
+            <div class="out">Verifikasi penuh · approval admin</div>
+          </div>
+        </div>
+        <div class="takeaway">Friction conditional jauh lebih palatable daripada friction selalu. Itu kunci adopsi.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 4 — IMPLEMENTASI ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">04</div>
+          <div class="eyebrow">Implementasi</div>
+          <h2>Eksekusi per lapis.</h2>
+          <p class="desc">Database, backend logic, dan UI — dengan smart trigger jadi simpul utama.</p>
+        </div>
+      </section>
+
+      <!-- 13 · Database -->
+      <section>
+        <div class="eyebrow">Layer Database</div>
+        <h2>Schema <code>datadomain</code> · tabel &amp; constraint.</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Tabel</h3>
+            <ul style="font-size: 0.78em;">
+              <li><code>master_totp</code> — user_id, secret, created_at</li>
+              <li><code>user_ip_whitelist</code> — id, user_id, ip, status, requested_at, approved_at, approved_by, reason</li>
+              <li>Status enum: <code>pending</code> · <code>approved</code> · <code>rejected</code></li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">RPC &amp; Constraint</h3>
+            <ul style="font-size: 0.78em;">
+              <li><code>fn_request_ip_whitelist</code></li>
+              <li><code>fn_approve_ip_whitelist</code></li>
+              <li><code>fn_reject_ip_whitelist</code></li>
+              <li>RLS policies + GRANT level tabel ke <code>authenticated</code></li>
+              <li>Partial unique idx: <code>UNIQUE (user_id, ip) WHERE status='pending'</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Partial unique index (week 23 fix) — supaya approve ulang setelah rejected tidak bentrok dengan history.</div>
+      </section>
+
+      <!-- 14 · Backend logic -->
+      <section>
+        <div class="eyebrow">Layer Backend</div>
+        <h2>Library di <code>src/lib/</code> · logic per-lapis.</h2>
+        <div class="grid grid-3" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">mfa.ts</h3>
+            <p class="muted" style="font-size: 0.78em;">Verifikasi TOTP via <code>otplib</code>. Window toleransi 1 step (30 detik) untuk drift jam.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">ipGate.ts</h3>
+            <p class="muted" style="font-size: 0.78em;">Cek IP user terhadap whitelist. Return status: trusted / pending / unknown.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">realtime sub</h3>
+            <p class="muted" style="font-size: 0.78em;">Postgres CDC ke admin panel — pending requests muncul real-time tanpa polling.</p>
+          </div>
+        </div>
+        <div class="takeaway">Library kecil &amp; fokus per concern — bisa di-unit-test independen tanpa setup UI.</div>
+      </section>
+
+      <!-- 15 · UI/UX -->
+      <section>
+        <div class="eyebrow">Layer UI/UX</div>
+        <h2>Form login adaptif + admin panel realtime.</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">User-facing</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Login form normal (email + password)</li>
+              <li>Conditional MFA challenge (cuma jika IP belum whitelist)</li>
+              <li>Request whitelist screen + status badge (pending / approved / rejected)</li>
+              <li>MFA verified flag di localStorage per-user · TTL 8 jam</li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Admin-facing</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Daftar pending requests (realtime, no refresh)</li>
+              <li>Tombol approve / reject + reason</li>
+              <li>History &amp; audit log per user</li>
+              <li>Notif push browser saat request baru masuk</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">UX adaptif — user device biasa nyaris tidak merasakan ada security tambahan.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 4.5 — TANTANGAN ═══════════════ -->
+      <!-- 16 · Tantangan #1 — Friction -->
+      <section>
+        <div class="eyebrow amber">Tantangan #1 · Adopsi</div>
+        <h2>Friction = musuh adopsi.</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>Sebelum (Week 22)</h4>
+            <ul>
+              <li>OTP wajib di <strong>setiap</strong> login</li>
+              <li>User mulai cari bypass mental</li>
+              <li>Frustrasi naik tiap hari</li>
+              <li>Risiko: user nonaktifkan 2FA diam-diam</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>Sesudah (Week 23)</h4>
+            <ul>
+              <li>OTP <strong>conditional</strong> — cuma kalau IP belum whitelist</li>
+              <li>Daily use: 1 klik, no friction</li>
+              <li>Device baru: tetap aman dengan full check</li>
+              <li>Adopsi smooth — security stays on</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Smart trigger menang dari blanket enforcement. Security yang dibypass = security yang tidak ada.</div>
+      </section>
+
+      <!-- 17 · Tantangan #2 — Realtime & React closure -->
+      <section>
+        <div class="eyebrow amber">Tantangan #2 · Realtime</div>
+        <h2>Stale closure di useEffect subscription.</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>Bug halus</h4>
+            <ul>
+              <li>useEffect capture <code>user.id</code> dari render saat itu</li>
+              <li>Logout → login lain → subscription masih pakai user.id lama</li>
+              <li>Admin lihat pending requests user salah</li>
+              <li>Susah reproduce, intermittent</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>Solusi</h4>
+            <ul>
+              <li><code>useRef</code> untuk pegang user.id current value</li>
+              <li>Dependency array dibenarkan</li>
+              <li>Subscription resubscribe saat user berubah</li>
+              <li>Realtime correctly scoped per-user</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Realtime subscription harus closure-aware. useRef pattern wajib untuk state yang berubah di luar render.</div>
+      </section>
+
+      <!-- 18 · Tantangan #3+4 — Persistence & unique constraint (timeline) -->
+      <section>
+        <div class="eyebrow amber">Tantangan #3 &amp; #4 · Detail iterasi</div>
+        <h2>Lima commit stabilisasi minggu 23.</h2>
+        <div style="display: grid; gap: 6px; margin-top: 14px;">
+          <div class="commit-row">
+            <span class="sha">b63703d</span>
+            <span class="msg"><span class="tag">feat</span>OTP cuma kalau IP belum whitelist · friction –90% untuk daily use</span>
+          </div>
+          <div class="commit-row">
+            <span class="sha">4cd1fe5</span>
+            <span class="msg"><span class="tag">fix</span>simplify MFA persistence + revert IpGate OTP step · cleanup complexity</span>
+          </div>
+          <div class="commit-row">
+            <span class="sha">1c61224</span>
+            <span class="msg"><span class="tag">fix</span>user.id stale closure + realtime pending requests · useRef pattern</span>
+          </div>
+          <div class="commit-row">
+            <span class="sha">cbbbf08</span>
+            <span class="msg"><span class="tag">fix</span>persist MFA verified flag in localStorage (per-user, 8h TTL)</span>
+          </div>
+          <div class="commit-row">
+            <span class="sha">26d9f24</span>
+            <span class="msg"><span class="tag">fix</span>partial unique index untuk pending · approve gagal karena history</span>
+          </div>
+        </div>
+        <div class="takeaway">5 commit kecil tapi padat — masing-masing menutup satu celah UX atau correctness yang ditemukan di production.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 5 — HASIL & REFLEKSI ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">05</div>
+          <div class="eyebrow">Hasil &amp; Refleksi</div>
+          <h2>Capaian, nilai, pelajaran.</h2>
+          <p class="desc">Status production stable + value untuk user + arah ke depan.</p>
+        </div>
+      </section>
+
+      <!-- 20 · Stats -->
+      <section>
+        <div class="eyebrow">Numbers</div>
+        <h2>Capaian Proyek.</h2>
+        <div class="grid grid-4" style="margin-top: 28px;">
+          <div class="stat"><div class="num">3</div><div class="lbl">Lapis Defense</div></div>
+          <div class="stat"><div class="num">5</div><div class="lbl">Commit Stabilisasi</div></div>
+          <div class="stat"><div class="num">$0</div><div class="lbl">Biaya Operasional</div></div>
+          <div class="stat"><div class="num">8h</div><div class="lbl">MFA TTL</div></div>
+        </div>
+        <div class="grid grid-4" style="margin-top: 26px;">
+          <div class="stat"><div class="num">1</div><div class="lbl">Schema Dedicated</div></div>
+          <div class="stat"><div class="num">100%</div><div class="lbl">Audit Trail</div></div>
+          <div class="stat"><div class="num">–90%</div><div class="lbl">Friction Daily Use</div></div>
+          <div class="stat"><div class="num">0</div><div class="lbl">Pihak Ketiga Berbayar</div></div>
+        </div>
+        <div class="takeaway">Production stable — 3 lapis aktif, 0 biaya berjalan, audit trail penuh.</div>
+      </section>
+
+      <!-- 21 · Value before/after (4 card bahasa awam) -->
+      <section>
+        <div class="eyebrow">Value · Before vs After</div>
+        <h2>Apa yang berubah untuk pengguna.</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="value-card">
+            <div class="label">Keamanan</div>
+            <div class="row before"><span class="k">Dulu</span><span class="v">1 lapis (password saja)</span></div>
+            <hr/>
+            <div class="row after"><span class="k">Kini</span><span class="v">3 lapis · password + TOTP + IP whitelist</span></div>
+          </div>
+          <div class="value-card">
+            <div class="label">Kenyamanan (Friction)</div>
+            <div class="row before"><span class="k">Dulu</span><span class="v">OTP wajib setiap login</span></div>
+            <hr/>
+            <div class="row after"><span class="k">Kini</span><span class="v">OTP cuma kalau IP baru · daily use 1 klik</span></div>
+          </div>
+          <div class="value-card">
+            <div class="label">Audit &amp; Visibilitas</div>
+            <div class="row before"><span class="k">Dulu</span><span class="v">Tidak ada catatan login dari device asing</span></div>
+            <hr/>
+            <div class="row after"><span class="k">Kini</span><span class="v">Setiap request whitelist tercatat — siapa, kapan, dari mana</span></div>
+          </div>
+          <div class="value-card">
+            <div class="label">Biaya Operasional</div>
+            <div class="row before"><span class="k">Dulu</span><span class="v">Perlu SMS gateway berbayar untuk 2FA standar</span></div>
+            <hr/>
+            <div class="row after"><span class="k">Kini</span><span class="v">TOTP standar (otplib) + Postgres — gratis selamanya</span></div>
+          </div>
+        </div>
+        <div class="takeaway">Lebih aman, tetap nyaman, tercatat penuh, gratis. Empat-empatnya naik tanpa trade-off.</div>
+      </section>
+
+      <!-- 22 · Lessons + roadmap + closing (merged into 1) -->
+      <section>
+        <div class="eyebrow">Pelajaran &amp; Arah</div>
+        <h2>Insight utama dan satu fokus ke depan.</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.92em; color: var(--accent);">Pelajaran #1 · Friction = musuh adopsi</h3>
+            <p class="muted" style="font-size: 0.8em;">Security yang terlalu intrusive bakal dibypass. <strong>OTP conditional menang</strong> dari OTP selalu. Smart trigger > blanket enforcement.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.92em; color: var(--accent);">Pelajaran #2 · Realtime + React closure</h3>
+            <p class="muted" style="font-size: 0.8em;">useEffect subscription harus <strong>closure-aware</strong>. useRef pattern wajib — kalau tidak, stale state akan kena bug intermittent yang susah debug.</p>
+          </div>
+        </div>
+        <div class="card card-sky" style="margin-top: 14px;">
+          <h3 style="font-size: 0.92em; color: var(--sky);">Roadmap · Satu fokus utama</h3>
+          <p class="muted" style="font-size: 0.82em; margin-bottom: 4px;"><strong style="color:#fff;">Dashboard Analytics:</strong> visualisasi pola login (jam, geo, frekuensi) · failed attempt counter dengan alerting threshold · IP heatmap untuk deteksi anomali.</p>
+          <p class="muted" style="font-size: 0.76em; margin-top: 8px;"><strong style="color: var(--text-faint);">Tidak prioritas:</strong> lapis 4 (device fingerprint) — overkill untuk skala ini. SMS/push notif — friction tambahan, tidak worth it.</p>
+        </div>
+        <div class="takeaway">Production stable. Fokus ke depan: visibilitas, bukan lapis baru. Stop expanding, start observing.</div>
+      </section>
+
+      <!-- Closing -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Terima Kasih</div>
+          <h1>Pertanyaan?</h1>
+          <p class="subtitle">3 lapis defense in depth · 5 commit stabilisasi · production stable. Data klien aman, daily use tetap nyaman.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Domain Archive Dashboard</span>
+            <span><strong>Schema</strong> · datadomain</span>
+            <span><strong>Status</strong> · Production Stable</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      controls: true,
+      progress: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade',
+      center: false,
+      width: 1280,
+      height: 800,
+      margin: 0.04,
+    });
+  </script>
+</body>
+</html>
