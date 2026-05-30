@@ -1,0 +1,631 @@
+<!doctype html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  Week 23 — RLS Lockdown datadomain (kunci akses anon)
+  Dibuat dari _template.html. Audience: tim/kolega (engineering).
+  Design system: emerald accent + neutrals (Linear/Stripe restrained).
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Lockdown Akses Anon · datadomain RLS · Week 23</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+
+  <style>
+    :root {
+      --accent: #10b981;
+      --accent-soft: #10b98122;
+      --accent-line: #10b98144;
+      --amber: #f59e0b;
+      --amber-soft: #f59e0b22;
+      --red: #ef4444;
+      --red-soft: #ef444422;
+      --sky: #38bdf8;
+      --sky-soft: #38bdf822;
+      --bg: #0a0c12;
+      --bg-card: #13151d;
+      --bg-card-hover: #181b25;
+      --border: #ffffff14;
+      --border-strong: #ffffff24;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-faint: #64748b;
+    }
+
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
+    body, html, .reveal { background: var(--bg) !important; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
+    .reveal p { line-height: 1.55; margin: 0 0 12px; }
+    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.82em; color: var(--accent); border: 1px solid var(--border); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .reveal a { color: var(--accent); }
+    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
+    .reveal ul li, .reveal ol li { margin: 6px 0; }
+
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
+    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
+    .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
+    .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
+
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-amber  { border-left: 3px solid var(--amber);  }
+    .card-red    { border-left: 3px solid var(--red);    }
+    .card-sky    { border-left: 3px solid var(--sky);    }
+
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+    .pill.ok  { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+    .pill.bad { color: #fca5a5; border-color: #ef444444; background: var(--red-soft); }
+
+    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
+    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
+    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
+    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
+    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
+    .flow-node.bad { border-color: #ef444444; background: linear-gradient(180deg, var(--red-soft) 0%, var(--bg-card) 100%); }
+    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+
+    .layer-stack { display: grid; gap: 10px; }
+    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
+    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .layer .ico svg { width: 18px; height: 18px; stroke-width: 2; }
+    .layer .body { flex: 1; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
+
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .ba-before h4 { color: var(--red); }
+    .ba-after  h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
+    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+
+    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
+    .tl-row { display: grid; grid-template-columns: 60px 1fr 1.2fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.1em; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; }
+    .tl-row .fix  { color: var(--text-muted); }
+
+    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+    .title-slide .subtitle { font-size: 1.1em; color: var(--text-muted); margin-bottom: 32px; }
+    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+    .title-slide .meta strong { color: var(--text); font-weight: 700; }
+
+    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
+
+    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 760px; margin-top: 12px; }
+
+    .code-block { background: #0d0f17; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.62em; line-height: 1.6; color: var(--text-muted); overflow: auto; }
+    .code-block .c-rev { color: #fca5a5; }
+    .code-block .c-keep { color: var(--accent); }
+    .code-block .c-cmt { color: var(--text-faint); }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ═══════════════ COVER ═══════════════ -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Engineering Report · Week 23 · 2026</div>
+          <h1>Lockdown Akses Anon<br/>Row Level Security · <code style="font-size:0.5em;color:#6ee7b7;background:none;border:none;">datadomain</code></h1>
+          <p class="subtitle">Menutup breach akses publik ke database production — dari schema terbuka jadi terkunci per-role, tanpa mematahkan aplikasi.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Domain Archive</span>
+            <span><strong>Scope</strong> · Database / RLS</span>
+            <span><strong>Status</strong> · Production ✓ Merged</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 1: KONTEKS ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">01</div>
+          <div class="eyebrow">Konteks</div>
+          <h2>Audit menemukan pintu terbuka</h2>
+          <p class="desc">Saat review keamanan PostgREST, ditemukan schema <code>datadomain</code> ter-ekspos <strong>penuh</strong> ke siapa pun yang pegang anon key (publik). Ini titik awal kerjaan minggu ini.</p>
+        </div>
+      </section>
+
+      <!-- Konteks - profil sistem -->
+      <section>
+        <div class="eyebrow">Profil Sistem</div>
+        <h2>Yang kita amankan</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Skala</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">42 tabel</div>
+            <div class="muted" style="font-size: 0.8em;">Schema <code>datadomain</code> — domain, backlink, metrik, config.</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Data berat</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">~6 jt baris</div>
+            <div class="muted" style="font-size: 0.8em;">Ahrefs anchors 3,06jt + ref domains 2,96jt + 9.559 domain.</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Akses</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">anon key</div>
+            <div class="muted" style="font-size: 0.8em;">App React/Vite (browser) konek via PostgREST + anon key publik.</div>
+          </div>
+        </div>
+        <div class="takeaway">Anon key memang dirancang publik — yang menjaga data seharusnya <strong>RLS</strong> (Row Level Security), bukan kerahasiaan key.</div>
+      </section>
+
+      <!-- Konteks - model akses -->
+      <section>
+        <div class="eyebrow sky">Model Akses</div>
+        <h2>Bagaimana app bicara ke DB</h2>
+        <div class="flow" style="margin-top: 28px;">
+          <div class="flow-node">
+            <div class="title">Browser (anon key)</div>
+            <div class="sub">React SPA, key publik</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="title">PostgREST</div>
+            <div class="sub">expose schema datadomain</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node accent">
+            <div class="title">RLS = Satpam</div>
+            <div class="sub">filter per-baris / per-role</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="title">Tabel datadomain</div>
+            <div class="sub">data sensitif</div>
+          </div>
+        </div>
+        <div class="takeaway">Connection string role pribadi <span class="muted">(yang sempat diusulkan)</span> = untuk DBeaver/tooling — <strong>bukan</strong> untuk app browser. Maka perbaikan app = lewat RLS.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 2: MASALAH ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">02</div>
+          <div class="eyebrow red">Masalah</div>
+          <h2>Breach LIVE — terbuka sekarang</h2>
+          <p class="desc">RLS ternyata <strong>dimatikan</strong> di mayoritas tabel (policy ada tapi inert), ditambah blanket <code>GRANT ... TO anon</code>. Hasilnya: publik bisa baca data sensitif tanpa login.</p>
+        </div>
+      </section>
+
+      <!-- Masalah - 4 quadrant -->
+      <section>
+        <div class="eyebrow red">Temuan</div>
+        <h2>4 lubang nyata</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🔑 API key kebaca publik</h3>
+            <p class="muted" style="font-size: 0.82em;">Tabel <code>settings</code> punya anon SELECT + RLS off → kunci Ahrefs/Moz/dll terbuka.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🌐 Data jutaan baris</h3>
+            <p class="muted" style="font-size: 0.82em;">anon bisa baca <code>scan_access_codes</code>, <code>scan_sessions</code>, ~6jt baris ahrefs, daftar admin.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🚫 RLS dimatikan</h3>
+            <p class="muted" style="font-size: 0.82em;">29 dari 42 tabel <code>rls_enabled=false</code> → policy yang ada jadi sia-sia.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">💣 Eskalasi privilege</h3>
+            <p class="muted" style="font-size: 0.82em;">Policy <code>admin_access_update USING(true)</code> → siapa pun login bisa angkat diri jadi super_admin.</p>
+          </div>
+        </div>
+        <div class="takeaway">Lapisan auth (Master TOTP + IP whitelist) <strong>tidak jebol</strong> — yang jebol = kerahasiaan data &amp; kontrol tulis di level DB.</div>
+      </section>
+
+      <!-- Goals & Constraints -->
+      <section>
+        <div class="eyebrow">Tujuan</div>
+        <h2>Goal &amp; Constraint</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">🎯 Goals</h3>
+            <ul style="font-size: 0.8em;">
+              <li>anon (publik) tidak bisa baca/tulis data</li>
+              <li>Akses tidak melewati cek role aplikasi</li>
+              <li>App admin tetap jalan normal</li>
+              <li>Ada jalur rollback yang aman</li>
+            </ul>
+          </div>
+          <div class="card card-amber">
+            <h3 style="font-size: 0.95em; color: var(--amber);">⚠️ Constraints</h3>
+            <ul style="font-size: 0.8em;">
+              <li>DB production, dipakai live — tak boleh down</li>
+              <li>2 fungsi <em>pre-login</em> wajib tetap anon</li>
+              <li>RLS tak bisa dites via PAT (jalan as owner → bypass)</li>
+              <li>Akses via RDP: CLI standar diblok, lewat proxy</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Aturan emas: <strong>policy dulu → ENABLE RLS → REVOKE anon</strong> — jangan pernah ENABLE tanpa policy (= app langsung error).</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 3: PENDEKATAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">03</div>
+          <div class="eyebrow sky">Pendekatan</div>
+          <h2>Kunci by default, izinkan per-role</h2>
+          <p class="desc">Satu migration idempotent (<code>053</code>): bikin policy berbasis keanggotaan admin di setiap tabel, nyalakan RLS, lalu cabut akses anon — sisakan hanya yang dibutuhkan login.</p>
+        </div>
+      </section>
+
+      <!-- Arsitektur policy -->
+      <section>
+        <div class="eyebrow sky">Arsitektur Policy</div>
+        <h2>3 tingkat akses</h2>
+        <div class="layer-stack" style="margin-top: 18px;">
+          <div class="layer">
+            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M3 6h18M3 18h18" /></svg>
+            </div>
+            <div class="body">
+              <div class="head">Tabel data (33 tabel) — <code>is_admin_member()</code></div>
+              <div class="desc">Baca + tulis hanya untuk anggota <code>admin_access</code> aktif. Cocok via user_id ATAU email JWT.</div>
+            </div>
+            <span class="pill ok">read+write</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM16 11V7a4 4 0 00-8 0v4" /></svg>
+            </div>
+            <div class="body">
+              <div class="head"><code>settings</code> &amp; <code>admin_access</code> — super_admin</div>
+              <div class="desc">Baca = anggota admin; tulis = <code>is_super_admin()</code> saja. Policy eskalasi dibuang.</div>
+            </div>
+            <span class="pill">sensitif</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div class="body">
+              <div class="head">anon — sisa minimal</div>
+              <div class="desc">1 INSERT (log gagal-login) + 3 RPC pre-login SECURITY DEFINER. Selebihnya dicabut.</div>
+            </div>
+            <span class="pill bad">locked</span>
+          </div>
+        </div>
+        <div class="takeaway">Helper <code>is_admin_member()</code> &amp; <code>is_super_admin()</code> = <code>SECURITY DEFINER</code> → bisa cek <code>admin_access</code> tanpa kena RLS-nya sendiri (anti-rekursi).</div>
+      </section>
+
+      <!-- Flow akses sesudah -->
+      <section>
+        <div class="eyebrow sky">Alur Sesudah</div>
+        <h2>Siapa lolos, siapa diblok</h2>
+        <div style="margin-top: 22px; display:grid; gap:16px;">
+          <div class="flow">
+            <div class="flow-node bad">
+              <div class="title">anon / publik</div>
+              <div class="sub">cuma anon key</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">
+              <div class="title">RLS aktif</div>
+              <div class="sub">tak ada grant data</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node bad">
+              <div class="title">DITOLAK 🔒</div>
+              <div class="sub">0 baris</div>
+            </div>
+          </div>
+          <div class="flow">
+            <div class="flow-node">
+              <div class="title">Admin login</div>
+              <div class="sub">JWT authenticated</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node accent">
+              <div class="title">is_admin_member()</div>
+              <div class="sub">cek keanggotaan</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node accent">
+              <div class="title">LOLOS ✓</div>
+              <div class="sub">baca/tulis sesuai role</div>
+            </div>
+          </div>
+        </div>
+        <div class="takeaway">Login Google acak pun tetap diblok di level data — bukan anggota <code>admin_access</code> = tidak lolos policy.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 4: IMPLEMENTASI & TANTANGAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">04</div>
+          <div class="eyebrow">Implementasi</div>
+          <h2>Eksekusi yang aman</h2>
+          <p class="desc">Recon baseline → tulis migration + rollback → verifikasi adversarial → apply ke production → verifikasi ulang.</p>
+        </div>
+      </section>
+
+      <!-- Implementasi - helper + policy -->
+      <section>
+        <div class="eyebrow">Migration 053</div>
+        <h2>Inti perubahan</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Helper keanggotaan</h3>
+            <ul style="font-size: 0.76em;">
+              <li><code>is_admin_member()</code> — anggota aktif via user_id <em>atau</em> email JWT</li>
+              <li><code>is_super_admin()</code> diperkuat: tambah fallback email</li>
+              <li>Keduanya <code>SECURITY DEFINER</code>, anti-rekursi RLS</li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Policy &amp; RLS</h3>
+            <ul style="font-size: 0.76em;">
+              <li>33 tabel data → 1 policy <code>FOR ALL</code> member</li>
+              <li><code>settings</code>/<code>admin_access</code> diperketat (super_admin)</li>
+              <li>Drop policy <code>admin_access_update USING(true)</code></li>
+              <li>ENABLE RLS di semua tabel sensitif</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Kabar baik: policy lama sebagian besar sudah benar — masalah utamanya RLS yang <em>dimatikan</em>. Jadi lebih banyak "nyalain &amp; rapikan" daripada nulis dari nol.</div>
+      </section>
+
+      <!-- Implementasi - REVOKE anon -->
+      <section>
+        <div class="eyebrow">Cabut Anon</div>
+        <h2>Yang dicabut vs disisakan</h2>
+        <div class="code-block" style="margin-top: 8px;">
+<span class="c-rev">REVOKE ALL ON ALL TABLES IN SCHEMA datadomain FROM anon;</span><br/>
+<span class="c-rev">REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA datadomain FROM anon;</span><br/>
+<br/>
+<span class="c-cmt">-- sisakan HANYA yang dibutuhkan SEBELUM login (semua SECURITY DEFINER):</span><br/>
+<span class="c-keep">GRANT INSERT ON datadomain.admin_audit_log TO anon;</span>  <span class="c-cmt">-- log gagal-login</span><br/>
+<span class="c-keep">GRANT EXECUTE ON lookup_admin_email_by_username(text) TO anon;</span><br/>
+<span class="c-keep">GRANT EXECUTE ON check_login_lockout(text) TO anon;</span><br/>
+<span class="c-keep">GRANT EXECUTE ON verify_ip_bypass(text,text,text) TO anon;</span>
+        </div>
+        <div class="takeaway">Cuma cabut dari <code>anon</code> — grant <code>authenticated</code> dibiarkan utuh. 3 fungsi sisa tak menyentuh tabel langsung (definer), jadi login tetap jalan.</div>
+      </section>
+
+      <!-- Tantangan #1 - before/after -->
+      <section>
+        <div class="eyebrow amber">Tantangan #1</div>
+        <h2>Nyalakan RLS tanpa mematahkan login</h2>
+        <div class="ba" style="margin-top: 14px;">
+          <div class="ba-col ba-before">
+            <h4>❌ Risiko</h4>
+            <ul>
+              <li>Login butuh anon SEBELUM authenticated (cari username, cek lockout)</li>
+              <li>Cabut anon asal-asalan → tak ada yang bisa login</li>
+              <li>Member-scan ternyata anon murni (<code>signInAnonymously</code> = no-op)</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>✓ Solusi</h4>
+            <ul>
+              <li>3 fungsi pre-login dibuat <code>SECURITY DEFINER</code> → tetap dipanggil anon</li>
+              <li>anon disisakan persis 4 akses, sisanya dicabut</li>
+              <li>Member-scan via kode = mati by design (keputusan: wajib login)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Memetakan <em>apa yang dipanggil anon pre-login</em> dari kode app dulu = kunci agar revoke tidak memutus login.</div>
+      </section>
+
+      <!-- Tantangan #2 - verifikasi adversarial + timeline -->
+      <section>
+        <div class="eyebrow amber">Tantangan #2</div>
+        <h2>Verifikasi adversarial (5 agen)</h2>
+        <div class="timeline" style="margin-top: 12px;">
+          <div class="tl-row">
+            <div class="num">01</div>
+            <div class="prob">RLS ternyata OFF, bukan cuma grant</div>
+            <div class="fix">→ recon read-only, simpan baseline lengkap</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">02</div>
+            <div class="prob">Blocker: is_super_admin tanpa fallback email</div>
+            <div class="fix">→ bisa deadlock bootstrap → ditambah fallback email</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">03</div>
+            <div class="prob">3 "blocker" lain dari reviewer</div>
+            <div class="fix">→ ditelaah = false positive (salah baca anon↔authenticated)</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">04</div>
+            <div class="prob">Tes RLS via PAT menyesatkan (bypass as owner)</div>
+            <div class="fix">→ verifikasi nyata lewat app + login per role</div>
+          </div>
+        </div>
+        <div class="takeaway">Workflow multi-agen menangkap 1 blocker asli &amp; menyaring 3 alarm palsu — diperbaiki <em>sebelum</em> menyentuh production.</div>
+      </section>
+
+      <!-- Rollback safety -->
+      <section>
+        <div class="eyebrow sky">Jaring Pengaman</div>
+        <h2>Rollback 3 lapis</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-sky">
+            <h3 style="font-size: 0.92em; color: var(--sky);">1 · Kode</h3>
+            <p class="muted" style="font-size: 0.78em;">File <code>.sql</code> di git, checkpoint bersih di <code>main</code> sebelum mulai.</p>
+          </div>
+          <div class="card card-sky">
+            <h3 style="font-size: 0.92em; color: var(--sky);">2 · State DB</h3>
+            <p class="muted" style="font-size: 0.78em;">Down-migration auto-generate dari baseline: pulihkan 69 policy + status RLS + grant.</p>
+          </div>
+          <div class="card card-sky">
+            <h3 style="font-size: 0.92em; color: var(--sky);">3 · Data</h3>
+            <p class="muted" style="font-size: 0.78em;">Backup Supabase (PITR) untuk isi tabel — kalau ada yang berubah.</p>
+          </div>
+        </div>
+        <div class="takeaway">Recon read-only bukan cuma analisa — outputnya <strong>jadi baseline rollback</strong>. 1 command balik 100% ke kondisi semula.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 5: HASIL & REFLEKSI ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">05</div>
+          <div class="eyebrow">Hasil</div>
+          <h2>Breach tertutup, app utuh</h2>
+          <p class="desc">Migration applied &amp; terverifikasi di production. Data sensitif tidak lagi kebaca publik — admin tetap lancar.</p>
+        </div>
+      </section>
+
+      <!-- Hasil - stats -->
+      <section>
+        <div class="eyebrow">Numbers</div>
+        <h2>Capaian</h2>
+        <div class="grid grid-4" style="margin-top: 28px;">
+          <div class="stat"><div class="num">42/42</div><div class="lbl">Tabel RLS ON</div></div>
+          <div class="stat"><div class="num">28</div><div class="lbl">Tabel anon SELECT dicabut</div></div>
+          <div class="stat"><div class="num">~6 jt</div><div class="lbl">Baris ditutup dari publik</div></div>
+          <div class="stat"><div class="num">4</div><div class="lbl">Akses anon disisakan</div></div>
+        </div>
+        <div class="grid grid-4" style="margin-top: 26px;">
+          <div class="stat"><div class="num">1</div><div class="lbl">Migration (053)</div></div>
+          <div class="stat"><div class="num">5</div><div class="lbl">Agen verifikasi</div></div>
+          <div class="stat"><div class="num">3</div><div class="lbl">Lapis rollback</div></div>
+          <div class="stat"><div class="num">2</div><div class="lbl">Repo ter-merge</div></div>
+        </div>
+        <div class="takeaway">Tes app (super_admin): baca dashboard ✓, tulis domain ✓, manage user ✓ → semua jalur hijau.</div>
+      </section>
+
+      <!-- Before/After ringkas (Value untuk awam) -->
+      <section>
+        <div class="eyebrow">Before / After</div>
+        <h2>Apa yang berubah</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>❌ Sebelum</h4>
+            <ul>
+              <li>API key, kode akses, ~6jt baris data → <strong>kebaca siapa saja</strong></li>
+              <li>Siapa pun login bisa hapus/ubah data</li>
+              <li>Bisa angkat diri jadi super_admin</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>✓ Sesudah</h4>
+            <ul>
+              <li>Data sensitif <strong>hanya untuk anggota tim</strong> terdaftar</li>
+              <li>Tulis tergantung role; super_admin untuk yang kritis</li>
+              <li>Jalur eskalasi privilege ditutup</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Keamanan naik signifikan <strong>tanpa</strong> mengganggu kerja admin — login &amp; dashboard tetap berjalan normal.</div>
+      </section>
+
+      <!-- Lessons learned -->
+      <section>
+        <div class="eyebrow">Pembelajaran</div>
+        <h2>Insight Teknis</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.88em;">🚫 RLS ≠ GRANT</h3>
+            <p class="muted" style="font-size: 0.76em;">RLS yang dimatikan bikin policy inert — grant saja tak cukup menjaga data.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.88em;">🧪 PAT bypass RLS</h3>
+            <p class="muted" style="font-size: 0.76em;">Tes via superuser menyesatkan ("aman" palsu). Verifikasi wajib via app + login.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.88em;">🪪 Email fallback</h3>
+            <p class="muted" style="font-size: 0.76em;">Cocokkan keanggotaan via email JWT, bukan cuma user_id (sering belum sinkron).</p>
+          </div>
+        </div>
+        <div class="takeaway">Connection string role pribadi cocok untuk DBeaver/tooling — <strong>bukan</strong> ditaruh di kode app browser (malah membocorkan password DB).</div>
+      </section>
+
+      <!-- Next steps -->
+      <section>
+        <div class="eyebrow">Roadmap</div>
+        <h2>Tindak Lanjut</h2>
+        <div class="grid grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--sky);">Short-term</h3>
+            <ul style="font-size: 0.8em;">
+              <li>🔑 Rotasi password role <code>creative_ahmad</code> (sempat terlihat)</li>
+              <li>Switch koneksi DBeaver → role pribadi (least privilege)</li>
+              <li>Pantau log RLS pasca-deploy</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Mid-term</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Pertimbangkan policy read-only khusus viewer (DB-level)</li>
+              <li>Pindahkan API key ke edge function (jangan kebaca client)</li>
+              <li>Putuskan nasib fitur member-scan</li>
+              <li>Audit berkala grant/RLS (jadikan rutin)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Terima Kasih</div>
+          <h1>Pertanyaan?</h1>
+          <p class="subtitle">Breach ditutup, RLS aktif di 42 tabel, rollback siap — production aman &amp; app tetap jalan.</p>
+          <div class="meta">
+            <span><strong>Migration</strong> · 053 · Merged</span>
+            <span><strong>Project</strong> · Domain Archive</span>
+            <span><strong>Status</strong> · Production ✓</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      controls: true,
+      progress: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade',
+      center: false,
+      width: 1280,
+      height: 800,
+      margin: 0.04,
+    });
+  </script>
+</body>
+</html>
