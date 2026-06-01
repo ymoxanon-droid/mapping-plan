@@ -1,0 +1,626 @@
+<!doctype html>
+<!--
+  Engineering Report · Week 24 · 2026
+  Optimize Cold-Load /domains — 3 optimasi low-risk, behavior-preserving.
+  Dibuat dari _template.html (5-babak, emerald). Audience: tim/kolega.
+-->
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Optimize Cold-Load /domains · Week 24</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+
+  <style>
+    /* ═══ Design tokens — JANGAN diubah supaya tetap konsisten ═══ */
+    :root {
+      --accent: #10b981;
+      --accent-soft: #10b98122;
+      --accent-line: #10b98144;
+      --amber: #f59e0b;
+      --amber-soft: #f59e0b22;
+      --red: #ef4444;
+      --red-soft: #ef444422;
+      --sky: #38bdf8;
+      --sky-soft: #38bdf822;
+      --bg: #0a0c12;
+      --bg-card: #13151d;
+      --bg-card-hover: #181b25;
+      --border: #ffffff14;
+      --border-strong: #ffffff24;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-faint: #64748b;
+    }
+
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
+    body, html, .reveal { background: var(--bg) !important; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
+    .reveal p { line-height: 1.55; margin: 0 0 12px; }
+    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.85em; color: var(--accent); border: 1px solid var(--border); }
+    .reveal a { color: var(--accent); }
+    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
+    .reveal ul li, .reveal ol li { margin: 6px 0; }
+
+    /* Atoms */
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
+    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
+    .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
+    .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
+
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-amber  { border-left: 3px solid var(--amber);  }
+    .card-red    { border-left: 3px solid var(--red);    }
+    .card-sky    { border-left: 3px solid var(--sky);    }
+
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+
+    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
+    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
+    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
+    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
+    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
+    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+
+    .layer-stack { display: grid; gap: 10px; }
+    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
+    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .layer .ico svg { width: 18px; height: 18px; stroke-width: 2; }
+    .layer .body { flex: 1; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
+
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .ba-before h4 { color: var(--red); }
+    .ba-after  h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
+    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+
+    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
+    .tl-row { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.1em; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; }
+    .tl-row .fix  { color: var(--text-muted); }
+
+    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+    .title-slide .subtitle { font-size: 1.1em; color: var(--text-muted); margin-bottom: 32px; }
+    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+    .title-slide .meta strong { color: var(--text); font-weight: 700; }
+
+    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
+
+    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 700px; margin-top: 12px; }
+
+    /* Tambahan kecil khusus deck ini (tetap dalam palet) */
+    .code-note { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.72em; color: var(--text-muted); }
+    .kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.8em; color: var(--accent); }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ═══════════════ COVER ═══════════════ -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Engineering Report · Week 24 · 2026</div>
+          <h1>Optimize Cold-Load /domains<br/>Membuang Kerja yang Mubazir</h1>
+          <p class="subtitle">3 optimasi low-risk yang mempercepat halaman utama — tanpa mengubah satu pun perilaku.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Domain Archive</span>
+            <span><strong>Scope</strong> · /domains cold-load</span>
+            <span><strong>Status</strong> · Live di produksi</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 1: KONTEKS ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">01</div>
+          <div class="eyebrow">Konteks</div>
+          <h2>Kenapa Kecepatan, Kenapa Sekarang</h2>
+          <p class="desc">Struktur kode sudah dibenahi lewat refactor. Tapi data terus tumbuh — dan halaman utama mulai terasa berat saat pertama dibuka.</p>
+        </div>
+      </section>
+
+      <!-- Konteks - origin story + audience -->
+      <section>
+        <div class="eyebrow">Asal-usul</div>
+        <h2>Antisipasi Skala, Bukan Tambal Sulam</h2>
+        <p class="muted" style="font-size: 0.85em; max-width: 880px;">Jumlah domain yang dikelola terus naik. Yang tadinya ribuan, menuju puluhan ribu. Kalau halaman utama sudah mulai berat di angka sekarang, dia akan makin lambat seiring data bertambah. Jadi ini dibenahi <strong>sebelum</strong> jadi masalah besar — bukan sesudah.</p>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Pertumbuhan</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">2k → 10k</div>
+            <div class="muted" style="font-size: 0.8em;">domain yang dikelola & terus naik</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Tiap cold-load</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">~9.600</div>
+            <div class="muted" style="font-size: 0.8em;">baris diproses di sisi browser</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Untuk siapa</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">Tim</div>
+            <div class="muted" style="font-size: 0.8em;">dokumentasi keputusan & pola</div>
+          </div>
+        </div>
+        <div class="takeaway">Membenahi kecepatan saat data masih "sedang" jauh lebih murah daripada saat sudah terlanjur besar.</div>
+      </section>
+
+      <!-- Konteks - profil sistem + visi -->
+      <section>
+        <div class="eyebrow">Profil Sistem &amp; Visi</div>
+        <h2>Dari Dashboard Domain ke Platform Monitoring</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">Hari ini</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Halaman <code>/domains</code> = pusat kerja harian tim</li>
+              <li>Menampilkan ribuan domain + metrik (status, expiry, backlink, authority)</li>
+              <li>Diakses lewat RDP — CPU & jaringan terbatas</li>
+            </ul>
+          </div>
+          <div class="card card-sky">
+            <h3 style="font-size: 0.95em; color: var(--sky);">Arah jangka panjang</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Berkembang jadi <strong>platform monitoring domain lengkap</strong></li>
+              <li>Performa harus jadi fondasi — bukan ditambal belakangan</li>
+              <li>Tiap fitur baru bertumpu di atas halaman yang sudah ringan</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Performa adalah fondasi visi: platform monitoring hanya enak dipakai kalau halaman intinya tetap ringan saat data tumbuh.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 2: MASALAH ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">02</div>
+          <div class="eyebrow red">Masalah</div>
+          <h2>Cold-Load yang Berat</h2>
+          <p class="desc">"Cold-load" = saat halaman dibuka pertama kali tanpa cache. Browser harus mengambil & mengolah ~9.600 baris sekaligus di CPU RDP yang terbatas.</p>
+        </div>
+      </section>
+
+      <!-- Masalah - 4 quadrant -->
+      <section>
+        <div class="eyebrow red">Akar Masalah</div>
+        <h2>Bukan Server — Bebannya di Browser</h2>
+        <div class="grid grid-2" style="margin-top: 20px;">
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">⏳ Layar berat di awal</h3>
+            <p class="muted" style="font-size: 0.85em;">Saat pertama dibuka, butuh waktu sampai tabel benar-benar siap dipakai sepenuhnya.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🖥️ CPU RDP terbatas</h3>
+            <p class="muted" style="font-size: 0.85em;">Database menjawab dalam milidetik. Bottleneck-nya = browser mengolah ribuan baris di mesin RDP yang lemah.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🔁 Kerja mubazir tersembunyi</h3>
+            <p class="muted" style="font-size: 0.85em;">Ada operasi identik yang diulang jutaan kali per cold-load — tak terlihat, tapi memakan waktu nyata.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">📡 Pengambilan data bertahap</h3>
+            <p class="muted" style="font-size: 0.85em;">Data ditarik per-batch. Pengaturan lama butuh dua putaran untuk menutup seluruh data.</p>
+          </div>
+        </div>
+        <div class="takeaway">Karena bebannya di browser (bukan server), solusinya adalah <strong>mengurangi kerja yang dilakukan browser</strong> — bukan memperbesar server.</div>
+      </section>
+
+      <!-- Goals & Constraints -->
+      <section>
+        <div class="eyebrow">Tujuan Proyek</div>
+        <h2>Goal &amp; Constraint</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">🎯 Goals</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Percepat cold-load tanpa mengubah perilaku sedikit pun</li>
+              <li>Risiko rendah — bisa dibatalkan per langkah</li>
+              <li>Tiap perubahan dikunci oleh test</li>
+              <li>Hasil langsung dipakai di produksi</li>
+            </ul>
+          </div>
+          <div class="card card-amber">
+            <h3 style="font-size: 0.95em; color: var(--amber);">⚠️ Constraints</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Akses via RDP — jaringan & CPU terbatas</li>
+              <li>Sikap <em>risk-averse</em>: tolak risiko sedang–tinggi</li>
+              <li>Opsi besar (virtualization, server-pagination) sudah ditolak sebelumnya</li>
+              <li>Tidak boleh <em>rewrite</em> — perilaku yang sudah teroptimasi harus dijaga</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Aturan main: hanya ambil kemenangan yang <strong>terbukti aman</strong> dan <strong>mudah dibatalkan</strong>.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 3: PENDEKATAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">03</div>
+          <div class="eyebrow sky">Pendekatan</div>
+          <h2>Buang yang Mubazir, Bukan Tulis Ulang</h2>
+          <p class="desc">Daripada merombak halaman, kita berburu operasi yang diulang sia-sia — lalu menghapusnya dengan cara yang tidak mengubah hasil sama sekali.</p>
+        </div>
+      </section>
+
+      <!-- Filosofi / prinsip -->
+      <section>
+        <div class="eyebrow sky">Prinsip Kerja</div>
+        <h2>3 Pagar Pengaman di Tiap Langkah</h2>
+        <div class="layer-stack" style="margin-top: 20px;">
+          <div class="layer">
+            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <div class="body">
+              <div class="head">Behavior-preserving</div>
+              <div class="desc">Output sesudah optimasi harus identik byte-per-byte dengan sebelumnya.</div>
+            </div>
+            <span class="pill">output identik</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div class="body">
+              <div class="head">Dikunci test</div>
+              <div class="desc">Tiap perubahan ditemani <em>characterization test</em> yang membuktikan perilaku tak berubah.</div>
+            </div>
+            <span class="pill">37 test</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h11M9 21V3m0 0L4 8m5-5l5 5" /></svg>
+            </div>
+            <div class="body">
+              <div class="head">Bisa dibatalkan per langkah</div>
+              <div class="desc">Tiap optimasi = 1 commit terisolasi + tanda restore-point. Salah satu bisa dibuang tanpa ganggu yang lain.</div>
+            </div>
+            <span class="pill">rollback siap</span>
+          </div>
+        </div>
+        <div class="takeaway">Karena tiap langkah aman & reversibel, kita berani menyentuh halaman inti yang dipakai tiap hari.</div>
+      </section>
+
+      <!-- 3 optimasi overview -->
+      <section>
+        <div class="eyebrow sky">Peta Solusi</div>
+        <h2>Tiga Kerja Mubazir yang Dihapus</h2>
+        <div class="flow" style="margin-top: 24px;">
+          <div class="flow-node accent">
+            <div class="title">#1 · Index berulang</div>
+            <div class="sub">Daftar acuan dibangun ulang jutaan kali → dibangun sekali, dipakai ulang</div>
+          </div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-node accent">
+            <div class="title">#2 · Dua putaran ambil data</div>
+            <div class="sub">Ekor data butuh putaran kedua → cukup satu putaran</div>
+          </div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-node accent">
+            <div class="title">#3 · Format tanggal mahal</div>
+            <div class="sub">Alat format dibuat ulang tiap baris → dibuat sekali</div>
+          </div>
+        </div>
+        <div class="grid grid-3" style="margin-top: 28px;">
+          <div class="stat"><div class="num">3</div><div class="lbl">Optimasi low-risk</div></div>
+          <div class="stat"><div class="num">0</div><div class="lbl">Perubahan perilaku</div></div>
+          <div class="stat"><div class="num">37</div><div class="lbl">Test lulus</div></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 4: IMPLEMENTASI ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">04</div>
+          <div class="eyebrow">Implementasi</div>
+          <h2>Tiga Langkah, Satu Per Satu</h2>
+          <p class="desc">Tiap optimasi punya pola yang sama: temukan kerja yang diulang sia-sia, lakukan sekali, buktikan hasilnya tetap sama.</p>
+        </div>
+      </section>
+
+      <!-- Optimasi #1 -->
+      <section>
+        <div class="eyebrow amber">Optimasi #1</div>
+        <h2>Daftar Acuan yang Dibangun Ulang Terus</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>❌ Sebelum</h4>
+            <ul>
+              <li>Tiap baris dicek: "punya backlink berkualitas?"</li>
+              <li>Tiap cek membangun ulang daftar acuan ~100 domain</li>
+              <li>× ribuan baris × beberapa token = <strong>jutaan pembangunan identik</strong></li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>✓ Sesudah</h4>
+            <ul>
+              <li>Daftar acuan dibangun <strong>sekali</strong>, lalu dipakai ulang (di-<em>cache</em>)</li>
+              <li>Versi cek "ada/tidak" yang ringan — berhenti di kecocokan pertama</li>
+              <li>Pekerjaan sia-sia hilang tanpa mengubah hasil</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Operasi yang hasilnya selalu sama tak perlu diulang — bangun sekali, pakai ulang.</div>
+      </section>
+
+      <!-- Optimasi #2 -->
+      <section>
+        <div class="eyebrow amber">Optimasi #2</div>
+        <h2>Cukup Satu Putaran Ambil Data</h2>
+        <div class="flow" style="margin-top: 22px;">
+          <div class="flow-node">
+            <div class="title">500 awal</div>
+            <div class="sub">tampil lebih dulu biar cepat kebaca</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node accent">
+            <div class="title">1 putaran paralel</div>
+            <div class="sub">6 batch sekaligus = tutup ~12.500 baris</div>
+          </div>
+          <div class="flow-arrow">✓</div>
+          <div class="flow-node">
+            <div class="title">Selesai</div>
+            <div class="sub">tanpa putaran kedua untuk ekor data</div>
+          </div>
+        </div>
+        <div class="grid grid-2" style="margin-top: 22px;">
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 0.95em;">Sebelum (4 paralel)</h3>
+            <p class="muted" style="font-size: 0.82em;">500 + 8.000 = 8.500 baris di putaran-1 → sisa ~ribuan baris butuh <strong>putaran ke-2</strong> (~1 round-trip ekstra).</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="color: var(--accent); font-size: 0.95em;">Sesudah (6 paralel)</h3>
+            <p class="muted" style="font-size: 0.82em;">500 + 12.000 = 12.500 baris → seluruh data (rentang 2k–10k) tertutup dalam <strong>satu putaran</strong>.</p>
+          </div>
+        </div>
+        <div class="takeaway">Satu konstanta diubah (<span class="kbd">4 → 6</span>) memangkas satu putaran jaringan penuh di ekor pengambilan data.</div>
+      </section>
+
+      <!-- Optimasi #3 -->
+      <section>
+        <div class="eyebrow amber">Optimasi #3</div>
+        <h2>Alat Format Tanggal yang Mahal</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>❌ Sebelum</h4>
+            <ul>
+              <li>Tiap baris membentuk tanggal "manusiawi" (mis. <em>Dec 31, 2025</em>)</li>
+              <li>Tiap panggilan membuat <strong>alat format baru</strong> — salah satu operasi paling mahal di JavaScript</li>
+              <li>× ribuan baris + dipakai lagi saat export CSV</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>✓ Sesudah</h4>
+            <ul>
+              <li>Alat format dibuat <strong>sekali</strong> di level modul, lalu dipakai ulang</li>
+              <li>Export CSV ikut menikmati percepatan yang sama</li>
+              <li>Hasil teks tetap byte-identik</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Biaya tersembunyi bukan di "berapa banyak baris", tapi di "membuat ulang alat mahal setiap kali".</div>
+      </section>
+
+      <!-- Safety net -->
+      <section>
+        <div class="eyebrow">Jaring Pengaman</div>
+        <h2>Kenapa Ini Aman Dipakai Langsung</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Bukti otomatis</h3>
+            <ul style="font-size: 0.78em;">
+              <li><strong>37 characterization test</strong> lulus — mengunci perilaku lama</li>
+              <li>Pengecekan tipe <strong>0 error</strong> di tiap commit</li>
+              <li>Output sesudah optimasi = byte-identik dengan sebelum</li>
+            </ul>
+          </div>
+          <div class="card card-sky">
+            <h3 style="font-size: 0.9em;">Bisa mundur kapan saja</h3>
+            <ul style="font-size: 0.78em;">
+              <li>3 commit <strong>terisolasi</strong> — satu bisa dibatalkan tanpa ganggu yang lain</li>
+              <li>Tanda restore-point per langkah (<span class="code-note">step-opt1/2/3</span>)</li>
+              <li>Pembatalan via <span class="code-note">git revert</span> — aman di produksi</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Test membuktikan "tidak ada yang rusak"; rollback memastikan "kalaupun ada, gampang dikembalikan".</div>
+      </section>
+
+      <!-- Tantangan: keputusan #3 -->
+      <section>
+        <div class="eyebrow amber">Tantangan</div>
+        <h2>Hampir Salah Pilih Alat</h2>
+        <div class="timeline" style="margin-top: 14px;">
+          <div class="tl-row">
+            <div class="num">1</div>
+            <div class="prob">Rencana awal: "tunda hitung field tampilan"</div>
+            <div class="fix">→ cek dulu siapa yang memakai &amp; berapa biayanya</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">2</div>
+            <div class="prob">Ternyata field <code>countdown</code> sangat murah</div>
+            <div class="fix">→ menundanya = nol manfaat, hanya menambah risiko</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">3</div>
+            <div class="prob">Biaya asli ada di "membuat ulang alat format"</div>
+            <div class="fix">→ ganti strategi: cukup buat alatnya sekali (singleton)</div>
+          </div>
+        </div>
+        <div class="takeaway">Periksa <strong>biaya sebenarnya</strong> sebelum memilih strategi — "menunda" ternyata alat yang salah; "buat sekali" jauh lebih murah & aman.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 5: HASIL & REFLEKSI ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">05</div>
+          <div class="eyebrow">Hasil</div>
+          <h2>Capaian &amp; Refleksi</h2>
+          <p class="desc">Tiga kerja mubazir dihapus, tiga commit live di produksi, nol perubahan perilaku.</p>
+        </div>
+      </section>
+
+      <!-- Hasil - stats -->
+      <section>
+        <div class="eyebrow">Numbers</div>
+        <h2>Capaian Proyek</h2>
+        <div class="grid grid-4" style="margin-top: 30px;">
+          <div class="stat"><div class="num">3</div><div class="lbl">Optimasi terkirim</div></div>
+          <div class="stat"><div class="num">37</div><div class="lbl">Test lulus</div></div>
+          <div class="stat"><div class="num">0</div><div class="lbl">Error tipe</div></div>
+          <div class="stat"><div class="num">0</div><div class="lbl">Perubahan perilaku</div></div>
+        </div>
+        <div class="grid grid-4" style="margin-top: 26px;">
+          <div class="stat"><div class="num">Jutaan</div><div class="lbl">Operasi index dibuang</div></div>
+          <div class="stat"><div class="num">1×</div><div class="lbl">Putaran jaringan dipangkas</div></div>
+          <div class="stat"><div class="num">CSV</div><div class="lbl">Ikut lebih cepat</div></div>
+          <div class="stat"><div class="num">2</div><div class="lbl">Remote ter-publish</div></div>
+        </div>
+        <div class="takeaway">Catatan jujur: angka detik real diukur langsung di browser (badge <span class="kbd">✓ Ready Xs</span> di toolbar). Yang pasti di sini = <strong>kerja sia-sia yang dihapus</strong>, terbukti via test.</div>
+      </section>
+
+      <!-- Value untuk user (before/after awam) -->
+      <section>
+        <div class="eyebrow">Dampak untuk Pengguna</div>
+        <h2>Yang Berubah Saat Dipakai</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>Sebelum</h4>
+            <ul>
+              <li>Buka halaman → nunggu sampai tabel benar-benar siap</li>
+              <li>Saat data lengkap masuk, halaman sempat terasa berat</li>
+              <li>Aksi harian (filter, scroll) ikut menanggung beban awal</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>Sesudah</h4>
+            <ul>
+              <li><strong>Tabel cepat kebaca</strong> — sisanya mengisi sendiri di belakang</li>
+              <li><strong>Layar tidak nge-freeze</strong> — tetap bisa diklik saat loading</li>
+              <li><strong>Kerja harian lebih sat-set</strong> — lebih responsif</li>
+              <li><strong>Aman</strong> — tak ada fitur yang berubah atau rusak</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Lebih ringan & lebih mulus untuk dipakai sehari-hari — tanpa pengguna harus belajar apa pun yang baru.</div>
+      </section>
+
+      <!-- Lessons learned -->
+      <section>
+        <div class="eyebrow">Pembelajaran</div>
+        <h2>Insight Teknis &amp; Operasional</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🔍 Ukur biaya dulu</h3>
+            <p class="muted" style="font-size: 0.78em;">Periksa biaya sebenarnya sebelum pilih strategi. "Menunda" tampak benar, padahal biaya asli di tempat lain.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🧪 Test = keberanian</h3>
+            <p class="muted" style="font-size: 0.78em;">Dengan output yang dikunci test, menyentuh halaman inti yang dipakai harian jadi tidak menakutkan.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">📉 Low-risk ada batasnya</h3>
+            <p class="muted" style="font-size: 0.78em;">Tiga kemenangan aman sudah dipetik. Sisanya berisiko tinggi — ditunda sampai benar-benar perlu (ROI).</p>
+          </div>
+        </div>
+        <div class="takeaway">Kemenangan terbaik sering bukan yang paling pintar — tapi yang paling <strong>aman, terukur, dan reversibel</strong>.</div>
+      </section>
+
+      <!-- Next steps -->
+      <section>
+        <div class="eyebrow">Roadmap</div>
+        <h2>Pengembangan Selanjutnya</h2>
+        <div class="grid grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--sky);">Short-term (1-2 minggu)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Ukur cold-load real di browser (badge timing built-in)</li>
+              <li>Putuskan: berhenti di sini kalau sudah cukup (ROI sisa rendah)</li>
+              <li>Pantau apakah <span class="kbd">6 paralel</span> tetap stabil di jaringan RDP</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Mid-term (1-3 bulan)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Lever besar (virtualization / server-pagination) hanya bila benar-benar perlu</li>
+              <li>Keduanya berisiko tinggi — butuh perencanaan terpisah</li>
+              <li>Bangun fitur monitoring baru di atas fondasi yang sudah ringan</li>
+              <li>Jaga performa sebagai syarat tiap penambahan fitur</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Terima Kasih</div>
+          <h1>Pertanyaan?</h1>
+          <p class="subtitle">3 optimasi low-risk · live di produksi · nol perubahan perilaku · dikunci 37 test.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Domain Archive</span>
+            <span><strong>Scope</strong> · /domains cold-load</span>
+            <span><strong>Week</strong> · 24 · 2026</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      controls: true,
+      progress: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade',
+      center: false,
+      width: 1280,
+      height: 800,
+      margin: 0.04,
+    });
+  </script>
+</body>
+</html>
