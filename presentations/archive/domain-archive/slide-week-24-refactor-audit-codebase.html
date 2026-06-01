@@ -1,9 +1,8 @@
 <!doctype html>
 <!--
   ═══════════════════════════════════════════════════════════════════════
-  Week 24 — Refactor & Audit Codebase (Domain Archive)
-  Audience: tim teknis · Origin: atasan minta rapikan
-  Value: bersih & aman tanpa ubah fitur
+  Week 24 — Refactor & Audit Codebase (Domain Archive) — v2 (explanatory)
+  Origin: atasan minta rapikan · Fokus: jelaskan KENAPA + istilah + angka
   ═══════════════════════════════════════════════════════════════════════
 -->
 <html lang="id">
@@ -17,99 +16,88 @@
 
   <style>
     :root {
-      --accent: #10b981;
-      --accent-soft: #10b98122;
-      --accent-line: #10b98144;
-      --amber: #f59e0b;
-      --amber-soft: #f59e0b22;
-      --red: #ef4444;
-      --red-soft: #ef444422;
-      --sky: #38bdf8;
-      --sky-soft: #38bdf822;
-      --bg: #0a0c12;
-      --bg-card: #13151d;
-      --bg-card-hover: #181b25;
-      --border: #ffffff14;
-      --border-strong: #ffffff24;
-      --text: #e5e7eb;
-      --text-muted: #9ca3af;
-      --text-faint: #64748b;
+      --accent: #10b981; --accent-soft: #10b98122; --accent-line: #10b98144;
+      --amber: #f59e0b; --amber-soft: #f59e0b22;
+      --red: #ef4444; --red-soft: #ef444422;
+      --sky: #38bdf8; --sky-soft: #38bdf822;
+      --bg: #0a0c12; --bg-card: #13151d; --bg-card-hover: #181b25;
+      --border: #ffffff14; --border-strong: #ffffff24;
+      --text: #e5e7eb; --text-muted: #9ca3af; --text-faint: #64748b;
     }
-    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 27px; color: var(--text); }
     .reveal .slides { text-align: left; }
-    .reveal .slides section { padding: 30px 54px; height: 100%; box-sizing: border-box; }
+    .reveal .slides section { padding: 28px 52px; height: 100%; box-sizing: border-box; }
     body, html, .reveal { background: var(--bg) !important; }
-    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 12px; text-transform: none; }
     .reveal h1 { font-size: 2.4em; line-height: 1.1; }
-    .reveal h2 { font-size: 1.6em; line-height: 1.15; }
-    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
-    .reveal p { line-height: 1.5; margin: 0 0 12px; }
+    .reveal h2 { font-size: 1.55em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.12em; line-height: 1.25; }
+    .reveal p { line-height: 1.5; margin: 0 0 11px; }
     .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.82em; color: var(--accent); border: 1px solid var(--border); font-family: 'JetBrains Mono', ui-monospace, monospace; }
     .reveal a { color: var(--accent); }
-    .reveal ul, .reveal ol { line-height: 1.5; margin: 8px 0 14px 1.2em; }
+    .reveal ul, .reveal ol { line-height: 1.45; margin: 6px 0 12px 1.2em; }
     .reveal ul li, .reveal ol li { margin: 5px 0; }
 
-    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 16px; }
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 14px; }
     .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
     .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
     .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
 
-    .muted { color: var(--text-muted); }
-    .faint { color: var(--text-faint); }
+    .muted { color: var(--text-muted); } .faint { color: var(--text-faint); }
+    .lead { font-size: 0.92em; color: var(--text-muted); line-height: 1.55; max-width: 980px; }
 
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 15px 17px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
     .card-accent { border-left: 3px solid var(--accent); }
     .card-amber  { border-left: 3px solid var(--amber);  }
     .card-red    { border-left: 3px solid var(--red);    }
     .card-sky    { border-left: 3px solid var(--sky);    }
 
-    .grid { display: grid; gap: 13px; }
+    .grid { display: grid; gap: 12px; }
     .grid-2 { grid-template-columns: 1fr 1fr; }
     .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
     .grid-4 { grid-template-columns: repeat(4, 1fr); }
 
     .stat { text-align: center; }
-    .stat .num { font-size: 2.3em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat .num { font-size: 2.2em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
     .stat .lbl { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
 
-    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.62em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.6em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
     .pill.ok { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+    .pill.no { color: #fca5a5; border-color: #ef444444; background: var(--red-soft); }
 
-    .takeaway { margin-top: 20px; padding: 11px 17px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.8em; color: #d1fae5; }
+    .takeaway { margin-top: 18px; padding: 11px 16px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.79em; color: #d1fae5; }
     .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
 
-    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.74em; width: 100%; }
-    .flow-node { flex: 1; padding: 13px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.72em; width: 100%; }
+    .flow-node { flex: 1; padding: 12px 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
     .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
     .flow-node .sub { font-size: 0.82em; color: var(--text-muted); }
     .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
-    .flow-arrow { padding: 0 7px; color: var(--text-faint); font-size: 1.1em; }
+    .flow-arrow { padding: 0 6px; color: var(--text-faint); font-size: 1.1em; }
 
-    .layer-stack { display: grid; gap: 9px; }
-    .layer { padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 13px; }
-    .layer .ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1em; }
+    .layer-stack { display: grid; gap: 8px; }
+    .layer { padding: 11px 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 13px; }
+    .layer .ico { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.05em; }
     .layer .body { flex: 1; }
-    .layer .head { font-weight: 700; color: #fff; font-size: 0.92em; }
-    .layer .desc { color: var(--text-muted); font-size: 0.76em; margin-top: 2px; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.9em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.74em; margin-top: 1px; }
 
-    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .ba-col { padding: 15px 17px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
-    .ba-col h4 { font-size: 0.76em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
-    .ba-before h4 { color: var(--red); }
-    .ba-after  h4 { color: var(--accent); }
-    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.82em; }
-    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .ba-col { padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.74em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 9px; }
+    .ba-before h4 { color: var(--red); } .ba-after h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.8em; }
+    .ba-col ul li { margin: 5px 0; color: var(--text-muted); }
 
-    .timeline { display: grid; gap: 7px; font-size: 0.74em; }
-    .tl-row { display: grid; grid-template-columns: 50px 1fr 1.2fr; gap: 12px; padding: 9px 13px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
-    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1em; }
-    .tl-row .prob { color: #fca5a5; font-weight: 600; }
-    .tl-row .fix  { color: var(--text-muted); }
+    .timeline { display: grid; gap: 6px; font-size: 0.72em; }
+    .tl-row { display: grid; grid-template-columns: 46px 1fr 1.2fr; gap: 11px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; } .tl-row .fix { color: var(--text-muted); }
 
     .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
     .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
-    .title-slide .subtitle { font-size: 1.05em; color: var(--text-muted); margin-bottom: 30px; }
-    .title-slide .meta { display: flex; gap: 22px; font-size: 0.68em; color: var(--text-faint); letter-spacing: 0.07em; text-transform: uppercase; flex-wrap: wrap; }
+    .title-slide .subtitle { font-size: 1.02em; color: var(--text-muted); margin-bottom: 28px; }
+    .title-slide .meta { display: flex; gap: 20px; font-size: 0.66em; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; flex-wrap: wrap; }
     .title-slide .meta strong { color: var(--text); font-weight: 700; }
 
     .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
@@ -117,17 +105,22 @@
 
     .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
     .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
-    .section-divider h2 { font-size: 2.4em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .section-divider .desc { color: var(--text-muted); font-size: 0.98em; max-width: 720px; margin-top: 12px; }
+    .section-divider h2 { font-size: 2.3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 0.95em; max-width: 740px; margin-top: 12px; line-height: 1.5; }
 
-    .kv { display:grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 0.8em; }
-    .kv .k { color: var(--text-faint); font-family:'JetBrains Mono',monospace; font-size:0.9em; }
-    .kv .v { color: var(--text); }
-    table.mini { width:100%; border-collapse:collapse; font-size:0.74em; margin-top:6px; }
-    table.mini th, table.mini td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); }
-    table.mini th { color: var(--text-faint); text-transform:uppercase; letter-spacing:0.08em; font-size:0.85em; font-weight:700; }
+    table.mini { width:100%; border-collapse:collapse; font-size:0.74em; margin-top:8px; }
+    table.mini th, table.mini td { text-align:left; padding:8px 11px; border-bottom:1px solid var(--border); }
+    table.mini th { color: var(--text-faint); text-transform:uppercase; letter-spacing:0.07em; font-size:0.82em; font-weight:700; }
     table.mini td { color: var(--text-muted); }
-    table.mini td strong { color:#fff; }
+    table.mini td strong { color:#fff; } table.mini td .down { color: var(--accent); font-family:'JetBrains Mono',monospace; font-weight:700; }
+    .arrow-num { font-family:'JetBrains Mono',monospace; }
+    .big-ba { display:grid; grid-template-columns: 1fr auto 1fr; gap: 18px; align-items:center; margin-top: 14px; }
+    .big-ba .box { text-align:center; padding: 20px; border-radius: 14px; border:1px solid var(--border); background:var(--bg-card); }
+    .big-ba .box .n { font-size: 2.3em; font-weight:800; line-height:1; }
+    .big-ba .box.before .n { color:#fca5a5; } .big-ba .box.after .n { background:linear-gradient(135deg,var(--accent),#6ee7b7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .big-ba .box .c { font-size:0.7em; color:var(--text-muted); margin-top:6px; text-transform:uppercase; letter-spacing:0.08em; }
+    .big-ba .mid { text-align:center; color:var(--accent); }
+    .big-ba .mid .d { font-size:1.6em; font-weight:800; } .big-ba .mid .a { font-size:1.6em; color:var(--text-faint); }
   </style>
 </head>
 
@@ -141,11 +134,11 @@
         <div class="title-slide">
           <div class="eyebrow">Engineering Report · Week 24 · 2026</div>
           <h1>Refactor &amp; Audit<br/>Codebase</h1>
-          <p class="subtitle">Beberes besar 126 file &mdash; tanpa mengubah satu fitur pun.</p>
+          <p class="subtitle">Membenahi 126 file &mdash; tanpa mengubah satu fitur pun.</p>
           <div class="meta">
             <span><strong>Project</strong> · Domain Archive</span>
-            <span><strong>Scope</strong> · React + Supabase frontend</span>
-            <span><strong>Status</strong> · &minus;19.769 baris · semua terverifikasi</span>
+            <span><strong>Permintaan</strong> · Atasan</span>
+            <span><strong>Hasil</strong> · kode &minus;30% · 0 fitur berubah</span>
           </div>
         </div>
       </section>
@@ -155,340 +148,264 @@
         <div class="section-divider">
           <div class="num">01</div>
           <div class="eyebrow">Konteks</div>
-          <h2>Kenapa Ini Ada</h2>
-          <p class="desc">Atasan minta codebase dirapikan. Sebelum eksekusi, kita pahami dulu: sistem apa, sebesar apa, dan kenapa sudah waktunya "diservis".</p>
+          <h2>Apa Itu "Refactor" &amp; Kenapa Perlu</h2>
+          <p class="desc">Sebelum ke angka, mari samakan persepsi dulu: refactor itu apa, kenapa penting, dan kenapa codebase kita sudah waktunya "diservis".</p>
         </div>
       </section>
 
-      <!-- ═══ 3 · ORIGIN STORY ═══ -->
+      <!-- ═══ 3 · APA ITU REFACTOR ═══ -->
       <section>
-        <div class="eyebrow">Asal-usul</div>
-        <h2>Dari "Tolong dirapikan" jadi rencana terukur</h2>
-        <div class="grid grid-2" style="margin-top:14px;">
-          <div class="card card-accent">
-            <h3 style="font-size:0.95em;">📌 Pemicu</h3>
-            <p class="muted" style="font-size:0.82em;">Atasan minta refactor codebase. Tapi "refactor" itu luas &mdash; perlu diterjemahkan jadi: <strong style="color:#fff">apa yang aman dikerjakan, apa yang berisiko, dan berapa angkanya</strong> untuk laporan.</p>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size:0.95em;">🎯 Prinsip yang dipegang</h3>
-            <p class="muted" style="font-size:0.82em;">Aplikasi <strong style="color:#fff">sedang dipakai produksi</strong>. Aturan emas: rapikan tanpa merusak. "Refactor" = beberes &amp; servis &mdash; struktur dibenahi, <strong style="color:#fff">fungsi tetap sama persis</strong>.</p>
-          </div>
+        <div class="eyebrow">Definisi Sederhana</div>
+        <h2>Refactor = "Beberes &amp; Servis" kode</h2>
+        <p class="lead" style="margin-bottom:14px;">Refactor adalah <strong style="color:#fff">merapikan kode tanpa mengubah hasilnya</strong>. Struktur dibenahi, tapi fungsinya tetap sama persis &mdash; user tidak melihat perubahan apa pun.</p>
+        <div class="grid grid-3">
+          <div class="card card-accent"><h3 style="font-size:0.9em;">🏠 Beberes lemari</h3><p class="muted" style="font-size:0.76em;">Baju (fungsi) tetap lengkap, cuma disusun rapi biar gampang dicari.</p></div>
+          <div class="card card-accent"><h3 style="font-size:0.9em;">🚗 Servis mobil</h3><p class="muted" style="font-size:0.76em;">Mesin dibersihin, part usang dibuang &mdash; mobil tetap jalan sama.</p></div>
+          <div class="card card-accent"><h3 style="font-size:0.9em;">✍️ Edit tulisan</h3><p class="muted" style="font-size:0.76em;">Makna tetap, kalimat berulang dibuang &mdash; lebih ringkas &amp; jelas.</p></div>
         </div>
-        <div class="takeaway">Bukan rombak ulang. Ini "servis mobil": mesin dibersihin, part usang dibuang &mdash; mobilnya tetap jalan sama.</div>
+        <div class="takeaway">Kuncinya: <strong>bukan rombak ulang</strong>. Rapi-rapi &amp; bersih-bersih, sambil memastikan aplikasi jalan sama persis.</div>
       </section>
 
-      <!-- ═══ 4 · PROFIL SISTEM ═══ -->
+      <!-- ═══ 4 · KENAPA HARUS (technical debt) ═══ -->
       <section>
-        <div class="eyebrow">Profil Sistem</div>
-        <h2>Yang kita hadapi</h2>
-        <div class="grid grid-3" style="margin-top:16px;">
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin:0 0 8px;">Stack</div>
-            <div style="font-size:1.3em;font-weight:800;color:#fff;">React + Vite</div>
-            <div class="muted" style="font-size:0.78em;">Frontend + Supabase (Postgres) + 26 Edge Function</div>
-          </div>
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin:0 0 8px;">Ukuran</div>
-            <div style="font-size:1.3em;font-weight:800;color:#fff;">126 file</div>
-            <div class="muted" style="font-size:0.78em;">67 src + 26 edge function + 33 script tooling</div>
+        <div class="eyebrow red">Kenapa Harus</div>
+        <h2>Kalau tidak di-refactor, apa ruginya?</h2>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="card card-red">
+            <h3 style="font-size:0.92em;color:#fca5a5;">💳 "Technical debt" (utang teknis)</h3>
+            <p class="muted" style="font-size:0.79em;">Kode yang dibuat buru-buru itu seperti <strong style="color:#fff">utang</strong>. Makin lama dibiarkan, "bunganya" makin besar &mdash; tiap fitur baru jadi makin lambat &amp; mahal dikerjakan.</p>
           </div>
           <div class="card card-red">
-            <div class="eyebrow red" style="margin:0 0 8px;">Titik berat</div>
-            <div style="font-size:1.3em;font-weight:800;color:#fff;">2 god-file</div>
-            <div class="muted" style="font-size:0.78em;">NamecheapPage 8.027 + DomainManagePage 6.408 = <strong style="color:#fca5a5">30,6%</strong> codebase</div>
+            <h3 style="font-size:0.92em;color:#fca5a5;">👃 "Code smell" (bau kode)</h3>
+            <p class="muted" style="font-size:0.79em;">Tanda-tanda kode bermasalah: 1 file <strong style="color:#fff">8.000 baris</strong>, kode kembar di mana-mana, barang mati numpuk. Belum rusak, tapi rawan &amp; susah dirawat.</p>
           </div>
         </div>
-        <div class="takeaway">Dua file menampung sepertiga seluruh kode. Di situlah beban perawatan terbesar.</div>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="card"><h3 style="font-size:0.88em;color:var(--amber);">⏳ Beban perawatan naik</h3><p class="muted" style="font-size:0.76em;">Cari sesuatu di file 8rb baris = mimpi buruk. Perbaiki 1 bug = harus edit banyak tempat (karena kembar).</p></div>
+          <div class="card"><h3 style="font-size:0.88em;color:var(--amber);">🧱 Titik rapuh tunggal</h3><p class="muted" style="font-size:0.76em;">2 file raksasa pegang produk inti. Sekali salah sentuh = berisiko ke seluruh halaman utama.</p></div>
+        </div>
+        <div class="takeaway">Analogi: rumah yang tak pernah dibersihin &mdash; barang numpuk, makin susah cari &amp; bergerak. Refactor = bayar utang itu sebelum membengkak.</div>
       </section>
 
-      <!-- ═══ 5 · DIVIDER 02 ═══ -->
+      <!-- ═══ 5 · PROFIL SISTEM + REPOMIX ═══ -->
+      <section>
+        <div class="eyebrow">Profil Sistem</div>
+        <h2>Sebesar apa yang kita hadapi</h2>
+        <div class="grid grid-4" style="margin-top:14px;">
+          <div class="card card-accent"><div class="eyebrow" style="margin:0 0 6px;">Total</div><div style="font-size:1.4em;font-weight:800;color:#fff;">126</div><div class="muted" style="font-size:0.72em;">file kode</div></div>
+          <div class="card card-accent"><div class="eyebrow" style="margin:0 0 6px;">Stack</div><div style="font-size:1.4em;font-weight:800;color:#fff;">React</div><div class="muted" style="font-size:0.72em;">+ Supabase + Edge Fn</div></div>
+          <div class="card card-red"><div class="eyebrow red" style="margin:0 0 6px;">God-file</div><div style="font-size:1.4em;font-weight:800;color:#fff;">30,6%</div><div class="muted" style="font-size:0.72em;">codebase di 2 file</div></div>
+          <div class="card card-sky"><div class="eyebrow sky" style="margin:0 0 6px;">Repomix</div><div style="font-size:1.4em;font-weight:800;color:#fff;">~66rb</div><div class="muted" style="font-size:0.72em;">baris (snapshot kode)</div></div>
+        </div>
+        <p class="lead" style="margin-top:16px;font-size:0.82em;"><strong style="color:#fff">Repomix</strong> = alat yang "memotret" seluruh kode jadi 1 file ukur. Inilah angka <strong style="color:#fff">~66 ribu baris</strong> yang jadi titik awal kita &mdash; di sinilah kita mulai membenahi.</p>
+        <div class="takeaway">Dua file (NamecheapPage 8.027 + DomainManagePage 6.408 baris) menampung sepertiga seluruh kode. Di situ beban terbesar.</div>
+      </section>
+
+      <!-- ═══ 6 · DIVIDER 02 ═══ -->
       <section>
         <div class="section-divider">
           <div class="num">02</div>
           <div class="eyebrow red">Masalah</div>
           <h2>Bukan Kode Rusak &mdash; Kode yang Tumbuh Liar</h2>
-          <p class="desc">Fungsinya sehat &amp; perf sudah dioptimasi. Masalahnya struktural: numpuk, kembar, dan kepadatan yang bikin susah dirawat.</p>
+          <p class="desc">Fungsinya sehat &amp; sudah cepat. Yang bermasalah strukturnya: numpuk, kembar, dan padat sampai susah dirawat.</p>
         </div>
       </section>
 
-      <!-- ═══ 6 · MASALAH 4 QUADRANT ═══ -->
+      <!-- ═══ 7 · MASALAH 4 QUADRANT ═══ -->
       <section>
         <div class="eyebrow red">Diagnosa</div>
         <h2>4 sumber beban perawatan</h2>
-        <div class="grid grid-2" style="margin-top:14px;">
-          <div class="card card-red">
-            <h3 style="color:#fca5a5;font-size:0.95em;">🗂️ God-file raksasa</h3>
-            <p class="muted" style="font-size:0.8em;">1 komponen React = <strong style="color:#fff">8.027 baris</strong> dengan 77 useState + 27 useMemo + 27 useEffect. Mustahil di-review per bagian.</p>
-          </div>
-          <div class="card card-red">
-            <h3 style="color:#fca5a5;font-size:0.95em;">📋 Duplikasi tersebar</h3>
-            <p class="muted" style="font-size:0.8em;">Pola panggil server (token+fetch) di-copy di <strong style="color:#fff">18 file / 66 tempat</strong>. Fungsi util kembar (chunk, capFirst) di banyak file.</p>
-          </div>
-          <div class="card card-red">
-            <h3 style="color:#fca5a5;font-size:0.95em;">💀 Dead code</h3>
-            <p class="muted" style="font-size:0.8em;">Komponen &amp; file tak terpakai, import mati 22 simbol/file, fungsi yang tak pernah dipanggil &mdash; numpuk jadi noise.</p>
-          </div>
-          <div class="card card-red">
-            <h3 style="color:#fca5a5;font-size:0.95em;">🧩 Kompleksitas inline</h3>
-            <p class="muted" style="font-size:0.8em;">Semua tanggung jawab (data, filter, render tabel, modal) tumpuk dalam 1 komponen &mdash; tiap ubahan kecil = risiko tinggi.</p>
-          </div>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="card card-red"><h3 style="color:#fca5a5;font-size:0.92em;">🗂️ God-file raksasa</h3><p class="muted" style="font-size:0.78em;">1 komponen = <strong style="color:#fff">8.027 baris</strong>, 77 "saklar" (useState) dalam 1 file. Mustahil di-review per bagian.</p></div>
+          <div class="card card-red"><h3 style="color:#fca5a5;font-size:0.92em;">📋 Duplikasi tersebar</h3><p class="muted" style="font-size:0.78em;">Pola panggil server di-copy di <strong style="color:#fff">18 file / 66 tempat</strong>. Util kembar di banyak file.</p></div>
+          <div class="card card-red"><h3 style="color:#fca5a5;font-size:0.92em;">💀 Dead code (barang mati)</h3><p class="muted" style="font-size:0.78em;">Komponen, file, &amp; import tak terpakai numpuk jadi noise yang bikin bingung.</p></div>
+          <div class="card card-red"><h3 style="color:#fca5a5;font-size:0.92em;">🧩 Playground duplikat</h3><p class="muted" style="font-size:0.78em;">Folder eksperimen tema (v2) = <strong style="color:#fff">~18.600 baris</strong> jiplakan dari halaman asli.</p></div>
         </div>
-        <div class="takeaway">Konsekuensi kalau dibiarkan: onboarding sulit, tiap fitur baru makin lambat, dan god-file jadi "single point of fragility".</div>
+        <div class="takeaway">Kalau dibiarkan: onboarding sulit, tiap fitur baru makin lambat, god-file jadi titik rapuh produk inti.</div>
       </section>
 
-      <!-- ═══ 7 · GOAL & CONSTRAINT ═══ -->
+      <!-- ═══ 8 · GOAL & CONSTRAINT ═══ -->
       <section>
         <div class="eyebrow">Tujuan &amp; Batasan</div>
         <h2>Goal &amp; Constraint</h2>
-        <div class="grid grid-2" style="margin-top:14px;">
+        <div class="grid grid-2" style="margin-top:12px;">
           <div class="card card-accent">
-            <h3 style="font-size:0.92em;color:var(--accent);">🎯 Goals</h3>
-            <ul style="font-size:0.8em;">
+            <h3 style="font-size:0.9em;color:var(--accent);">🎯 Goals</h3>
+            <ul style="font-size:0.79em;">
               <li><strong style="color:#fff">Behavior-preserving</strong> &mdash; aplikasi jalan sama persis</li>
               <li>Buang yang mati, satukan yang kembar</li>
-              <li>Angka terukur &amp; jujur untuk laporan atasan</li>
-              <li>Setiap langkah bisa diverifikasi &amp; di-rollback</li>
+              <li>Angka terukur &amp; jujur untuk laporan</li>
+              <li>Tiap langkah bisa diverifikasi &amp; di-rollback</li>
             </ul>
           </div>
           <div class="card card-amber">
-            <h3 style="font-size:0.92em;color:var(--amber);">⚠️ Constraints</h3>
-            <ul style="font-size:0.8em;">
-              <li><strong style="color:#fff">Produksi aktif</strong> &mdash; tak boleh ada downtime/bug</li>
-              <li>Akses via <strong style="color:#fff">RDP yang blokir TCP</strong> &mdash; CLI standar gagal</li>
+            <h3 style="font-size:0.9em;color:var(--amber);">⚠️ Constraints</h3>
+            <ul style="font-size:0.79em;">
+              <li><strong style="color:#fff">Produksi aktif</strong> &mdash; tak boleh ada bug/downtime</li>
+              <li>Akses <strong style="color:#fff">RDP blokir TCP</strong> &mdash; tool standar gagal</li>
               <li>Alur renew domain = <strong style="color:#fca5a5">saldo uang riil</strong></li>
-              <li>Test otomatis <strong style="color:#fff">tak mencakup tampilan</strong> (UI)</li>
+              <li>Test otomatis <strong style="color:#fff">tak cek tampilan</strong> (UI)</li>
             </ul>
           </div>
         </div>
-        <div class="takeaway">Batasan terberat: tak ada jaring otomatis untuk UI &amp; ada jalur yang menyentuh uang &rarr; disiplin keamanan jadi wajib.</div>
+        <div class="takeaway">Batasan terberat: tak ada jaring otomatis untuk UI &amp; ada jalur yang menyentuh uang &rarr; disiplin keamanan wajib.</div>
       </section>
 
-      <!-- ═══ 8 · DIVIDER 03 ═══ -->
+      <!-- ═══ 9 · DIVIDER 03 ═══ -->
       <section>
         <div class="section-divider">
           <div class="num">03</div>
           <div class="eyebrow sky">Pendekatan</div>
-          <h2>Pengaman Dulu, Baru Otak-Atik</h2>
-          <p class="desc">Strategi: pasang jaring pengaman berlapis, kerjakan bertahap dari risiko terendah, verifikasi tiap langkah. Tidak ada perubahan tanpa bukti aman.</p>
+          <h2>Kosakata &amp; Strategi</h2>
+          <p class="desc">"Refactor" itu payung besar. Penting paham turunannya &mdash; teknik apa yang dipakai, dan yang sengaja dihindari karena berisiko.</p>
         </div>
       </section>
 
-      <!-- ═══ 9 · ARSITEKTUR PENGAMAN ═══ -->
+      <!-- ═══ 10 · PETA ISTILAH / TURUNAN ═══ -->
       <section>
-        <div class="eyebrow sky">Jaring Pengaman</div>
-        <h2>4 lapis sebelum sentuh kode</h2>
-        <div class="layer-stack" style="margin-top:14px;">
-          <div class="layer">
-            <div class="ico" style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line);">🧊</div>
-            <div class="body"><div class="head">Branch <code>main</code> dibekukan</div><div class="desc">Semua kerjaan di branch terpisah &mdash; produksi jadi fallback yang utuh</div></div>
-            <span class="pill ok">fallback</span>
-          </div>
-          <div class="layer">
-            <div class="ico" style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line);">🏷️</div>
-            <div class="body"><div class="head">Tag restore-point per-langkah</div><div class="desc">16 tag &mdash; bisa mundur ke titik mana pun, bukan cuma awal</div></div>
-            <span class="pill ok">16 tag</span>
-          </div>
-          <div class="layer">
-            <div class="ico" style="background:var(--sky-soft);color:var(--sky);border:1px solid #38bdf844;">💾</div>
-            <div class="body"><div class="head">Cold backup (bundle 4,7 MB)</div><div class="desc">Snapshot seluruh history dalam 1 file &mdash; pulih walau .git rusak</div></div>
-          </div>
-          <div class="layer">
-            <div class="ico" style="background:var(--sky-soft);color:var(--sky);border:1px solid #38bdf844;">🧪</div>
-            <div class="body"><div class="head">Test net (26 characterization test)</div><div class="desc">Kunci perilaku fungsi pure &mdash; tanpa install dependency apa pun (RDP-friendly)</div></div>
-            <span class="pill ok">26 test</span>
-          </div>
-        </div>
-        <div class="takeaway">Filosofi: kalau apa pun kacau, satu perintah balik bersih &mdash; <code>git reset --hard &lt;tag&gt;</code>.</div>
-      </section>
-
-      <!-- ═══ 10 · PETA METODE REFACTOR ═══ -->
-      <section>
-        <div class="eyebrow sky">Peta Metode</div>
-        <h2>"Refactor" itu payung &mdash; ini teknik yang dipakai</h2>
-        <div class="grid grid-2" style="margin-top:12px;">
+        <div class="eyebrow sky">Peta Istilah</div>
+        <h2>"Refactor" &amp; turunannya</h2>
+        <div class="grid grid-2" style="margin-top:10px;">
           <div class="card card-accent">
-            <h3 style="font-size:0.9em;color:var(--accent);">✅ Yang dilakukan</h3>
-            <ul style="font-size:0.78em;">
-              <li><strong style="color:#fff">Clean-up</strong> &mdash; buang dead code (yang mati)</li>
-              <li><strong style="color:#fff">DRY / Consolidate</strong> &mdash; satukan yang kembar jadi 1</li>
-              <li><strong style="color:#fff">Extract</strong> &mdash; pecah god-file jadi modul</li>
-              <li><strong style="color:#fff">Simplify</strong> &mdash; sederhanakan (terbatas)</li>
-            </ul>
+            <h3 style="font-size:0.88em;color:var(--accent);">✅ Teknik yang DIPAKAI</h3>
+            <table class="mini" style="margin-top:2px;">
+              <tr><td><strong>Clean-up</strong></td><td>buang dead code (barang mati)</td></tr>
+              <tr><td><strong>DRY / Consolidate</strong></td><td>satukan kode kembar jadi 1</td></tr>
+              <tr><td><strong>Extract</strong></td><td>pecah god-file jadi modul rapi</td></tr>
+              <tr><td><strong>Simplify</strong></td><td>sederhanakan logika (terbatas)</td></tr>
+            </table>
           </div>
           <div class="card card-red">
-            <h3 style="font-size:0.9em;color:#fca5a5;">⛔ Yang SENGAJA dihindari</h3>
-            <ul style="font-size:0.78em;">
-              <li><strong style="color:#fff">Rewrite</strong> &mdash; tulis ulang = risiko bug tinggi</li>
-              <li><strong style="color:#fff">Optimize</strong> &mdash; perf sudah bagus, bukan tujuan</li>
-              <li><strong style="color:#fff">Paksa &minus;30%</strong> &mdash; harus hapus fitur (ditolak)</li>
-            </ul>
+            <h3 style="font-size:0.88em;color:#fca5a5;">⛔ Yang SENGAJA dihindari</h3>
+            <table class="mini" style="margin-top:2px;">
+              <tr><td><strong>Rewrite</strong></td><td>tulis ulang dari nol = risiko bug tinggi</td></tr>
+              <tr><td><strong>Optimize</strong></td><td>bikin cepat &mdash; perf sudah bagus, beda tujuan</td></tr>
+              <tr><td><strong>Paksa &minus;30%</strong></td><td>harus hapus fitur &mdash; ditolak</td></tr>
+            </table>
           </div>
         </div>
+        <p class="lead" style="margin-top:12px;font-size:0.78em;"><span class="pill ok">DRY</span> = "Don't Repeat Yourself" &mdash; jangan tulis hal sama berulang. &nbsp; <span class="pill no">Rewrite ≠ Refactor</span> &mdash; sering ketuker, padahal risikonya beda jauh.</p>
         <div class="takeaway">Keputusan engineering = tahu kapan <em>tidak</em> melakukan sesuatu, sama pentingnya dengan melakukannya.</div>
       </section>
 
-      <!-- ═══ 11 · ALUR FASE ═══ -->
+      <!-- ═══ 11 · JARING PENGAMAN ═══ -->
+      <section>
+        <div class="eyebrow sky">Jaring Pengaman</div>
+        <h2>4 lapis sebelum sentuh kode</h2>
+        <div class="layer-stack" style="margin-top:12px;">
+          <div class="layer"><div class="ico" style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line);">🧊</div><div class="body"><div class="head">Branch terpisah &mdash; produksi dibekukan</div><div class="desc">Semua kerjaan di jalur sendiri; produksi jadi fallback utuh</div></div><span class="pill ok">fallback</span></div>
+          <div class="layer"><div class="ico" style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line);">🏷️</div><div class="body"><div class="head">Restore-point per-langkah</div><div class="desc">16 "checkpoint" &mdash; bisa mundur ke titik mana pun</div></div><span class="pill ok">16 tag</span></div>
+          <div class="layer"><div class="ico" style="background:var(--sky-soft);color:var(--sky);border:1px solid #38bdf844;">💾</div><div class="body"><div class="head">Cold backup (1 file, 4,7 MB)</div><div class="desc">Pulih walau sistem rusak total</div></div></div>
+          <div class="layer"><div class="ico" style="background:var(--sky-soft);color:var(--sky);border:1px solid #38bdf844;">🧪</div><div class="body"><div class="head">Test pengaman (26 test)</div><div class="desc">Kunci perilaku &mdash; tanpa install apa pun (RDP-friendly)</div></div><span class="pill ok">26 test</span></div>
+        </div>
+        <div class="takeaway">Filosofi: kalau apa pun kacau, satu perintah balik bersih. Berani otak-atik karena ada jaring.</div>
+      </section>
+
+      <!-- ═══ 12 · ALUR FASE ═══ -->
       <section>
         <div class="eyebrow sky">Alur Eksekusi</div>
         <h2>Bertahap, dari aman ke berisiko</h2>
-        <div class="flow" style="margin-top:22px;">
-          <div class="flow-node accent"><div class="title">F0 · Pengaman</div><div class="sub">test net + tag</div></div>
+        <div class="flow" style="margin-top:20px;">
+          <div class="flow-node accent"><div class="title">F0 · Pengaman</div><div class="sub">test + checkpoint</div></div>
           <div class="flow-arrow">→</div>
           <div class="flow-node"><div class="title">F1 · Quick win</div><div class="sub">buang dead + dedup</div></div>
           <div class="flow-arrow">→</div>
-          <div class="flow-node"><div class="title">F2 · Satukan</div><div class="sub">callEdgeFn</div></div>
+          <div class="flow-node"><div class="title">F2 · Satukan</div><div class="sub">1 pintu server</div></div>
           <div class="flow-arrow">→</div>
           <div class="flow-node"><div class="title">F3 · Ekstrak</div><div class="sub">pecah god-file</div></div>
           <div class="flow-arrow">→</div>
           <div class="flow-node"><div class="title">Audit ×2</div><div class="sub">+ cleanup</div></div>
         </div>
-        <div class="grid grid-3" style="margin-top:24px;">
-          <div class="stat"><div class="num">22</div><div class="lbl">commit ber-tag</div></div>
+        <div class="grid grid-3" style="margin-top:22px;">
+          <div class="stat"><div class="num">22</div><div class="lbl">commit ber-checkpoint</div></div>
           <div class="stat"><div class="num">0</div><div class="lbl">error tiap langkah</div></div>
           <div class="stat"><div class="num">100%</div><div class="lbl">terverifikasi</div></div>
         </div>
       </section>
 
-      <!-- ═══ 12 · DIVIDER 04 ═══ -->
+      <!-- ═══ 13 · DIVIDER 04 ═══ -->
       <section>
         <div class="section-divider">
           <div class="num">04</div>
           <div class="eyebrow">Implementasi</div>
           <h2>Eksekusi per Fase</h2>
-          <p class="desc">Detail tiap fase: apa yang dikerjakan, hasilnya, dan bagaimana diverifikasi aman.</p>
+          <p class="desc">Detail tiap langkah: apa yang dikerjakan, hasilnya, dan bagaimana dipastikan aman.</p>
         </div>
       </section>
 
-      <!-- ═══ 13 · F0-F1 ═══ -->
+      <!-- ═══ 14 · F0-F1 ═══ -->
       <section>
         <div class="eyebrow">Fase 0–1</div>
-        <h2>Jaring pengaman + quick wins</h2>
-        <div class="grid grid-2" style="margin-top:14px;">
-          <div class="card card-accent">
-            <h3 style="font-size:0.9em;">🧪 F0 · Test net</h3>
-            <ul style="font-size:0.77em;">
-              <li>26 test pakai <code>node:test</code> bawaan &mdash; 0 dependency baru</li>
-              <li>Loader stub biar bisa test tanpa Vite (RDP-compatible)</li>
-              <li>Kunci: parseYmd, formatEta, detectNsBucket, dll</li>
-            </ul>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size:0.9em;">🧹 F1 · Quick wins</h3>
-            <ul style="font-size:0.77em;">
-              <li>Hapus <code>RenewPanel</code> mati (&minus;157 baris)</li>
-              <li>Satukan util kembar (chunk, capFirst, parseYmd)</li>
-              <li>Dedup <code>msgStyle</code> 3 salinan → 1</li>
-            </ul>
-          </div>
+        <h2>Pengaman + quick wins</h2>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="card card-accent"><h3 style="font-size:0.9em;">🧪 F0 · Test net</h3><ul style="font-size:0.76em;"><li>26 test pakai tool bawaan &mdash; 0 dependency baru</li><li>Bisa jalan walau di balik RDP</li><li>Kunci perilaku fungsi inti</li></ul></div>
+          <div class="card card-accent"><h3 style="font-size:0.9em;">🧹 F1 · Quick wins</h3><ul style="font-size:0.76em;"><li>Hapus <code>RenewPanel</code> mati (&minus;157)</li><li>Satukan util kembar (3 fungsi)</li><li>Dedup style 3 salinan → 1</li></ul></div>
         </div>
-        <div class="takeaway">F0 wajib duluan: alur renew menyentuh saldo riil &mdash; tak boleh refactor tanpa pengaman.</div>
+        <div class="takeaway">F0 wajib duluan: alur renew menyentuh saldo riil &mdash; tak boleh otak-atik tanpa pengaman.</div>
       </section>
 
-      <!-- ═══ 14 · F2 callEdgeFn ═══ -->
+      <!-- ═══ 15 · F2 ═══ -->
       <section>
         <div class="eyebrow">Fase 2 · DRY paling berdampak</div>
-        <h2>Satu pintu panggil server: <code>callEdgeFn</code></h2>
-        <div class="ba" style="margin-top:14px;">
-          <div class="ba-col ba-before">
-            <h4>❌ Sebelum</h4>
-            <ul>
-              <li>Pola token + fetch + Bearer di-copy di <strong style="color:#fff">18 file</strong></li>
-              <li>Kalau auth berubah → edit 18 tempat</li>
-              <li>Rawan beda-beda &amp; lupa sync</li>
-            </ul>
-          </div>
-          <div class="ba-col ba-after">
-            <h4>✓ Sesudah</h4>
-            <ul>
-              <li>1 helper <code>callEdgeFn(slug, body)</code></li>
-              <li>Semua titik delegasi ke situ &mdash; perilaku byte-identik</li>
-              <li>Auth/error = 1 sumber kebenaran</li>
-            </ul>
-          </div>
+        <h2>Satu pintu panggil server</h2>
+        <div class="ba" style="margin-top:12px;">
+          <div class="ba-col ba-before"><h4>❌ Sebelum</h4><ul><li>Pola panggil server di-copy di <strong style="color:#fff">18 file</strong></li><li>Auth berubah → edit 18 tempat</li><li>Rawan beda &amp; lupa sync</li></ul></div>
+          <div class="ba-col ba-after"><h4>✓ Sesudah</h4><ul><li>1 fungsi <code>callEdgeFn</code></li><li>Semua titik pakai itu &mdash; perilaku sama persis</li><li>Auth/error = 1 sumber kebenaran</li></ul></div>
         </div>
-        <div class="takeaway">Termasuk jalur renew/saldo &mdash; di-<strong>smoke-test live</strong>: domain ke-renew, $12.18 kepotong benar, expiry update. ✅</div>
+        <div class="takeaway">Termasuk jalur renew/saldo &mdash; di-<strong>smoke-test live</strong>: domain ke-renew, $12.18 kepotong benar. ✅</div>
       </section>
 
-      <!-- ═══ 15 · F3 ekstraksi ═══ -->
+      <!-- ═══ 16 · F3 + AUDIT ═══ -->
       <section>
-        <div class="eyebrow">Fase 3 · Pecah god-file</div>
-        <h2>Dari 1 file monster jadi modul rapi</h2>
-        <div class="grid grid-3" style="margin-top:14px;">
-          <div class="card card-accent"><div class="eyebrow" style="margin:0 0 6px;">Icons</div><div class="muted" style="font-size:0.8em;">13 ikon SVG → <code>icons.tsx</code></div></div>
-          <div class="card card-accent"><div class="eyebrow" style="margin:0 0 6px;">Tooltip</div><div class="muted" style="font-size:0.8em;">Subsistem tooltip → <code>MetricTooltip.tsx</code></div></div>
-          <div class="card card-accent"><div class="eyebrow" style="margin:0 0 6px;">Util pure</div><div class="muted" style="font-size:0.8em;">detectNsBucket, formatEta, dll → <code>namecheapUtils.ts</code> (+test)</div></div>
-          <div class="card card-accent"><div class="eyebrow" style="margin:0 0 6px;">Komponen</div><div class="muted" style="font-size:0.8em;">ProviderIcon, MetricBadge, CounterValue → file sendiri</div></div>
-          <div class="card card-accent"><div class="eyebrow" style="margin:0 0 6px;">Shared lib</div><div class="muted" style="font-size:0.8em;"><code>callEdgeFn</code>, <code>downloadBlob</code>, <code>parseTimestamp</code></div></div>
-          <div class="card"><div class="eyebrow amber" style="margin:0 0 6px;">Disetop di sini</div><div class="muted" style="font-size:0.8em;">FilterSidebar/DomainRow = risiko visual tinggi → <strong style="color:#fbbf24">ditunda</strong></div></div>
-        </div>
-        <div class="takeaway">NamecheapPage <strong>8.027 → 7.368</strong> baris. Ekstrak yang aman (leaf component) dulu; yang berisiko sengaja ditahan.</div>
-      </section>
-
-      <!-- ═══ 16 · AUDIT ═══ -->
-      <section>
-        <div class="eyebrow sky">Audit Menyeluruh</div>
-        <h2>2 pass · 19 agen · baca seluruh codebase</h2>
-        <div class="grid grid-2" style="margin-top:14px;">
-          <div class="card card-sky">
-            <h3 style="font-size:0.9em;color:var(--sky);">Pass 1 · Permukaan (9 agen)</h3>
-            <p class="muted" style="font-size:0.79em;">Sweep ~65 file: cari duplikasi lintas-file, dead code, peluang &mdash; klasifikasi aman vs berisiko.</p>
+        <div class="eyebrow">Fase 3 + Audit</div>
+        <h2>Pecah god-file + sisir seluruh kode</h2>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="card card-accent">
+            <h3 style="font-size:0.9em;">🧩 F3 · Ekstrak modul</h3>
+            <p class="muted" style="font-size:0.77em;">13 ikon, subsistem tooltip, util pure, komponen → <strong style="color:#fff">8 file modul baru</strong>. God-file mulai menyusut. Yang berisiko visual sengaja ditahan.</p>
           </div>
           <div class="card card-sky">
-            <h3 style="font-size:0.9em;color:var(--sky);">Pass 2 · Mendalam (11 agen)</h3>
-            <p class="muted" style="font-size:0.79em;">Per-file teliti + <strong style="color:#fff">verifikasi byte-per-byte</strong> &mdash; nemu ~140 import mati yang pass-1 lewatkan.</p>
+            <h3 style="font-size:0.9em;color:var(--sky);">🔍 Audit · 2 pass, 19 agen</h3>
+            <p class="muted" style="font-size:0.77em;">Baca <strong style="color:#fff">seluruh</strong> codebase 2× (permukaan + mendalam). Verifikasi byte-per-byte &mdash; nemu ~140 import mati yang nyaris terlewat.</p>
           </div>
         </div>
-        <div class="takeaway">Audit menemukan, manusia memutuskan: tiap temuan "aman" diverifikasi ulang sebelum dieksekusi.</div>
+        <div class="takeaway">Audit menemukan, manusia memutuskan &mdash; tiap temuan "aman" diverifikasi ulang sebelum dieksekusi.</div>
       </section>
 
-      <!-- ═══ 17 · CLEANUP ═══ -->
+      <!-- ═══ 17 · CLEANUP TABLE ═══ -->
       <section>
         <div class="eyebrow">Hasil Cleanup</div>
         <h2>Buang yang mati &mdash; aman 100%</h2>
         <table class="mini">
-          <tr><th>Yang dibuang</th><th>Jumlah</th><th>Verifikasi</th></tr>
-          <tr><td><strong>File dead</strong> (komponen/lib/ui 0-referensi)</td><td>15 file</td><td>grep 0-ref + tsc</td></tr>
-          <tr><td><strong>Playground duplikat (v2)</strong></td><td>&minus;18.597</td><td>route &amp; menu dihapus bersih</td></tr>
-          <tr><td><strong>Dead code in-file</strong> + 3 script lama</td><td>~&minus;240</td><td>0-caller terverifikasi</td></tr>
-          <tr><td><strong>Import mati</strong> supabaseCompat</td><td>9 file</td><td>cek pemakaian + tsc</td></tr>
+          <tr><th>Yang dibuang</th><th>Jumlah</th><th>Cara verifikasi</th></tr>
+          <tr><td><strong>Playground duplikat (v2)</strong></td><td class="down">&minus;18.597</td><td>route &amp; menu dihapus bersih</td></tr>
+          <tr><td><strong>File dead</strong> (komponen/lib 0-pakai)</td><td class="down">15 file</td><td>grep 0-referensi + tsc</td></tr>
+          <tr><td><strong>Dead code in-file</strong> + 3 script lama</td><td class="down">~&minus;240</td><td>0-pemanggil terverifikasi</td></tr>
+          <tr><td><strong>Import mati</strong> (9 file)</td><td class="down">~140 simbol</td><td>cek pemakaian + tsc jadi hakim</td></tr>
         </table>
-        <div class="takeaway">Tiap penghapusan lewat <code>tsc</code> sebagai hakim &mdash; kalau salah cabut, langsung ketahuan (0 error = benar mati).</div>
+        <div class="takeaway">Tiap penghapusan lewat <code>tsc</code> sebagai hakim &mdash; salah cabut = langsung ketahuan (0 error = benar mati).</div>
       </section>
 
-      <!-- ═══ 18 · TANTANGAN 1 (before/after) ═══ -->
+      <!-- ═══ 18 · TANTANGAN 1 ═══ -->
       <section>
         <div class="eyebrow amber">Tantangan #1</div>
         <h2>Refactor produksi tanpa jaring UI</h2>
-        <div class="ba" style="margin-top:14px;">
-          <div class="ba-col ba-before">
-            <h4>❌ Risiko</h4>
-            <ul>
-              <li>Test otomatis tak cek tampilan/interaksi</li>
-              <li>Ada jalur yang memotong saldo riil</li>
-              <li>Akses RDP &mdash; CLI deploy standar gagal</li>
-            </ul>
-          </div>
-          <div class="ba-col ba-after">
-            <h4>✓ Mitigasi</h4>
-            <ul>
-              <li>Commit atomic + tag &mdash; rollback per-langkah</li>
-              <li>Smoke-test manual untuk jalur uang</li>
-              <li>Skema bypass-RDP (PAT + proxy) yang sudah ada</li>
-            </ul>
-          </div>
+        <div class="ba" style="margin-top:12px;">
+          <div class="ba-col ba-before"><h4>❌ Risiko</h4><ul><li>Test otomatis tak cek tampilan/interaksi</li><li>Ada jalur yang memotong saldo riil</li><li>Akses RDP &mdash; tool deploy standar gagal</li></ul></div>
+          <div class="ba-col ba-after"><h4>✓ Mitigasi</h4><ul><li>Commit + checkpoint &mdash; rollback per-langkah</li><li>Smoke-test manual jalur uang</li><li>Skema bypass-RDP yang sudah ada</li></ul></div>
         </div>
         <div class="takeaway">Tidak semua bisa dijamin otomatis &mdash; yang berisiko di-QA manual, yang ragu di-skip.</div>
       </section>
 
-      <!-- ═══ 19 · TANTANGAN 2 (timeline bug) ═══ -->
+      <!-- ═══ 19 · TANTANGAN 2 (timeline) ═══ -->
       <section>
         <div class="eyebrow amber">Tantangan #2</div>
         <h2>Bug yang ke-catch &amp; cara fix</h2>
-        <div class="timeline" style="margin-top:12px;">
-          <div class="tl-row"><div class="num">01</div><div class="prob">Sisa potongan fungsi nyangkut saat ekstrak</div><div class="fix">→ ke-catch <code>tsc</code> + IDE, langsung dibersihkan</div></div>
-          <div class="tl-row"><div class="num">02</div><div class="prob">Script bash rusakin karakter <code>\b</code> → buang semua import</div><div class="fix">→ revert instan + script ditulis ke file (.cjs)</div></div>
-          <div class="tl-row"><div class="num">03</div><div class="prob">Variabel <code>url</code> yatim setelah migrasi download</div><div class="fix">→ <code>tsc</code> teriak "Cannot find name" → diperbaiki</div></div>
-          <div class="tl-row"><div class="num">04</div><div class="prob">Audit klaim "identik" padahal beda halus</div><div class="fix">→ verifikasi byte-per-byte → di-skip (formatDate, HoverButton)</div></div>
+        <div class="timeline" style="margin-top:10px;">
+          <div class="tl-row"><div class="num">01</div><div class="prob">Sisa potongan kode nyangkut saat ekstrak</div><div class="fix">→ ke-catch tsc + IDE, langsung dibersihkan</div></div>
+          <div class="tl-row"><div class="num">02</div><div class="prob">Script rusakin karakter → buang semua import</div><div class="fix">→ revert instan + ganti cara (script ke file)</div></div>
+          <div class="tl-row"><div class="num">03</div><div class="prob">Variabel yatim setelah migrasi</div><div class="fix">→ tsc teriak "tak dikenal" → diperbaiki</div></div>
+          <div class="tl-row"><div class="num">04</div><div class="prob">Audit klaim "identik" padahal beda halus</div><div class="fix">→ verifikasi byte-per-byte → di-skip</div></div>
         </div>
         <div class="takeaway">Jaring (tsc + revert + verifikasi) bekerja &mdash; tiap kesalahan tertangkap sebelum jadi bug produksi.</div>
       </section>
@@ -498,100 +415,66 @@
         <div class="section-divider">
           <div class="num">05</div>
           <div class="eyebrow">Hasil</div>
-          <h2>Capaian &amp; Refleksi</h2>
-          <p class="desc">Angka konkret, perubahan nyata untuk tim, dan pelajaran yang dibawa pulang.</p>
+          <h2>Angka &amp; Refleksi</h2>
+          <p class="desc">Penurunan nyata: dari repomix, kode aplikasi, sampai per-halaman besar.</p>
         </div>
       </section>
 
-      <!-- ═══ 21 · STATS GRID ═══ -->
+      <!-- ═══ 21 · ANGKA BESAR (repomix + src) ═══ -->
       <section>
-        <div class="eyebrow">Numbers</div>
-        <h2>Capaian terukur</h2>
-        <div class="grid grid-4" style="margin-top:24px;">
-          <div class="stat"><div class="num">&minus;19,7k</div><div class="lbl">baris net</div></div>
-          <div class="stat"><div class="num">&minus;659</div><div class="lbl">NamecheapPage</div></div>
-          <div class="stat"><div class="num">18</div><div class="lbl">file → 1 helper fetch</div></div>
-          <div class="stat"><div class="num">26</div><div class="lbl">test pengaman</div></div>
+        <div class="eyebrow">Penurunan Total</div>
+        <h2>Kode aplikasi: turun ~30%</h2>
+        <div class="big-ba">
+          <div class="box before"><div class="n arrow-num">65.763</div><div class="c">baris awal (termasuk v2)</div></div>
+          <div class="mid"><div class="d">−30%</div><div class="a">→</div></div>
+          <div class="box after"><div class="n arrow-num">45.885</div><div class="c">baris sekarang</div></div>
         </div>
-        <div class="grid grid-4" style="margin-top:22px;">
-          <div class="stat"><div class="num">22</div><div class="lbl">commit ber-tag</div></div>
-          <div class="stat"><div class="num">16</div><div class="lbl">restore-point</div></div>
-          <div class="stat"><div class="num">8</div><div class="lbl">modul baru</div></div>
-          <div class="stat"><div class="num">0</div><div class="lbl">fitur berubah</div></div>
+        <div class="grid grid-2" style="margin-top:16px;">
+          <div class="card card-sky"><h3 style="font-size:0.85em;color:var(--sky);">📸 Repomix (snapshot)</h3><p class="muted" style="font-size:0.77em;"><span class="arrow-num">66.389</span> → <span class="arrow-num" style="color:#fff">65.207</span> baris &mdash; turun terus seiring cleanup.</p></div>
+          <div class="card card-accent"><h3 style="font-size:0.85em;color:var(--accent);">📉 Selisih nyata</h3><p class="muted" style="font-size:0.77em;"><strong style="color:#fff">&minus;19.878 baris</strong> hilang &mdash; mayoritas dari hapus playground duplikat v2 (jujur: itu kode kembar).</p></div>
         </div>
-        <div class="takeaway">Semua di GitHub, ter-checkpoint, dan setiap angka terverifikasi (tsc 0 + test hijau).</div>
+        <div class="takeaway">Aplikasi jalan sama persis &mdash; yang hilang cuma duplikat &amp; barang mati, bukan fitur.</div>
       </section>
 
-      <!-- ═══ 22 · VALUE BEFORE/AFTER (awam) ═══ -->
+      <!-- ═══ 22 · PENURUNAN PER-HALAMAN ═══ -->
+      <section>
+        <div class="eyebrow">Per-Halaman Besar</div>
+        <h2>Penurunan file terbesar</h2>
+        <table class="mini">
+          <tr><th>Halaman / File</th><th>Awal</th><th>Sekarang</th><th>Turun</th></tr>
+          <tr><td><strong>NamecheapPage</strong> (god-file #1)</td><td class="arrow-num">8.027</td><td class="arrow-num"><strong>7.368</strong></td><td class="down">&minus;659</td></tr>
+          <tr><td><strong>DomainManagePage</strong> (god-file #2)</td><td class="arrow-num">6.408</td><td class="arrow-num"><strong>6.183</strong></td><td class="down">&minus;225</td></tr>
+          <tr><td>DomainOverviewPage</td><td class="arrow-num">1.737</td><td class="arrow-num"><strong>1.698</strong></td><td class="down">&minus;39</td></tr>
+          <tr><td>AdminPage</td><td class="arrow-num">2.174</td><td class="arrow-num"><strong>2.145</strong></td><td class="down">&minus;29</td></tr>
+          <tr><td>ConfigurationPage</td><td class="arrow-num">2.798</td><td class="arrow-num"><strong>2.791</strong></td><td class="down">&minus;7</td></tr>
+        </table>
+        <div class="takeaway">God-file turun paling banyak. Plus 8 modul baru lahir dari isinya &mdash; bukan numpuk lagi di 1 file.</div>
+      </section>
+
+      <!-- ═══ 23 · VALUE BEFORE/AFTER ═══ -->
       <section>
         <div class="eyebrow">Nilai untuk Tim</div>
         <h2>Apa yang berubah (bahasa awam)</h2>
-        <div class="ba" style="margin-top:14px;">
-          <div class="ba-col ba-before">
-            <h4>SEBELUM</h4>
-            <ul>
-              <li>Kode kembar tersebar &mdash; perbaiki 1 bug = edit banyak tempat</li>
-              <li>File 8.027 baris &mdash; cari sesuatu = mimpi buruk</li>
-              <li>Banyak "barang rusak" numpuk (dead code)</li>
-              <li>Tiap ubahan deg-degan (gak ada pengaman)</li>
-            </ul>
-          </div>
-          <div class="ba-col ba-after">
-            <h4>SESUDAH</h4>
-            <ul>
-              <li>Kembar disatukan &mdash; ubah 1 tempat, beres semua</li>
-              <li>Modul-modul rapi &mdash; gampang dicari &amp; dirawat</li>
-              <li>Bersih dari barang mati</li>
-              <li>Ada test + rollback &mdash; perubahan bisa diverifikasi</li>
-            </ul>
-          </div>
+        <div class="ba" style="margin-top:12px;">
+          <div class="ba-col ba-before"><h4>SEBELUM</h4><ul><li>Kode kembar &mdash; 1 bug = edit banyak tempat</li><li>File 8.027 baris &mdash; cari sesuatu = mimpi buruk</li><li>Banyak "barang rusak" numpuk</li><li>Tiap ubahan deg-degan (tak ada pengaman)</li></ul></div>
+          <div class="ba-col ba-after"><h4>SESUDAH</h4><ul><li>Kembar disatukan &mdash; ubah 1 tempat, beres semua</li><li>Modul rapi &mdash; gampang dicari &amp; dirawat</li><li>Bersih dari barang mati</li><li>Ada test + rollback &mdash; perubahan terverifikasi</li></ul></div>
         </div>
-        <div class="takeaway">Dan yang terpenting: <strong>aplikasi jalan SAMA PERSIS</strong> &mdash; tak ada fitur yang berubah/hilang.</div>
+        <div class="takeaway">Yang terpenting: <strong>aplikasi jalan SAMA PERSIS</strong> &mdash; tak ada fitur berubah/hilang.</div>
       </section>
 
-      <!-- ═══ 23 · LESSONS ═══ -->
+      <!-- ═══ 24 · LESSONS + ROADMAP ═══ -->
       <section>
-        <div class="eyebrow">Pembelajaran</div>
-        <h2>Insight teknis &amp; operasional</h2>
-        <div class="grid grid-3" style="margin-top:16px;">
-          <div class="card card-accent">
-            <h3 style="font-size:0.88em;">🛡️ Pengaman dulu</h3>
-            <p class="muted" style="font-size:0.76em;">Sebelum sentuh produksi (apalagi jalur uang): test net + tag + bundle. Wajib, bukan opsional.</p>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size:0.88em;">🔬 Verifikasi sendiri</h3>
-            <p class="muted" style="font-size:0.76em;">Audit/AI bisa over-claim "identik". Cek byte-per-byte &mdash; beberapa ternyata beda &amp; di-skip. <code>tsc</code> = hakim.</p>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size:0.88em;">✋ Tahu kapan berhenti</h3>
-            <p class="muted" style="font-size:0.76em;">Kode sehat punya batas bawah. Maksa &minus;30% = motong fitur. Berhenti di titik aman = keputusan benar.</p>
-          </div>
+        <div class="eyebrow">Pembelajaran &amp; Roadmap</div>
+        <h2>Insight + langkah berikut</h2>
+        <div class="grid grid-3" style="margin-top:12px;">
+          <div class="card card-accent"><h3 style="font-size:0.85em;">🛡️ Pengaman dulu</h3><p class="muted" style="font-size:0.74em;">Sebelum sentuh produksi (apalagi jalur uang): test + checkpoint. Wajib.</p></div>
+          <div class="card card-accent"><h3 style="font-size:0.85em;">🔬 Verifikasi sendiri</h3><p class="muted" style="font-size:0.74em;">Audit bisa salah klaim "identik". Cek byte-per-byte sebelum eksekusi.</p></div>
+          <div class="card card-accent"><h3 style="font-size:0.85em;">✋ Tahu kapan berhenti</h3><p class="muted" style="font-size:0.74em;">Kode sehat ada batas bawah. Berhenti di titik aman = keputusan benar.</p></div>
         </div>
-        <div class="takeaway">"Kerjain dengan benar" = tahu kapan <em>tidak</em> ngotot &mdash; demi tidak mengorbankan yang sudah jalan.</div>
-      </section>
-
-      <!-- ═══ 24 · ROADMAP ═══ -->
-      <section>
-        <div class="eyebrow">Roadmap</div>
-        <h2>Langkah selanjutnya</h2>
-        <div class="grid grid-2" style="margin-top:16px;">
-          <div class="card">
-            <h3 style="font-size:0.9em;color:var(--sky);">Short-term (1–2 minggu)</h3>
-            <ul style="font-size:0.79em;">
-              <li>Merge branch → <code>main</code> (jadikan resmi, setelah cek aplikasi)</li>
-              <li>Keputusan: dedup edge-function (butuh re-deploy backend)</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3 style="font-size:0.9em;color:var(--accent);">Mid-term (1–3 bulan, opsional)</h3>
-            <ul style="font-size:0.79em;">
-              <li>Pecah FilterSidebar / DomainRow &mdash; <strong style="color:#fbbf24">hanya jika ada waktu QA penuh</strong></li>
-              <li>Tambah test UI (butuh framework render &mdash; saat RDP memungkinkan)</li>
-              <li>Lanjut tipis simplify pola berulang (~10% ringkas-nyata)</li>
-            </ul>
-          </div>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div class="card"><h3 style="font-size:0.85em;color:var(--sky);">Berikutnya (dekat)</h3><p class="muted" style="font-size:0.74em;">Merge ke produksi (setelah cek aplikasi) · keputusan dedup backend.</p></div>
+          <div class="card"><h3 style="font-size:0.85em;color:var(--accent);">Nanti (opsional)</h3><p class="muted" style="font-size:0.74em;">Pecah halaman besar &mdash; <strong style="color:#fbbf24">hanya bila ada waktu QA penuh</strong>.</p></div>
         </div>
-        <div class="takeaway">Yang berisiko sengaja ditahan &mdash; bukan dilupakan. Dikerjakan saat pengaman (QA UI) sudah memadai.</div>
       </section>
 
       <!-- ═══ 25 · CLOSING ═══ -->
@@ -600,11 +483,11 @@
         <div class="title-slide">
           <div class="eyebrow">Terima Kasih</div>
           <h1>Pertanyaan?</h1>
-          <p class="subtitle">Codebase lebih bersih &amp; aman dirawat &mdash; tanpa mengorbankan satu fitur pun.</p>
+          <p class="subtitle">Kode lebih bersih &amp; aman dirawat &mdash; tanpa mengorbankan satu fitur pun.</p>
           <div class="meta">
-            <span><strong>Branch</strong> · refactor/namecheap</span>
-            <span><strong>Project</strong> · Domain Archive</span>
-            <span><strong>Net</strong> · &minus;19.769 baris · 0 fitur berubah</span>
+            <span><strong>Kode</strong> · &minus;30% (65,8rb → 45,9rb baris)</span>
+            <span><strong>Fitur</strong> · 0 berubah</span>
+            <span><strong>Status</strong> · terverifikasi &amp; ter-checkpoint</span>
           </div>
         </div>
       </section>
@@ -615,17 +498,9 @@
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
   <script>
     Reveal.initialize({
-      hash: true,
-      slideNumber: 'c/t',
-      controls: true,
-      progress: true,
-      transition: 'fade',
-      transitionSpeed: 'fast',
-      backgroundTransition: 'fade',
-      center: false,
-      width: 1280,
-      height: 800,
-      margin: 0.04,
+      hash: true, slideNumber: 'c/t', controls: true, progress: true,
+      transition: 'fade', transitionSpeed: 'fast', backgroundTransition: 'fade',
+      center: false, width: 1280, height: 800, margin: 0.04,
     });
   </script>
 </body>
