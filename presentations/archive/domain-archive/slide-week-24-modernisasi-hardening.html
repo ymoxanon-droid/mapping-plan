@@ -1,0 +1,525 @@
+<!doctype html>
+<!-- Week 24 · Modernisasi UI + Hardening Arsitektur · Domain Archive -->
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Naik Kelas: Cantik &amp; Terpercaya · Week 24</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+
+  <style>
+    :root {
+      --accent: #10b981; --accent-soft: #10b98122; --accent-line: #10b98144;
+      --amber: #f59e0b; --amber-soft: #f59e0b22;
+      --red: #ef4444; --red-soft: #ef444422;
+      --sky: #38bdf8; --sky-soft: #38bdf822;
+      --bg: #0a0c12; --bg-card: #13151d; --bg-card-hover: #181b25;
+      --border: #ffffff14; --border-strong: #ffffff24;
+      --text: #e5e7eb; --text-muted: #9ca3af; --text-faint: #64748b;
+    }
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
+    body, html, .reveal { background: var(--bg) !important; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
+    .reveal p { line-height: 1.55; margin: 0 0 12px; }
+    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.85em; color: var(--accent); border: 1px solid var(--border); }
+    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
+    .reveal ul li, .reveal ol li { margin: 6px 0; }
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
+    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
+    .eyebrow.red { color: var(--red); background: var(--red-soft); border-color: #ef444444; }
+    .eyebrow.sky { color: var(--sky); background: var(--sky-soft); border-color: #38bdf844; }
+    .muted { color: var(--text-muted); } .faint { color: var(--text-faint); }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-amber { border-left: 3px solid var(--amber); }
+    .card-red { border-left: 3px solid var(--red); }
+    .card-sky { border-left: 3px solid var(--sky); }
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; } .grid-3 { grid-template-columns: 1fr 1fr 1fr; } .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
+    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
+    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
+    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
+    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
+    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+    .layer-stack { display: grid; gap: 10px; }
+    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
+    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .layer .body { flex: 1; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .ba-before h4 { color: var(--red); } .ba-after h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
+    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
+    .tl-row { display: grid; grid-template-columns: 60px 1fr 1.1fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.05em; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; }
+    .tl-row .fix { color: var(--text-muted); }
+    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+    .title-slide .subtitle { font-size: 1.1em; color: var(--text-muted); margin-bottom: 32px; }
+    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+    .title-slide .meta strong { color: var(--text); font-weight: 700; }
+    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
+    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 760px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="reveal"><div class="slides">
+
+    <!-- ═══ COVER ═══ -->
+    <section>
+      <div class="bg-dots"></div>
+      <div class="title-slide">
+        <div class="eyebrow">Engineering Report · Week 24 · 2026</div>
+        <h1>Naik Kelas:<br/>Cantik &amp; Terpercaya</h1>
+        <p class="subtitle">Modernisasi tampilan ke standar industri + pengerasan fondasi jadi solid, cepat, dan aman.</p>
+        <div class="meta">
+          <span><strong>Project</strong> · Domain Archive</span>
+          <span><strong>Scope</strong> · UI/UX + Arsitektur</span>
+          <span><strong>Status</strong> · Live di Produksi</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 01 KONTEKS ═══ -->
+    <section>
+      <div class="section-divider">
+        <div class="num">01</div>
+        <div class="eyebrow">Konteks</div>
+        <h2>Kenapa Ini Ada</h2>
+        <p class="desc">Dari dashboard yang berfungsi tapi terasa "generic", menuju platform yang layak dipercaya banyak klien.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Latar Belakang</div>
+      <h2>Asal-usul &amp; Arah</h2>
+      <div class="grid grid-3" style="margin-top: 20px;">
+        <div class="card card-accent">
+          <div class="eyebrow" style="margin: 0 0 8px;">Pemicu</div>
+          <div style="font-size: 1.25em; font-weight: 800; color: #fff;">Terasa "generic"</div>
+          <div class="muted" style="font-size: 0.8em;">Tampilan berfungsi, tapi terasa seperti hasil generator — belum mencerminkan kualitas produk.</div>
+        </div>
+        <div class="card card-accent">
+          <div class="eyebrow" style="margin: 0 0 8px;">Untuk Siapa</div>
+          <div style="font-size: 1.25em; font-weight: 800; color: #fff;">Klien</div>
+          <div class="muted" style="font-size: 0.8em;">Alat kelola aset domain yang diarahkan untuk dipercaya & dipakai banyak pihak.</div>
+        </div>
+        <div class="card card-accent">
+          <div class="eyebrow" style="margin: 0 0 8px;">Arah</div>
+          <div style="font-size: 1.25em; font-weight: 800; color: #fff;">Multi-tenant</div>
+          <div class="muted" style="font-size: 0.8em;">Jangka panjang: 1 sistem dipakai banyak tim/klien sekaligus.</div>
+        </div>
+      </div>
+      <div class="takeaway">Tujuannya bukan sekadar "biar cantik" — tapi biar <b>layak dipercaya</b> saat dipakai banyak klien.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Profil Sistem</div>
+      <h2>Apa yang Dikelola</h2>
+      <div class="grid grid-3" style="margin-top: 20px;">
+        <div class="card">
+          <h3 style="font-size: 1em;">🌐 Aset Domain</h3>
+          <p class="muted" style="font-size: 0.82em;">Ribuan domain: status, masa berlaku, perpanjangan (renewal), sinkronisasi otomatis.</p>
+        </div>
+        <div class="card">
+          <h3 style="font-size: 1em;">📊 Data SEO</h3>
+          <p class="muted" style="font-size: 0.82em;">Metrik backlink &amp; otoritas (Ahrefs) — jutaan baris data buat keputusan.</p>
+        </div>
+        <div class="card">
+          <h3 style="font-size: 1em;">⚙️ Operasi</h3>
+          <p class="muted" style="font-size: 0.82em;">Integrasi Cloudflare / Vercel / Namecheap, kontrol akses berlapis, audit log.</p>
+        </div>
+      </div>
+      <div class="takeaway">Skalanya besar &amp; menyentuh uang nyata (perpanjangan domain) — jadi stabilitas itu wajib, bukan opsi.</div>
+    </section>
+
+    <!-- ═══ 02 MASALAH ═══ -->
+    <section>
+      <div class="section-divider">
+        <div class="num">02</div>
+        <div class="eyebrow red">Masalah</div>
+        <h2>Dua Masalah Tersembunyi</h2>
+        <p class="desc">Yang kelihatan (tampilan generic) — dan yang <i>nggak</i> kelihatan (fondasi rapuh).</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow red">Pain Point</div>
+      <h2>Yang Kelihatan &amp; Yang Tersembunyi</h2>
+      <div class="grid grid-2" style="margin-top: 18px;">
+        <div class="card card-red">
+          <h3 style="color: #fca5a5; font-size: 1em;">🎨 Tampilan generic</h3>
+          <p class="muted" style="font-size: 0.84em;">Terasa hasil generator, kurang profesional, dan tiap halaman gayanya beda-beda.</p>
+        </div>
+        <div class="card card-red">
+          <h3 style="color: #fca5a5; font-size: 1em;">🐌 Kadang lemot</h3>
+          <p class="muted" style="font-size: 0.84em;">Perpindahan antar halaman terasa berat / nge-freeze sesaat.</p>
+        </div>
+        <div class="card card-red">
+          <h3 style="color: #fca5a5; font-size: 1em;">💥 Rapuh tersembunyi</h3>
+          <p class="muted" style="font-size: 0.84em;">Kondisi tertentu bisa bikin halaman crash → layar error yang jelek.</p>
+        </div>
+        <div class="card card-red">
+          <h3 style="color: #fca5a5; font-size: 1em;">💸 Risiko mahal</h3>
+          <p class="muted" style="font-size: 0.84em;">Pernah ada insiden salah-potong saldo (~$775) tanpa pengaman yang teruji.</p>
+        </div>
+      </div>
+      <div class="takeaway">Masalahnya bukan cuma estetika — ada <b>risiko stabilitas &amp; finansial</b> yang nggak kelihatan dari luar.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Tujuan Proyek</div>
+      <h2>Goal &amp; Constraint</h2>
+      <div class="grid grid-2" style="margin-top: 18px;">
+        <div class="card card-accent">
+          <h3 style="font-size: 0.95em; color: var(--accent);">🎯 Goals</h3>
+          <ul style="font-size: 0.82em;">
+            <li>Tampilan profesional &amp; konsisten di semua halaman</li>
+            <li>Navigasi cepat &amp; mulus</li>
+            <li>Fondasi tahan-crash &amp; aman finansial</li>
+            <li>Siap berkembang jadi platform multi-tenant</li>
+          </ul>
+        </div>
+        <div class="card card-amber">
+          <h3 style="font-size: 0.95em; color: var(--amber);">⚠️ Constraints</h3>
+          <ul style="font-size: 0.82em;">
+            <li>Tidak boleh ganggu fitur yang sudah jalan</li>
+            <li>Akses lewat jaringan terbatas (RDP)</li>
+            <li>Halaman utama sangat sensitif performa</li>
+            <li>Semua perubahan harus bisa di-rollback</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 03 PENDEKATAN ═══ -->
+    <section>
+      <div class="section-divider">
+        <div class="num">03</div>
+        <div class="eyebrow sky">Pendekatan</div>
+        <h2>Strategi Dua Sisi</h2>
+        <p class="desc">Percantik tampilan ke standar industri — sekaligus keraskan fondasi dari dalam.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow sky">Arsitektur</div>
+      <h2>Pendekatan Tiga Lapis</h2>
+      <div class="layer-stack" style="margin-top: 20px;">
+        <div class="layer">
+          <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">🎨</div>
+          <div class="body">
+            <div class="head">1 · Modernisasi Tampilan</div>
+            <div class="desc">Satu sistem komponen standar industri (shadcn/ui) diterapkan ke seluruh aplikasi → seragam &amp; profesional.</div>
+          </div>
+          <span class="pill">~42 file</span>
+        </div>
+        <div class="layer">
+          <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">⚡</div>
+          <div class="body">
+            <div class="head">2 · Performa</div>
+            <div class="desc">Perbaiki kelambatan navigasi + percepat loading awal (file aplikasi dipecah jadi lebih ringan).</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">🛡️</div>
+          <div class="body">
+            <div class="head">3 · Pengerasan Fondasi</div>
+            <div class="desc">Tahan-crash (jaring pengaman), aman finansial (pengaman + tes), dan data yang akurat secara tipe.</div>
+          </div>
+        </div>
+      </div>
+      <div class="takeaway">Bukan cuma "ganti baju" — tapi juga <b>memperkuat rangka</b>-nya di saat yang sama.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow sky">Teknologi</div>
+      <h2>Tools Standar Industri</h2>
+      <div class="flow" style="margin-top: 24px;">
+        <div class="flow-node accent">
+          <div class="title">Komponen UI</div>
+          <div class="sub">shadcn/ui — 1 bahasa desain, dipakai pro (Linear/Stripe-style)</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="title">Data Cerdas</div>
+          <div class="sub">Cache otomatis — buka ulang halaman jadi instan</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="title">Form &amp; Notifikasi</div>
+          <div class="sub">Validasi jelas + notifikasi rapi (toast)</div>
+        </div>
+      </div>
+      <div class="grid grid-3" style="margin-top: 26px;">
+        <div class="stat"><div class="num">42</div><div class="lbl">File dirombak</div></div>
+        <div class="stat"><div class="num">7</div><div class="lbl">Komponen baru</div></div>
+        <div class="stat"><div class="num">1</div><div class="lbl">Standar konsisten</div></div>
+      </div>
+    </section>
+
+    <!-- ═══ 04 IMPLEMENTASI ═══ -->
+    <section>
+      <div class="section-divider">
+        <div class="num">04</div>
+        <div class="eyebrow">Implementasi</div>
+        <h2>Eksekusi</h2>
+        <p class="desc">Dikerjakan bertahap &amp; aman — tiap langkah diuji, semua bisa di-rollback.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Layer 1</div>
+      <h2>Tampilan Naik Kelas</h2>
+      <div class="grid grid-2" style="margin-top: 16px;">
+        <div class="card card-accent">
+          <h3 style="font-size: 0.9em;">Seragam &amp; Profesional</h3>
+          <ul style="font-size: 0.8em;">
+            <li>Satu warna aksen (emerald) + netral — restrained, bukan neon</li>
+            <li>Kartu, tombol, tabel, dialog: 1 gaya di semua halaman</li>
+            <li>Ikon konsisten (lucide), bukan emoji acak</li>
+          </ul>
+        </div>
+        <div class="card card-accent">
+          <h3 style="font-size: 0.9em;">Pengalaman Lebih Enak</h3>
+          <ul style="font-size: 0.8em;">
+            <li>Notifikasi rapi (toast) — ganti pop-up jadul</li>
+            <li>Form dengan validasi jelas (salah isi langsung ketahuan)</li>
+            <li>Command palette ⌘K — lompat antar halaman instan</li>
+          </ul>
+        </div>
+      </div>
+      <div class="takeaway">Konsistensi = sinyal kualitas. Klien merasa pakai produk yang <b>diurus serius</b>.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow amber">Layer 2</div>
+      <h2>Lebih Cepat &amp; Ringan</h2>
+      <div class="grid grid-2" style="margin-top: 16px;">
+        <div class="card card-amber">
+          <h3 style="font-size: 0.9em;">Loading Awal</h3>
+          <ul style="font-size: 0.8em;">
+            <li>File aplikasi dipecah per-bagian (lib besar dipisah)</li>
+            <li>Dari 1.5&nbsp;MB jadi ~604&nbsp;KB di muatan utama</li>
+            <li>Bagian berat (grafik) cuma dimuat saat dibutuhkan</li>
+          </ul>
+        </div>
+        <div class="card card-amber">
+          <h3 style="font-size: 0.9em;">Navigasi</h3>
+          <ul style="font-size: 0.8em;">
+            <li>Dulu: tiap pindah menu, semua halaman dihitung ulang</li>
+            <li>Sekarang: cuma halaman aktif yang kerja</li>
+            <li>Hasil: pindah halaman terasa instan</li>
+          </ul>
+        </div>
+      </div>
+      <div class="takeaway">Penting di balik jaringan terbatas (RDP): tiap KB &amp; tiap render dihitung.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow sky">Layer 3</div>
+      <h2>Fondasi yang Dikerasin</h2>
+      <div class="grid grid-2" style="margin-top: 16px;">
+        <div class="card card-sky">
+          <h3 style="font-size: 0.9em;">Tahan-Crash</h3>
+          <ul style="font-size: 0.8em;">
+            <li>Jaring pengaman: 1 halaman error tidak matiin seluruh aplikasi</li>
+            <li>21 bug "crash tersembunyi" ditemukan &amp; diperbaiki</li>
+            <li>Linter otomatis cegah bug serupa muncul lagi</li>
+          </ul>
+        </div>
+        <div class="card card-sky">
+          <h3 style="font-size: 0.9em;">Aman &amp; Terverifikasi</h3>
+          <ul style="font-size: 0.8em;">
+            <li>Pengaman salah-potong-saldo + 15 tes khusus</li>
+            <li>Total 52 tes otomatis (jalan tiap perubahan)</li>
+            <li>Tipe data akurat → salah kolom ketahuan lebih awal</li>
+          </ul>
+        </div>
+      </div>
+      <div class="takeaway">"Terpercaya" itu bukan klaim — dibuktikan oleh <b>tes &amp; pengaman</b> yang jalan otomatis.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow amber">Tantangan #1</div>
+      <h2>Sempat Malah Lebih Lambat</h2>
+      <div class="ba" style="margin-top: 16px;">
+        <div class="ba-col ba-before">
+          <h4>❌ Masalah</h4>
+          <ul>
+            <li>Setelah modernisasi, navigasi justru terasa lebih berat</li>
+            <li>Komponen baru lebih "kaya" → lebih berat per elemen</li>
+            <li>Risiko: cantik tapi lambat = mundur</li>
+          </ul>
+        </div>
+        <div class="ba-col ba-after">
+          <h4>✓ Solusi</h4>
+          <ul>
+            <li>Ditelusuri: ternyata SEMUA halaman dihitung ulang tiap pindah</li>
+            <li>Diperbaiki agar cuma halaman aktif yang kerja</li>
+            <li>Hasil: JUSTRU lebih cepat dari kondisi awal</li>
+          </ul>
+        </div>
+      </div>
+      <div class="takeaway">Pelajaran: modernisasi wajib <b>diukur sebelum &amp; sesudah</b> — jangan korbankan kecepatan demi tampilan.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow amber">Tantangan #2</div>
+      <h2>Bug yang Ditemukan &amp; Dibereskan</h2>
+      <div class="timeline" style="margin-top: 14px;">
+        <div class="tl-row"><div class="num">01</div><div class="prob">Halaman preview bisa crash saat dibuka</div><div class="fix">→ struktur internal diperbaiki (semua user aman)</div></div>
+        <div class="tl-row"><div class="num">02</div><div class="prob">User non-akses bisa crash di halaman utama</div><div class="fix">→ gerbang akses diperbaiki, muncul rapi (bukan crash)</div></div>
+        <div class="tl-row"><div class="num">03</div><div class="prob">Risiko salah-potong saldo (~$775)</div><div class="fix">→ pengaman + 15 tes otomatis</div></div>
+        <div class="tl-row"><div class="num">04</div><div class="prob">Fitur ⌘K sempat error saat dibuka</div><div class="fix">→ diperbaiki, langsung jalan</div></div>
+      </div>
+      <div class="takeaway">Banyak bug ini <b>tersembunyi</b> — ketahuan justru karena linter &amp; tes otomatis yang baru dipasang.</div>
+    </section>
+
+    <!-- ═══ 05 HASIL ═══ -->
+    <section>
+      <div class="section-divider">
+        <div class="num">05</div>
+        <div class="eyebrow">Hasil</div>
+        <h2>Capaian Akhir</h2>
+        <p class="desc">Semua live di produksi, terverifikasi hijau (tes &amp; build), dan siap berkembang.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Numbers</div>
+      <h2>Capaian dalam Angka</h2>
+      <div class="grid grid-4" style="margin-top: 28px;">
+        <div class="stat"><div class="num">42</div><div class="lbl">File dirombak</div></div>
+        <div class="stat"><div class="num">7</div><div class="lbl">Komponen baru</div></div>
+        <div class="stat"><div class="num">604<span style="font-size:0.4em;">KB</span></div><div class="lbl">dari 1.5 MB</div></div>
+        <div class="stat"><div class="num">52</div><div class="lbl">Tes otomatis</div></div>
+      </div>
+      <div class="grid grid-4" style="margin-top: 26px;">
+        <div class="stat"><div class="num">21</div><div class="lbl">Bug crash dibereskan</div></div>
+        <div class="stat"><div class="num">$775</div><div class="lbl">Risiko dilindungi</div></div>
+        <div class="stat"><div class="num">0</div><div class="lbl">Error (build hijau)</div></div>
+        <div class="stat"><div class="num">100<span style="font-size:0.4em;">%</span></div><div class="lbl">Live di produksi</div></div>
+      </div>
+      <div class="takeaway">Bukan demo — semua sudah berjalan di produksi &amp; terverifikasi otomatis.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Value untuk User</div>
+      <h2>Sebelum vs Sesudah</h2>
+      <div class="ba" style="margin-top: 16px;">
+        <div class="ba-col ba-before">
+          <h4>❌ Sebelum</h4>
+          <ul>
+            <li>Tampilan generic, tiap halaman beda gaya</li>
+            <li>Kadang lemot saat pindah halaman</li>
+            <li>Bisa crash di kondisi tertentu</li>
+            <li>Ada risiko finansial tanpa pengaman teruji</li>
+          </ul>
+        </div>
+        <div class="ba-col ba-after">
+          <h4>✓ Sesudah</h4>
+          <ul>
+            <li>Profesional &amp; konsisten di semua halaman</li>
+            <li>Navigasi lancar, loading lebih ringan</li>
+            <li>Tahan-crash (jaring pengaman aktif)</li>
+            <li>Aman finansial + terverifikasi 52 tes</li>
+          </ul>
+        </div>
+      </div>
+      <div class="takeaway">Hasil akhirnya: <b>cantik DAN terpercaya</b> — siap dipercaya banyak klien.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Pembelajaran</div>
+      <h2>Insight Utama</h2>
+      <div class="grid grid-3" style="margin-top: 20px;">
+        <div class="card card-accent">
+          <h3 style="font-size: 0.9em;">🎯 Konsistensi = Kepercayaan</h3>
+          <p class="muted" style="font-size: 0.78em;">Satu bahasa desain di semua halaman bikin produk terasa diurus serius.</p>
+        </div>
+        <div class="card card-accent">
+          <h3 style="font-size: 0.9em;">📏 Ukur Sebelum &amp; Sesudah</h3>
+          <p class="muted" style="font-size: 0.78em;">Modernisasi sempat bikin lambat — ketahuan &amp; dibalik karena diukur.</p>
+        </div>
+        <div class="card card-accent">
+          <h3 style="font-size: 0.9em;">🤖 Otomasi Nangkep Bug</h3>
+          <p class="muted" style="font-size: 0.78em;">Tes + linter menemukan 21 bug crash yang tersembunyi bertahun-tahun.</p>
+        </div>
+      </div>
+      <div class="takeaway">Kualitas yang terlihat (UI) &amp; tak terlihat (fondasi) sama-sama menentukan kepercayaan klien.</div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Roadmap</div>
+      <h2>Pengembangan Selanjutnya</h2>
+      <div class="grid grid-2" style="margin-top: 20px;">
+        <div class="card">
+          <h3 style="font-size: 0.9em; color: var(--sky);">Short-term (1–2 minggu)</h3>
+          <ul style="font-size: 0.8em;">
+            <li>Tuntaskan pengujian runtime semua aksi</li>
+            <li>Perluas tes ke alur kritis lain (auth)</li>
+            <li>Rapikan sisa peringatan minor</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="font-size: 0.9em; color: var(--accent);">Mid-term (1–3 bulan)</h3>
+          <ul style="font-size: 0.8em;">
+            <li>Jadi "rumah utama" merge 10 dashboard (multi-tenant)</li>
+            <li>Pecah halaman terbesar jadi modul (lebih mudah dirawat)</li>
+            <li>Perluas tes &amp; monitoring</li>
+            <li>Tingkatkan kontrol akses berbasis peran (RBAC)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ CLOSING ═══ -->
+    <section>
+      <div class="bg-dots"></div>
+      <div class="title-slide">
+        <div class="eyebrow">Terima Kasih</div>
+        <h1>Pertanyaan?</h1>
+        <p class="subtitle">Live di produksi · cantik &amp; terpercaya · fondasi siap berkembang jadi multi-tenant.</p>
+        <div class="meta">
+          <span><strong>Project</strong> · Domain Archive</span>
+          <span><strong>Status</strong> · Production · Build Hijau</span>
+        </div>
+      </div>
+    </section>
+
+  </div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true, slideNumber: 'c/t', controls: true, progress: true,
+      transition: 'fade', transitionSpeed: 'fast', backgroundTransition: 'fade',
+      center: false, width: 1280, height: 800, margin: 0.04,
+    });
+  </script>
+</body>
+</html>
