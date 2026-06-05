@@ -1,10 +1,9 @@
 <!doctype html>
 <!--
-  ═══════════════════════════════════════════════════════════════════════
-  PRESENTASI MINGGUAN — Domain Archive Project
-  Week 24 · Task: Integrate Dashboard
-  Dibuat dari _template.html (skeleton WAJIB). Design system tidak diubah.
-  ═══════════════════════════════════════════════════════════════════════
+  Integrasi Dashboard · Week 24 · Domain Archive
+  Reveal.js v5.1.0 — self-contained .html, desain kaya-visual (PPTX-style).
+  Catatan: sengaja TIDAK pakai _template.html / aturan CLAUDE.md (di-override
+  atas permintaan user). Engine tetap Reveal.js.
 -->
 <html lang="id">
 <head>
@@ -12,600 +11,399 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Integrasi Dashboard · Week 24</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
 
   <style>
-    /* ═══ Design tokens — JANGAN diubah supaya tetap konsisten ═══ */
-    :root {
-      --accent: #10b981;
-      --accent-soft: #10b98122;
-      --accent-line: #10b98144;
-      --amber: #f59e0b;
-      --amber-soft: #f59e0b22;
-      --red: #ef4444;
-      --red-soft: #ef444422;
-      --sky: #38bdf8;
-      --sky-soft: #38bdf822;
-      --bg: #0a0c12;
-      --bg-card: #13151d;
-      --bg-card-hover: #181b25;
-      --border: #ffffff14;
-      --border-strong: #ffffff24;
-      --text: #e5e7eb;
-      --text-muted: #9ca3af;
-      --text-faint: #64748b;
+    :root{
+      --bg:#0a0e16; --bg2:#070a11;
+      --panel:#121722; --panel2:#161c28; --panel3:#1b2230;
+      --line:#ffffff14; --line2:#ffffff26;
+      --emerald:#10b981; --emerald-soft:#10b9811f; --emerald-line:#10b98147;
+      --teal:#2dd4bf; --sky:#38bdf8; --sky-soft:#38bdf81f;
+      --amber:#f59e0b; --amber-soft:#f59e0b1f; --red:#ef4444; --red-soft:#ef44441f;
+      --purple:#a78bfa;
+      --text:#e7ebf0; --muted:#9aa6b6; --faint:#5d6b7d;
     }
+    .reveal{font-family:'Inter',system-ui,sans-serif;font-size:26px;color:var(--text);}
+    .reveal .slides{text-align:left;}
+    .reveal .slides section{padding:30px 54px;height:100%;box-sizing:border-box;}
+    html,body,.reveal{background:radial-gradient(ellipse at top right,#0e1626 0%,var(--bg) 55%,var(--bg2) 100%)!important;}
+    .reveal h1,.reveal h2,.reveal h3,.reveal h4{font-family:'Inter',system-ui;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0 0 14px;text-transform:none;}
+    .reveal h1{font-size:2.5em;line-height:1.08;}
+    .reveal h2{font-size:1.6em;line-height:1.14;}
+    .reveal h3{font-size:1.06em;line-height:1.25;}
+    .reveal p{line-height:1.5;margin:0 0 10px;}
+    .reveal code{background:#0008;padding:1px 7px;border-radius:5px;font-size:0.84em;color:var(--emerald);border:1px solid var(--line);font-family:'JetBrains Mono',monospace;}
+    .reveal ul{line-height:1.5;margin:6px 0 12px 1.15em;} .reveal li{margin:5px 0;}
+    .grad{background:linear-gradient(120deg,#fff 10%,var(--emerald) 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 
-    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
-    .reveal .slides { text-align: left; }
-    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
-    body, html, .reveal { background: var(--bg) !important; }
-    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
-    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
-    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
-    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
-    .reveal p { line-height: 1.55; margin: 0 0 12px; }
-    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.85em; color: var(--accent); border: 1px solid var(--border); }
-    .reveal a { color: var(--accent); }
-    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
-    .reveal ul li, .reveal ol li { margin: 6px 0; }
+    /* eyebrow */
+    .eyebrow{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--emerald);padding:4px 11px;background:var(--emerald-soft);border:1px solid var(--emerald-line);border-radius:999px;margin-bottom:16px;}
+    .eyebrow.red{color:#fca5a5;background:var(--red-soft);border-color:#ef444455;}
+    .eyebrow.amber{color:#fcd34d;background:var(--amber-soft);border-color:#f59e0b55;}
+    .eyebrow.sky{color:#7dd3fc;background:var(--sky-soft);border-color:#38bdf855;}
+    .muted{color:var(--muted);} .faint{color:var(--faint);}
 
-    /* Atoms */
-    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
-    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
-    .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
-    .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
+    /* cards / grids */
+    .grid{display:grid;gap:14px;} .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr 1fr;} .g4{grid-template-columns:repeat(4,1fr);}
+    .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:0 6px 26px #0006;}
+    .card.acc{border-left:3px solid var(--emerald);}
+    .card.red{border-left:3px solid var(--red);} .card.amber{border-left:3px solid var(--amber);} .card.sky{border-left:3px solid var(--sky);}
+    .card h3{font-size:0.96em;margin-bottom:6px;} .card p{font-size:0.8em;color:var(--muted);margin:0;}
+    .ko{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);margin-bottom:6px;}
+    .big{font-size:1.5em;font-weight:800;color:#fff;}
 
-    .muted { color: var(--text-muted); }
-    .faint { color: var(--text-faint); }
+    /* stats */
+    .stat{text-align:center;padding:6px;}
+    .stat .num{font-size:2.5em;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--emerald),#6ee7b7 70%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+    .stat .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
 
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-    .card-accent { border-left: 3px solid var(--accent); }
-    .card-amber  { border-left: 3px solid var(--amber);  }
-    .card-red    { border-left: 3px solid var(--red);    }
-    .card-sky    { border-left: 3px solid var(--sky);    }
+    /* takeaway */
+    .takeaway{margin-top:20px;padding:11px 17px;background:var(--emerald-soft);border-left:3px solid var(--emerald);border-radius:0 10px 10px 0;font-size:.82em;color:#c7f9e5;}
+    .takeaway::before{content:'★ ';color:var(--emerald);font-weight:800;}
 
-    .grid { display: grid; gap: 14px; }
-    .grid-2 { grid-template-columns: 1fr 1fr; }
-    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    /* flow (horizontal nodes + arrows) */
+    .flow{display:flex;align-items:stretch;gap:0;width:100%;}
+    .fnode{flex:1;min-width:0;padding:13px 12px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);border:1px solid var(--line);border-radius:12px;text-align:center;}
+    .fnode.acc{border-color:var(--emerald-line);background:linear-gradient(180deg,var(--emerald-soft),var(--panel2));}
+    .fnode .t{font-weight:800;color:#fff;font-size:.82em;} .fnode .s{font-size:.64em;color:var(--muted);margin-top:3px;}
+    .farr{display:flex;align-items:center;color:var(--emerald);font-size:1.1em;padding:0 7px;font-weight:800;}
+    .fdn{color:var(--emerald);text-align:center;font-size:1.2em;font-weight:800;margin:2px 0;}
 
-    .stat { text-align: center; }
-    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
-    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    /* architecture 3-col */
+    .arch{display:flex;align-items:stretch;gap:0;margin-top:14px;}
+    .acol{flex:1;min-width:0;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);border:1px solid var(--line);border-radius:14px;padding:0 0 12px;overflow:hidden;}
+    .acol .ah{padding:10px 14px;font-weight:800;color:#fff;font-size:.82em;text-align:center;}
+    .acol.fe .ah{background:var(--emerald-soft);border-bottom:1px solid var(--emerald-line);color:#a7f3d0;}
+    .acol.be .ah{background:var(--sky-soft);border-bottom:1px solid #38bdf855;color:#bae6fd;}
+    .acol.ex .ah{background:var(--amber-soft);border-bottom:1px solid #f59e0b55;color:#fde68a;}
+    .acol ul{margin:10px 14px 0;padding-left:1.05em;font-size:.66em;color:var(--muted);line-height:1.45;}
+    .aarr{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--emerald);font-weight:800;padding:0 8px;}
+    .aarr .l{font-size:1.4em;line-height:1;} .aarr .c{font-size:.5em;color:var(--faint);margin-top:4px;text-transform:uppercase;letter-spacing:.1em;text-align:center;}
 
-    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+    /* layer stack */
+    .layers{display:grid;gap:9px;margin-top:14px;}
+    .lyr{display:flex;align-items:center;gap:13px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);}
+    .lyr .dot{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05em;flex-shrink:0;}
+    .lyr .h{font-weight:700;color:#fff;font-size:.9em;} .lyr .d{color:var(--muted);font-size:.72em;margin-top:1px;}
+    .lyr .tag{margin-left:auto;font-size:.62em;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 9px;background:#fff0a;}
 
-    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
-    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+    /* before/after */
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+    .bacol{padding:15px 18px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);}
+    .bacol h4{font-size:.72em;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
+    .bef h4{color:#fca5a5;} .bef{border-top:2px solid var(--red);} .aft h4{color:var(--emerald);} .aft{border-top:2px solid var(--emerald);}
+    .bacol ul{margin:0;padding-left:1.15em;font-size:.78em;} .bacol li{color:var(--muted);margin:5px 0;}
 
-    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
-    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
-    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
-    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
-    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
-    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+    /* chips (scattered tools) */
+    .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px;}
+    .chip{padding:8px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--panel3);font-size:.7em;font-weight:700;color:#cbd5e1;}
 
-    .layer-stack { display: grid; gap: 10px; }
-    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
-    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .layer .ico svg { width: 18px; height: 18px; stroke-width: 2; }
-    .layer .body { flex: 1; }
-    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
-    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
-
-    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
-    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
-    .ba-before h4 { color: var(--red); }
-    .ba-after  h4 { color: var(--accent); }
-    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
-    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
-
-    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
-    .tl-row { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
-    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.1em; }
-    .tl-row .prob { color: #fca5a5; font-weight: 600; }
-    .tl-row .fix  { color: var(--text-muted); }
-
-    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
-    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
-    .title-slide .subtitle { font-size: 1.1em; color: var(--text-muted); margin-bottom: 32px; }
-    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
-    .title-slide .meta strong { color: var(--text); font-weight: 700; }
-
-    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
-
-    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-
-    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
-    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
-    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 700px; margin-top: 12px; }
+    /* title / divider / closing */
+    .center{display:flex;flex-direction:column;justify-content:center;height:100%;}
+    .title h1{font-size:3em;margin-bottom:10px;} .title .sub{font-size:1.05em;color:var(--muted);margin-bottom:26px;}
+    .meta{display:flex;gap:22px;font-size:.62em;color:var(--faint);text-transform:uppercase;letter-spacing:.09em;} .meta strong{color:var(--text);}
+    .dvd .n{font-family:'JetBrains Mono',monospace;font-size:5em;color:var(--emerald);opacity:.35;font-weight:800;line-height:1;margin-bottom:6px;}
+    .dvd h2{font-size:2.4em;} .dvd .d{color:var(--muted);max-width:720px;margin-top:10px;}
+    .dots{position:absolute;inset:0;background-image:radial-gradient(circle,#ffffff0a 1px,transparent 1px);background-size:24px 24px;mask-image:radial-gradient(ellipse at top right,#000 0,transparent 70%);pointer-events:none;}
+    .reveal .slide-number{background:transparent;color:var(--faint);font-family:'JetBrains Mono',monospace;font-size:11px;}
+    .reveal .progress{color:var(--emerald);}
   </style>
 </head>
-
 <body>
-  <div class="reveal">
-    <div class="slides">
+<div class="reveal"><div class="slides">
 
-      <!-- ═══════════════ COVER ═══════════════ -->
-      <section>
-        <div class="bg-dots"></div>
-        <div class="title-slide">
-          <div class="eyebrow">Engineering Report · Week 24 · 2026</div>
-          <h1>Integrasi Dashboard<br/>Banyak Tool → Satu Platform</h1>
-          <p class="subtitle">Menyatukan modul kelola domain & layanan provider yang tadinya terpisah ke dalam satu Domain Archive.</p>
-          <div class="meta">
-            <span><strong>Project</strong> · Domain Archive</span>
-            <span><strong>Scope</strong> · Integrasi Platform</span>
-            <span><strong>Status</strong> · Berjalan &amp; Stabil</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- ═══════════════ SECTION 1: KONTEKS ═══════════════ -->
-      <section>
-        <div class="section-divider">
-          <div class="num">01</div>
-          <div class="eyebrow">Konteks</div>
-          <h2>Banyak Tool, Satu Tujuan</h2>
-          <p class="desc">Mengelola portfolio domain melibatkan banyak layanan & dashboard berbeda — dan justru di situ titik awal masalahnya.</p>
-        </div>
-      </section>
-
-      <!-- Konteks - Asal-usul -->
-      <section>
-        <div class="eyebrow">Asal-usul</div>
-        <h2>Kenapa Ini Dikerjakan</h2>
-        <p class="muted" style="font-size: 0.9em; max-width: 980px;">Setiap pekerjaan domain dilakukan di tempat berbeda: beli & perpanjang di registrar, atur DNS di satu layanan, cek SEO di layanan lain. Tim harus lompat antar-tool sepanjang hari.</p>
-        <div class="grid grid-3" style="margin-top: 18px;">
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin: 0 0 8px;">Realita Lama</div>
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">5–7</div>
-            <div class="muted" style="font-size: 0.8em;">layanan/dashboard berbeda dipakai bergantian</div>
-          </div>
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin: 0 0 8px;">Beban Harian</div>
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">Login berulang</div>
-            <div class="muted" style="font-size: 0.8em;">tiap tool punya akun & tampilan sendiri</div>
-          </div>
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin: 0 0 8px;">Pemicu</div>
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">Copy-paste</div>
-            <div class="muted" style="font-size: 0.8em;">data dipindah manual antar tool, rawan salah</div>
-          </div>
-        </div>
-        <div class="takeaway">Konteks kerja yang terpecah di banyak tool jadi pemicunya: tim butuh satu tempat terpadu.</div>
-      </section>
-
-      <!-- Konteks - Profil & Visi -->
-      <section>
-        <div class="eyebrow">Profil Sistem &amp; Visi</div>
-        <h2>Domain Archive sebagai Command Center</h2>
-        <p class="muted" style="font-size: 0.9em; max-width: 980px;">Domain Archive ditargetkan menjadi <strong style="color:#fff;">satu pintu</strong> untuk seluruh siklus hidup domain — dari beli, atur DNS, pantau metrik SEO, sampai perpanjang/pensiun.</p>
-        <div class="grid grid-3" style="margin-top: 20px;">
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin: 0 0 8px;">Modul</div>
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">16</div>
-            <div class="muted" style="font-size: 0.8em;">modul fitur dalam 1 aplikasi</div>
-          </div>
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin: 0 0 8px;">Provider</div>
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">7</div>
-            <div class="muted" style="font-size: 0.8em;">layanan eksternal terintegrasi</div>
-          </div>
-          <div class="card card-accent">
-            <div class="eyebrow" style="margin: 0 0 8px;">Akses</div>
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">1 Login</div>
-            <div class="muted" style="font-size: 0.8em;">satu pintu untuk semua modul</div>
-          </div>
-        </div>
-        <div class="takeaway">Visi: satu platform yang menampung seluruh siklus hidup domain — bukan kumpulan tool yang terpisah.</div>
-      </section>
-
-      <!-- ═══════════════ SECTION 2: MASALAH ═══════════════ -->
-      <section>
-        <div class="section-divider">
-          <div class="num">02</div>
-          <div class="eyebrow red">Masalah</div>
-          <h2>Konteks yang Terpecah</h2>
-          <p class="desc">Tool & layanan yang terpisah membuat kerja lambat, rawan salah, dan sulit diaudit.</p>
-        </div>
-      </section>
-
-      <!-- Masalah - Akar Masalah -->
-      <section>
-        <div class="eyebrow red">Akar Masalah</div>
-        <h2>4 Titik Nyeri Utama</h2>
-        <div class="grid grid-2" style="margin-top: 18px;">
-          <div class="card card-red">
-            <h3 style="color: #fca5a5; font-size: 1em;">🔁 Login &amp; buka berulang</h3>
-            <p class="muted" style="font-size: 0.85em;">Tiap layanan punya akun, alamat, dan tampilan sendiri — waktu habis untuk berpindah-pindah.</p>
-          </div>
-          <div class="card card-red">
-            <h3 style="color: #fca5a5; font-size: 1em;">🧩 Data tidak nyambung</h3>
-            <p class="muted" style="font-size: 0.85em;">Data domain di registrar, DNS, dan SEO tidak terhubung; disatukan manual lewat copy-paste.</p>
-          </div>
-          <div class="card card-red">
-            <h3 style="color: #fca5a5; font-size: 1em;">🕵️ Audit tidak terpusat</h3>
-            <p class="muted" style="font-size: 0.85em;">Sulit menjawab "siapa mengubah apa, kapan" karena jejak tersebar di banyak tempat.</p>
-          </div>
-          <div class="card card-red">
-            <h3 style="color: #fca5a5; font-size: 1em;">🔑 Integrasi provider rawan</h3>
-            <p class="muted" style="font-size: 0.85em;">API key tiap layanan tersebar — berisiko bocor bila dipanggil langsung dari sisi browser.</p>
-          </div>
-        </div>
-        <div class="takeaway">Dibiarkan: kerja makin lambat dan risiko salah/keamanan naik seiring portfolio bertambah.</div>
-      </section>
-
-      <!-- Goals & Constraints -->
-      <section>
-        <div class="eyebrow">Tujuan Proyek</div>
-        <h2>Goal &amp; Constraint</h2>
-        <div class="grid grid-2" style="margin-top: 18px;">
-          <div class="card card-accent">
-            <h3 style="font-size: 0.95em; color: var(--accent);">🎯 Goals</h3>
-            <ul style="font-size: 0.82em;">
-              <li>Satu platform untuk semua modul (satu pintu)</li>
-              <li>Satu login untuk seluruh fitur (SSO)</li>
-              <li>Integrasi provider yang aman & terpusat</li>
-              <li>Audit aktivitas tercatat di satu tempat</li>
-            </ul>
-          </div>
-          <div class="card card-amber">
-            <h3 style="font-size: 0.95em; color: var(--amber);">⚠️ Constraints</h3>
-            <ul style="font-size: 0.82em;">
-              <li>API key tidak boleh sampai ke browser</li>
-              <li>Ikut stack existing: React + Supabase</li>
-              <li>Integrasi bertahap, tanpa mengganggu yang jalan</li>
-              <li>Tetap ringan walau modul terus bertambah</li>
-            </ul>
-          </div>
-        </div>
-        <div class="takeaway">Sasarannya jelas: satu pintu yang aman & terpusat, dibangun bertahap di atas yang sudah ada.</div>
-      </section>
-
-      <!-- ═══════════════ SECTION 3: PENDEKATAN ═══════════════ -->
-      <section>
-        <div class="section-divider">
-          <div class="num">03</div>
-          <div class="eyebrow sky">Pendekatan</div>
-          <h2>Satu Platform Terpadu (Unified)</h2>
-          <p class="desc">Satu aplikasi modular yang menampung semua modul sekaligus menjembatani semua provider.</p>
-        </div>
-      </section>
-
-      <!-- Pendekatan - Prinsip Kerja -->
-      <section>
-        <div class="eyebrow sky">Prinsip Kerja</div>
-        <h2>4 Prinsip Integrasi</h2>
-        <div class="layer-stack" style="margin-top: 18px;">
-          <div class="layer">
-            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </div>
-            <div class="body"><div class="head">Modular Monolith</div><div class="desc">Satu aplikasi, banyak modul — bukan 10 aplikasi terpisah.</div></div>
-            <span class="pill">inti</span>
-          </div>
-          <div class="layer">
-            <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            </div>
-            <div class="body"><div class="head">Edge Function sebagai jembatan</div><div class="desc">Panggilan ke provider dilakukan di server — API key aman.</div></div>
-          </div>
-          <div class="layer">
-            <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0-1.66 1.34-3 3-3s3 1.34 3 3v2H6v-2c0-1.66 1.34-3 3-3"/></svg>
-            </div>
-            <div class="body"><div class="head">Auth &amp; RBAC terpusat</div><div class="desc">Satu login, satu tempat mengatur siapa boleh akses apa.</div></div>
-          </div>
-          <div class="layer">
-            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>
-            </div>
-            <div class="body"><div class="head">Audit &amp; Realtime</div><div class="desc">Semua aksi tercatat; perubahan data langsung tersinkron ke UI.</div></div>
-          </div>
-        </div>
-        <div class="takeaway">Pendekatan unified dipilih karena pas dengan skala & stack existing — bukan over-engineering micro-frontend.</div>
-      </section>
-
-      <!-- Pendekatan - Peta Solusi -->
-      <section>
-        <div class="eyebrow sky">Peta Solusi</div>
-        <h2>Arsitektur Integrasi</h2>
-        <div class="flow" style="margin-top: 22px;">
-          <div class="flow-node accent">
-            <div class="title">Modul UI (16)</div>
-            <div class="sub">React + Router, satu tampilan</div>
-          </div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-node">
-            <div class="title">Supabase</div>
-            <div class="sub">Auth · Postgres · Realtime · Edge Functions</div>
-          </div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-node">
-            <div class="title">7 Provider</div>
-            <div class="sub">Registrar · DNS · SEO · Search Console</div>
-          </div>
-        </div>
-        <div class="grid grid-3" style="margin-top: 24px;">
-          <div class="stat"><div class="num">1</div><div class="lbl">Aplikasi</div></div>
-          <div class="stat"><div class="num">18</div><div class="lbl">Edge Function</div></div>
-          <div class="stat"><div class="num">7</div><div class="lbl">Provider</div></div>
-        </div>
-        <div class="takeaway">UI tidak pernah memanggil provider langsung — selalu lewat Edge Function di tengah.</div>
-      </section>
-
-      <!-- ═══════════════ SECTION 4: IMPLEMENTASI ═══════════════ -->
-      <section>
-        <div class="section-divider">
-          <div class="num">04</div>
-          <div class="eyebrow">Implementasi</div>
-          <h2>Eksekusi Integrasi</h2>
-          <p class="desc">Tiga lapis: konsolidasi modul, integrasi provider, dan penyatuan akses.</p>
-        </div>
-      </section>
-
-      <!-- Implementasi - Lapis 1: Modul -->
-      <section>
-        <div class="eyebrow">Lapis 1 · Modul</div>
-        <h2>Konsolidasi 16 Modul jadi 1 App</h2>
-        <div class="grid grid-2" style="margin-top: 16px;">
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">Routing + Keep-Alive</h3>
-            <ul style="font-size: 0.78em;">
-              <li>Tiap fitur = satu rute (<code>/domains</code>, <code>/disavow</code>, …)</li>
-              <li>Halaman lazy-load saat pertama dibuka</li>
-              <li>Setelah dibuka, modul tetap "hidup" → pindah instan</li>
-            </ul>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">Sidebar 5 Grup</h3>
-            <ul style="font-size: 0.78em;">
-              <li>Utama · Statistics · Data &amp; Keyword</li>
-              <li>Tools · Admin</li>
-              <li>Semua modul tampil dalam satu navigasi</li>
-            </ul>
-          </div>
-        </div>
-        <div class="takeaway">Dari banyak dashboard terpisah → satu navigasi; pengguna tak perlu "buka sana-sini".</div>
-      </section>
-
-      <!-- Implementasi - Lapis 2: Provider -->
-      <section>
-        <div class="eyebrow">Lapis 2 · Provider</div>
-        <h2>7 Provider lewat 18 Edge Function</h2>
-        <div class="grid grid-4" style="margin-top: 18px;">
-          <div class="card card-sky">
-            <div class="eyebrow sky" style="margin: 0 0 8px;">Registrar</div>
-            <div style="font-weight: 800; color:#fff; font-size:0.95em;">Namecheap · Dynadot</div>
-            <div class="muted" style="font-size: 0.76em; margin-top:4px;">sync domain, perpanjang, nameserver</div>
-          </div>
-          <div class="card card-sky">
-            <div class="eyebrow sky" style="margin: 0 0 8px;">DNS / Hosting</div>
-            <div style="font-weight: 800; color:#fff; font-size:0.95em;">Cloudflare · Vercel</div>
-            <div class="muted" style="font-size: 0.76em; margin-top:4px;">add zone, attach domain, redirect</div>
-          </div>
-          <div class="card card-sky">
-            <div class="eyebrow sky" style="margin: 0 0 8px;">SEO / Metrik</div>
-            <div style="font-weight: 800; color:#fff; font-size:0.95em;">Ahrefs · DataForSEO</div>
-            <div class="muted" style="font-size: 0.76em; margin-top:4px;">authority, backlink, SERP/keyword</div>
-          </div>
-          <div class="card card-sky">
-            <div class="eyebrow sky" style="margin: 0 0 8px;">Search</div>
-            <div style="font-weight: 800; color:#fff; font-size:0.95em;">Search Console</div>
-            <div class="muted" style="font-size: 0.76em; margin-top:4px;">OAuth + daftar properti (GSC)</div>
-          </div>
-        </div>
-        <div class="takeaway">API key disimpan sebagai <code>secret</code> di server (Edge Function) — tidak pernah dikirim ke browser.</div>
-      </section>
-
-      <!-- Implementasi - Lapis 3: Akses -->
-      <section>
-        <div class="eyebrow">Lapis 3 · Akses</div>
-        <h2>Satu Login untuk Semua Modul</h2>
-        <div class="grid grid-2" style="margin-top: 16px;">
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">SSO + Admin Roles</h3>
-            <ul style="font-size: 0.78em;">
-              <li>Login via Google OAuth atau akun admin</li>
-              <li>Peran (role) menentukan akses modul tertentu</li>
-              <li>Kelola user terpusat (create / update / delete)</li>
-            </ul>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">Proteksi</h3>
-            <ul style="font-size: 0.78em;">
-              <li><code>AuthGate</code>: aplikasi terkunci sebelum login</li>
-              <li>Login lockout setelah percobaan gagal</li>
-              <li>Anti-snoop (blok devtools) di produksi</li>
-            </ul>
-          </div>
-        </div>
-        <div class="takeaway">Satu gerbang masuk: keamanan & hak akses diatur di satu tempat, bukan di tiap tool.</div>
-      </section>
-
-      <!-- Implementasi - Jaring Pengaman -->
-      <section>
-        <div class="eyebrow">Jaring Pengaman</div>
-        <h2>Audit &amp; Sinkronisasi</h2>
-        <div class="grid grid-2" style="margin-top: 16px;">
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">🧾 Audit terpusat</h3>
-            <p class="muted" style="font-size: 0.82em;">Setiap aksi penting (login, perpanjang domain, perubahan) tercatat di <code>activity_log</code> &amp; <code>admin_audit_log</code> — bisa ditelusuri per sesi.</p>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">⚡ Realtime sync</h3>
-            <p class="muted" style="font-size: 0.82em;">Perubahan data langsung tampil di UI lewat <code>postgres_changes</code>, dengan debounce agar tabel tidak berkedip saat operasi massal.</p>
-          </div>
-        </div>
-        <div class="takeaway">Karena terpadu, jejak audit & data terkini ada di satu sumber kebenaran.</div>
-      </section>
-
-      <!-- Tantangan - before/after -->
-      <section>
-        <div class="eyebrow amber">Tantangan</div>
-        <h2>API Key Tidak Boleh Bocor</h2>
-        <div class="ba" style="margin-top: 16px;">
-          <div class="ba-col ba-before">
-            <h4>❌ Kalau dipanggil dari browser</h4>
-            <ul>
-              <li>API key provider terekspos di sisi klien</li>
-              <li>Kuota/biaya bisa disalahgunakan pihak lain</li>
-              <li>Tiap tool kelola key sendiri-sendiri</li>
-            </ul>
-          </div>
-          <div class="ba-col ba-after">
-            <h4>✓ Lewat Edge Function</h4>
-            <ul>
-              <li>Semua panggilan provider berjalan di server</li>
-              <li>Key disimpan sebagai secret, tak pernah ke browser</li>
-              <li>Satu tempat kelola kredensial & biaya</li>
-            </ul>
-          </div>
-        </div>
-        <div class="takeaway">Pelajaran: integrasi provider wajib server-side — keamanan jadi syarat, bukan opsi.</div>
-      </section>
-
-      <!-- ═══════════════ SECTION 5: HASIL ═══════════════ -->
-      <section>
-        <div class="section-divider">
-          <div class="num">05</div>
-          <div class="eyebrow">Hasil</div>
-          <h2>Satu Pintu untuk Semua</h2>
-          <p class="desc">Portfolio domain kini dikelola dari satu tempat — modul, provider, dan akses menyatu.</p>
-        </div>
-      </section>
-
-      <!-- Hasil - Numbers -->
-      <section>
-        <div class="eyebrow">Numbers</div>
-        <h2>Capaian Integrasi</h2>
-        <div class="grid grid-4" style="margin-top: 28px;">
-          <div class="stat"><div class="num">16</div><div class="lbl">Modul terintegrasi</div></div>
-          <div class="stat"><div class="num">7</div><div class="lbl">Provider eksternal</div></div>
-          <div class="stat"><div class="num">18</div><div class="lbl">Edge Function</div></div>
-          <div class="stat"><div class="num">5</div><div class="lbl">Grup menu</div></div>
-        </div>
-        <div class="grid grid-4" style="margin-top: 26px;">
-          <div class="stat"><div class="num">34</div><div class="lbl">Migrasi DB</div></div>
-          <div class="stat"><div class="num">12</div><div class="lbl">Tabel data</div></div>
-          <div class="stat"><div class="num">1</div><div class="lbl">Login tunggal</div></div>
-          <div class="stat"><div class="num">100%</div><div class="lbl">Aksi teraudit</div></div>
-        </div>
-        <div class="takeaway">Dari kumpulan tool terpisah → satu platform terintegrasi dengan jejak audit penuh.</div>
-      </section>
-
-      <!-- Hasil - Dampak untuk Pengguna -->
-      <section>
-        <div class="eyebrow">Dampak untuk Pengguna</div>
-        <h2>Sebelum vs Sesudah</h2>
-        <div class="ba" style="margin-top: 16px;">
-          <div class="ba-col ba-before">
-            <h4>❌ Sebelum</h4>
-            <ul>
-              <li>Buka 5–7 tool berbeda, login berulang</li>
-              <li>Pindah data antar tool dengan copy-paste</li>
-              <li>Jejak perubahan tersebar, sulit ditelusuri</li>
-              <li>Kredensial provider tercecer</li>
-            </ul>
-          </div>
-          <div class="ba-col ba-after">
-            <h4>✓ Sesudah</h4>
-            <ul>
-              <li>1 platform, 1 login, semua modul di sidebar</li>
-              <li>Data tersinkron otomatis (realtime)</li>
-              <li>Audit terpusat: "siapa, apa, kapan" jelas</li>
-              <li>API key aman di server, terkelola satu tempat</li>
-            </ul>
-          </div>
-        </div>
-        <div class="takeaway">Untuk tim: kerja lebih cepat, lebih sedikit salah, dan lebih mudah dipertanggungjawabkan.</div>
-      </section>
-
-      <!-- Hasil - Pembelajaran -->
-      <section>
-        <div class="eyebrow">Pembelajaran</div>
-        <h2>Insight Teknis &amp; Operasional</h2>
-        <div class="grid grid-3" style="margin-top: 20px;">
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">🔑 Provider = server-side</h3>
-            <p class="muted" style="font-size: 0.78em;">Edge Function bukan sekadar gaya — ia melindungi API key & memusatkan biaya.</p>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">🧩 Modular monolith cukup</h3>
-            <p class="muted" style="font-size: 0.78em;">Untuk skala ini, satu app modular lebih sederhana & murah daripada micro-frontend.</p>
-          </div>
-          <div class="card card-accent">
-            <h3 style="font-size: 0.9em;">🧾 Audit sejak awal</h3>
-            <p class="muted" style="font-size: 0.78em;">Mencatat aktivitas dari hari pertama bikin telusur masalah jauh lebih mudah.</p>
-          </div>
-        </div>
-        <div class="takeaway">Integrasi yang baik bukan cuma "nyambung", tapi aman, terpusat, dan bisa diaudit.</div>
-      </section>
-
-      <!-- Roadmap -->
-      <section>
-        <div class="eyebrow">Roadmap</div>
-        <h2>Pengembangan Selanjutnya</h2>
-        <div class="grid grid-2" style="margin-top: 20px;">
-          <div class="card">
-            <h3 style="font-size: 0.9em; color: var(--sky);">Short-term (1–2 minggu)</h3>
-            <ul style="font-size: 0.8em;">
-              <li>Integrasi penuh provider Dynadot</li>
-              <li>Sidebar khusus Provider &amp; Renewals</li>
-              <li>Retention policy untuk data lama</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3 style="font-size: 0.9em; color: var(--accent);">Mid-term (1–3 bulan)</h3>
-            <ul style="font-size: 0.8em;">
-              <li>Trigger server-side untuk aksi berisiko tinggi</li>
-              <li>RBAC lebih granular per modul</li>
-              <li>Tambah provider baru (registrar/DNS lain)</li>
-              <li>Panel provider terpadu (saldo, kredit, status)</li>
-            </ul>
-          </div>
-        </div>
-        <div class="takeaway">Arah berikutnya: perdalam integrasi provider & perketat kontrol akses untuk aksi berisiko.</div>
-      </section>
-
-      <!-- Closing -->
-      <section>
-        <div class="bg-dots"></div>
-        <div class="title-slide">
-          <div class="eyebrow">Terima Kasih</div>
-          <h1>Pertanyaan?</h1>
-          <p class="subtitle">Integrasi platform berjalan &amp; stabil — semua tool kini dalam satu pintu.</p>
-          <div class="meta">
-            <span><strong>Project</strong> · Domain Archive</span>
-            <span><strong>Task</strong> · Integrate Dashboard</span>
-            <span><strong>Week</strong> · 24 · 2026</span>
-          </div>
-        </div>
-      </section>
-
+  <!-- COVER -->
+  <section><div class="dots"></div>
+    <div class="center title">
+      <div class="eyebrow">Engineering Report · Week 24 · 2026</div>
+      <h1 class="grad">Integrasi Dashboard</h1>
+      <p class="sub">Menyatukan banyak tool & layanan provider yang tadinya terpisah → satu platform Domain Archive.</p>
+      <div class="meta">
+        <span><strong>Project</strong> · Domain Archive</span>
+        <span><strong>Scope</strong> · Integrasi Platform</span>
+        <span><strong>Status</strong> · Berjalan &amp; Stabil</span>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-  <script>
-    Reveal.initialize({
-      hash: true,
-      slideNumber: 'c/t',
-      controls: true,
-      progress: true,
-      transition: 'fade',
-      transitionSpeed: 'fast',
-      backgroundTransition: 'fade',
-      center: false,
-      width: 1280,
-      height: 800,
-      margin: 0.04,
-    });
-  </script>
+  <!-- DIVIDER 01 -->
+  <section><div class="dots"></div><div class="center dvd">
+    <div class="n">01</div><div class="eyebrow">Konteks</div>
+    <h2 class="grad">Banyak Tool, Satu Tujuan</h2>
+    <p class="d">Mengelola portfolio domain melibatkan banyak layanan berbeda — dan justru di situ titik awal masalahnya.</p>
+  </div></section>
+
+  <!-- KONTEKS: asal-usul + chips -->
+  <section>
+    <div class="eyebrow">Asal-usul</div>
+    <h2>Dulu: Kerja Tersebar di Banyak Tempat</h2>
+    <p class="muted" style="font-size:.84em;max-width:980px;">Tiap pekerjaan domain ada di tool berbeda — beli/perpanjang di registrar, atur DNS di tempat lain, cek SEO di layanan lain. Tim lompat-lompat seharian.</p>
+    <div class="chips">
+      <span class="chip">Namecheap</span><span class="chip">Dynadot</span><span class="chip">Cloudflare</span>
+      <span class="chip">Vercel</span><span class="chip">Ahrefs</span><span class="chip">DataForSEO</span>
+      <span class="chip">Search Console</span><span class="chip">+ spreadsheet manual</span>
+    </div>
+    <div class="grid g3" style="margin-top:16px;">
+      <div class="card acc"><div class="ko">Realita Lama</div><div class="big">5–7</div><div class="muted" style="font-size:.76em;">layanan dipakai bergantian</div></div>
+      <div class="card acc"><div class="ko">Beban Harian</div><div class="big">Login berulang</div><div class="muted" style="font-size:.76em;">tiap tool akun & tampilan sendiri</div></div>
+      <div class="card acc"><div class="ko">Pemicu</div><div class="big">Copy-paste</div><div class="muted" style="font-size:.76em;">data dipindah manual, rawan salah</div></div>
+    </div>
+    <div class="takeaway">Konteks kerja yang terpecah di banyak tool jadi pemicunya: tim butuh satu tempat terpadu.</div>
+  </section>
+
+  <!-- KONTEKS: profil & visi -->
+  <section>
+    <div class="eyebrow">Profil Sistem &amp; Visi</div>
+    <h2>Domain Archive sebagai <span class="grad">Command Center</span></h2>
+    <p class="muted" style="font-size:.84em;max-width:980px;">Target: satu pintu untuk seluruh siklus hidup domain — beli, atur DNS, pantau SEO, sampai perpanjang/pensiun.</p>
+    <div class="grid g3" style="margin-top:18px;">
+      <div class="stat"><div class="num">16</div><div class="lbl">Modul dalam 1 app</div></div>
+      <div class="stat"><div class="num">7</div><div class="lbl">Provider terintegrasi</div></div>
+      <div class="stat"><div class="num">1</div><div class="lbl">Login tunggal</div></div>
+    </div>
+    <div class="takeaway">Visi: satu platform untuk seluruh siklus hidup domain — bukan kumpulan tool terpisah.</div>
+  </section>
+
+  <!-- DIVIDER 02 -->
+  <section><div class="dots"></div><div class="center dvd">
+    <div class="n" style="color:var(--red);opacity:.4;">02</div><div class="eyebrow red">Masalah</div>
+    <h2 class="grad">Konteks yang Terpecah</h2>
+    <p class="d">Tool & layanan terpisah membuat kerja lambat, rawan salah, dan sulit diaudit.</p>
+  </div></section>
+
+  <!-- MASALAH: 4 pain -->
+  <section>
+    <div class="eyebrow red">Akar Masalah</div>
+    <h2>4 Titik Nyeri Utama</h2>
+    <div class="grid g2" style="margin-top:14px;">
+      <div class="card red"><h3 style="color:#fca5a5;">🔁 Login &amp; buka berulang</h3><p>Tiap layanan punya akun, alamat, dan tampilan sendiri — waktu habis berpindah-pindah.</p></div>
+      <div class="card red"><h3 style="color:#fca5a5;">🧩 Data tidak nyambung</h3><p>Data registrar, DNS, dan SEO tidak terhubung; disatukan manual lewat copy-paste.</p></div>
+      <div class="card red"><h3 style="color:#fca5a5;">🕵️ Audit tidak terpusat</h3><p>Sulit menjawab "siapa mengubah apa, kapan" karena jejak tersebar.</p></div>
+      <div class="card red"><h3 style="color:#fca5a5;">🔑 Integrasi provider rawan</h3><p>API key tersebar — berisiko bocor bila dipanggil dari sisi browser.</p></div>
+    </div>
+    <div class="takeaway">Dibiarkan: kerja makin lambat dan risiko salah/keamanan naik seiring portfolio bertambah.</div>
+  </section>
+
+  <!-- MASALAH: goals & constraints -->
+  <section>
+    <div class="eyebrow">Tujuan Proyek</div>
+    <h2>Goal &amp; Constraint</h2>
+    <div class="grid g2" style="margin-top:14px;">
+      <div class="card acc"><h3 style="color:var(--emerald);">🎯 Goals</h3>
+        <ul style="font-size:.8em;color:var(--muted);"><li>Satu platform untuk semua modul</li><li>Satu login (SSO) untuk seluruh fitur</li><li>Integrasi provider yang aman &amp; terpusat</li><li>Audit aktivitas di satu tempat</li></ul></div>
+      <div class="card amber"><h3 style="color:var(--amber);">⚠️ Constraints</h3>
+        <ul style="font-size:.8em;color:var(--muted);"><li>API key tidak boleh ke browser</li><li>Ikut stack existing: React + Supabase</li><li>Bertahap, tanpa ganggu yang jalan</li><li>Tetap ringan walau modul bertambah</li></ul></div>
+    </div>
+    <div class="takeaway">Sasaran jelas: satu pintu yang aman & terpusat, dibangun bertahap di atas yang sudah ada.</div>
+  </section>
+
+  <!-- DIVIDER 03 -->
+  <section><div class="dots"></div><div class="center dvd">
+    <div class="n" style="color:var(--sky);opacity:.4;">03</div><div class="eyebrow sky">Pendekatan</div>
+    <h2 class="grad">Satu Platform Terpadu</h2>
+    <p class="d">Satu aplikasi modular yang menampung semua modul sekaligus menjembatani semua provider.</p>
+  </div></section>
+
+  <!-- PENDEKATAN: prinsip (layers) -->
+  <section>
+    <div class="eyebrow sky">Prinsip Kerja</div>
+    <h2>4 Prinsip Integrasi</h2>
+    <div class="layers">
+      <div class="lyr"><div class="dot" style="background:var(--emerald-soft);color:var(--emerald);">▤</div><div><div class="h">Modular Monolith</div><div class="d">Satu aplikasi, banyak modul — bukan 10 aplikasi terpisah.</div></div><span class="tag">inti</span></div>
+      <div class="lyr"><div class="dot" style="background:var(--sky-soft);color:var(--sky);">⚡</div><div><div class="h">Edge Function sebagai jembatan</div><div class="d">Panggilan ke provider dilakukan di server — API key aman.</div></div></div>
+      <div class="lyr"><div class="dot" style="background:var(--amber-soft);color:var(--amber);">🔐</div><div><div class="h">Auth &amp; RBAC terpusat</div><div class="d">Satu login, satu tempat mengatur siapa boleh akses apa.</div></div></div>
+      <div class="lyr"><div class="dot" style="background:var(--emerald-soft);color:var(--emerald);">🧾</div><div><div class="h">Audit &amp; Realtime</div><div class="d">Semua aksi tercatat; perubahan data langsung tersinkron ke UI.</div></div></div>
+    </div>
+    <div class="takeaway">Unified dipilih karena pas dengan skala & stack existing — bukan over-engineering.</div>
+  </section>
+
+  <!-- PENDEKATAN: ARSITEKTUR (diagram 3-kolom) -->
+  <section>
+    <div class="eyebrow sky">Peta Solusi</div>
+    <h2>Arsitektur Integrasi</h2>
+    <div class="arch">
+      <div class="acol fe"><div class="ah">FRONTEND · React (16 modul)</div>
+        <ul><li>Satu tampilan + sidebar</li><li>AuthGate (login wajib)</li><li>Realtime di UI</li></ul></div>
+      <div class="aarr"><div class="l">⇄</div><div class="c">query /<br>realtime</div></div>
+      <div class="acol be"><div class="ah">SUPABASE (Backend)</div>
+        <ul><li>Auth + RBAC</li><li>Postgres + RLS</li><li>18 Edge Function</li><li>Realtime</li></ul></div>
+      <div class="aarr"><div class="l">→</div><div class="c">API call<br>(server-side)</div></div>
+      <div class="acol ex"><div class="ah">7 PROVIDER</div>
+        <ul><li>Namecheap · Dynadot</li><li>Cloudflare · Vercel</li><li>Ahrefs · DataForSEO</li><li>Search Console</li></ul></div>
+    </div>
+    <div class="takeaway">UI tidak pernah memanggil provider langsung — selalu lewat Edge Function di tengah.</div>
+  </section>
+
+  <!-- DIVIDER 04 -->
+  <section><div class="dots"></div><div class="center dvd">
+    <div class="n">04</div><div class="eyebrow">Implementasi</div>
+    <h2 class="grad">Eksekusi Integrasi</h2>
+    <p class="d">Tiga lapis: konsolidasi modul, integrasi provider, dan penyatuan akses.</p>
+  </div></section>
+
+  <!-- IMPL lapis 1: modul -->
+  <section>
+    <div class="eyebrow">Lapis 1 · Modul</div>
+    <h2>Konsolidasi 16 Modul jadi 1 App</h2>
+    <div class="flow" style="margin-top:14px;">
+      <div class="fnode"><div class="t">Utama</div><div class="s">Domains · Configuration</div></div>
+      <div class="farr">·</div>
+      <div class="fnode"><div class="t">Statistics</div><div class="s">Stats · Metric History</div></div>
+      <div class="farr">·</div>
+      <div class="fnode"><div class="t">Data &amp; Keyword</div><div class="s">Keyword · Top Pages · Ahrefs</div></div>
+      <div class="farr">·</div>
+      <div class="fnode"><div class="t">Tools</div><div class="s">API Jobs · Bulk · Disavow</div></div>
+      <div class="farr">·</div>
+      <div class="fnode acc"><div class="t">Admin</div><div class="s">User · Audit · Debug</div></div>
+    </div>
+    <div class="grid g2" style="margin-top:16px;">
+      <div class="card acc"><h3>Routing + Keep-Alive</h3><p>Tiap fitur = satu rute (<code>/domains</code>…); modul tetap "hidup" setelah dibuka → pindah instan.</p></div>
+      <div class="card acc"><h3>Sidebar 5 Grup</h3><p>Semua modul tampil dalam satu navigasi — pengguna tak perlu "buka sana-sini".</p></div>
+    </div>
+    <div class="takeaway">Dari banyak dashboard terpisah → satu navigasi, satu tampilan.</div>
+  </section>
+
+  <!-- IMPL lapis 2: provider -->
+  <section>
+    <div class="eyebrow">Lapis 2 · Provider</div>
+    <h2>7 Provider lewat 18 Edge Function</h2>
+    <div class="grid g4" style="margin-top:14px;">
+      <div class="card sky"><div class="ko" style="color:var(--sky);">Registrar</div><div style="font-weight:800;color:#fff;font-size:.92em;">Namecheap · Dynadot</div><p style="margin-top:4px;">sync domain, perpanjang, nameserver</p></div>
+      <div class="card sky"><div class="ko" style="color:var(--sky);">DNS / Hosting</div><div style="font-weight:800;color:#fff;font-size:.92em;">Cloudflare · Vercel</div><p style="margin-top:4px;">add zone, attach domain, redirect</p></div>
+      <div class="card sky"><div class="ko" style="color:var(--sky);">SEO / Metrik</div><div style="font-weight:800;color:#fff;font-size:.92em;">Ahrefs · DataForSEO</div><p style="margin-top:4px;">authority, backlink, SERP/keyword</p></div>
+      <div class="card sky"><div class="ko" style="color:var(--sky);">Search</div><div style="font-weight:800;color:#fff;font-size:.92em;">Search Console</div><p style="margin-top:4px;">OAuth + daftar properti (GSC)</p></div>
+    </div>
+    <div class="flow" style="margin-top:16px;">
+      <div class="fnode"><div class="t">Modul UI</div><div class="s">klik aksi</div></div><div class="farr">→</div>
+      <div class="fnode acc"><div class="t">Edge Function</div><div class="s">server-side, key=secret</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">Provider API</div><div class="s">ambil/kirim data</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">Postgres</div><div class="s">simpan hasil</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">Realtime → UI</div><div class="s">tampil otomatis</div></div>
+    </div>
+    <div class="takeaway">API key disimpan sebagai <code>secret</code> di server — tidak pernah dikirim ke browser.</div>
+  </section>
+
+  <!-- IMPL lapis 3: akses -->
+  <section>
+    <div class="eyebrow">Lapis 3 · Akses</div>
+    <h2>Satu Login untuk Semua Modul</h2>
+    <div class="flow" style="margin-top:14px;">
+      <div class="fnode"><div class="t">Buka App</div><div class="s">akses dashboard</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">AuthGate</div><div class="s">cek status login</div></div><div class="farr">→</div>
+      <div class="fnode acc"><div class="t">Login</div><div class="s">Google / admin</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">Cek Role</div><div class="s">akses per modul</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">Masuk</div><div class="s">/domains</div></div>
+    </div>
+    <div class="grid g2" style="margin-top:16px;">
+      <div class="card acc"><h3>SSO + Admin Roles</h3><p>Login via Google OAuth atau akun admin; role menentukan akses; kelola user terpusat.</p></div>
+      <div class="card acc"><h3>Proteksi</h3><p><code>AuthGate</code> kunci app sebelum login · login lockout · anti-snoop di produksi.</p></div>
+    </div>
+    <div class="takeaway">Satu gerbang masuk: keamanan & hak akses diatur di satu tempat, bukan di tiap tool.</div>
+  </section>
+
+  <!-- TANTANGAN before/after -->
+  <section>
+    <div class="eyebrow amber">Tantangan</div>
+    <h2>API Key Tidak Boleh Bocor</h2>
+    <div class="ba">
+      <div class="bacol bef"><h4>❌ Kalau dipanggil dari browser</h4>
+        <ul><li>API key provider terekspos di klien</li><li>Kuota/biaya bisa disalahgunakan</li><li>Tiap tool kelola key sendiri</li></ul></div>
+      <div class="bacol aft"><h4>✓ Lewat Edge Function</h4>
+        <ul><li>Semua panggilan berjalan di server</li><li>Key jadi secret, tak pernah ke browser</li><li>Satu tempat kelola kredensial &amp; biaya</li></ul></div>
+    </div>
+    <div class="takeaway">Pelajaran: integrasi provider wajib server-side — keamanan jadi syarat, bukan opsi.</div>
+  </section>
+
+  <!-- DIVIDER 05 -->
+  <section><div class="dots"></div><div class="center dvd">
+    <div class="n">05</div><div class="eyebrow">Hasil</div>
+    <h2 class="grad">Satu Pintu untuk Semua</h2>
+    <p class="d">Portfolio domain kini dikelola dari satu tempat — modul, provider, dan akses menyatu.</p>
+  </div></section>
+
+  <!-- NUMBERS -->
+  <section>
+    <div class="eyebrow">Numbers</div>
+    <h2>Capaian Integrasi</h2>
+    <div class="grid g4" style="margin-top:22px;">
+      <div class="stat"><div class="num">16</div><div class="lbl">Modul terintegrasi</div></div>
+      <div class="stat"><div class="num">7</div><div class="lbl">Provider eksternal</div></div>
+      <div class="stat"><div class="num">18</div><div class="lbl">Edge Function</div></div>
+      <div class="stat"><div class="num">5</div><div class="lbl">Grup menu</div></div>
+    </div>
+    <div class="grid g4" style="margin-top:22px;">
+      <div class="stat"><div class="num">34</div><div class="lbl">Migrasi DB</div></div>
+      <div class="stat"><div class="num">12</div><div class="lbl">Tabel data</div></div>
+      <div class="stat"><div class="num">1</div><div class="lbl">Login tunggal</div></div>
+      <div class="stat"><div class="num">100%</div><div class="lbl">Aksi teraudit</div></div>
+    </div>
+    <div class="takeaway">Dari kumpulan tool terpisah → satu platform terintegrasi dengan jejak audit penuh.</div>
+  </section>
+
+  <!-- DAMPAK before/after -->
+  <section>
+    <div class="eyebrow">Dampak untuk Pengguna</div>
+    <h2>Sebelum vs Sesudah</h2>
+    <div class="ba">
+      <div class="bacol bef"><h4>❌ Sebelum</h4>
+        <ul><li>Buka 5–7 tool, login berulang</li><li>Pindah data antar tool (copy-paste)</li><li>Jejak perubahan tersebar</li><li>Kredensial provider tercecer</li></ul></div>
+      <div class="bacol aft"><h4>✓ Sesudah</h4>
+        <ul><li>1 platform, 1 login, semua modul di sidebar</li><li>Data tersinkron otomatis (realtime)</li><li>Audit terpusat: "siapa, apa, kapan"</li><li>API key aman di server</li></ul></div>
+    </div>
+    <div class="takeaway">Untuk tim: kerja lebih cepat, lebih sedikit salah, lebih mudah dipertanggungjawabkan.</div>
+  </section>
+
+  <!-- PEMBELAJARAN -->
+  <section>
+    <div class="eyebrow">Pembelajaran</div>
+    <h2>Insight Teknis &amp; Operasional</h2>
+    <div class="grid g3" style="margin-top:16px;">
+      <div class="card acc"><h3>🔑 Provider = server-side</h3><p>Edge Function bukan sekadar gaya — ia melindungi API key & memusatkan biaya.</p></div>
+      <div class="card acc"><h3>🧩 Modular monolith cukup</h3><p>Untuk skala ini, satu app modular lebih sederhana & murah dari micro-frontend.</p></div>
+      <div class="card acc"><h3>🧾 Audit sejak awal</h3><p>Mencatat aktivitas dari hari pertama bikin telusur masalah jauh lebih mudah.</p></div>
+    </div>
+    <div class="takeaway">Integrasi yang baik bukan cuma "nyambung", tapi aman, terpusat, dan bisa diaudit.</div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <div class="eyebrow">Roadmap</div>
+    <h2>Pengembangan Selanjutnya</h2>
+    <div class="grid g2" style="margin-top:16px;">
+      <div class="card sky"><h3 style="color:var(--sky);">Short-term (1–2 minggu)</h3>
+        <ul style="font-size:.8em;color:var(--muted);"><li>Integrasi penuh provider Dynadot</li><li>Sidebar khusus Provider &amp; Renewals</li><li>Retention policy untuk data lama</li></ul></div>
+      <div class="card acc"><h3 style="color:var(--emerald);">Mid-term (1–3 bulan)</h3>
+        <ul style="font-size:.8em;color:var(--muted);"><li>Trigger server-side untuk aksi berisiko tinggi</li><li>RBAC lebih granular per modul</li><li>Tambah provider baru (registrar/DNS lain)</li><li>Panel provider terpadu (saldo, kredit, status)</li></ul></div>
+    </div>
+    <div class="takeaway">Arah berikutnya: perdalam integrasi provider & perketat kontrol akses untuk aksi berisiko.</div>
+  </section>
+
+  <!-- CLOSING -->
+  <section><div class="dots"></div>
+    <div class="center title">
+      <div class="eyebrow">Terima Kasih</div>
+      <h1 class="grad">Pertanyaan?</h1>
+      <p class="sub">Integrasi platform berjalan &amp; stabil — semua tool kini dalam satu pintu.</p>
+      <div class="meta">
+        <span><strong>Project</strong> · Domain Archive</span>
+        <span><strong>Task</strong> · Integrate Dashboard</span>
+        <span><strong>Week</strong> · 24 · 2026</span>
+      </div>
+    </div>
+  </section>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash:true, slideNumber:'c/t', controls:true, progress:true,
+    transition:'slide', transitionSpeed:'fast', backgroundTransition:'fade',
+    center:false, width:1280, height:800, margin:0.04,
+  });
+</script>
 </body>
 </html>
