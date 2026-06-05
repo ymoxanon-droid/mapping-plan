@@ -1,15 +1,15 @@
 <!doctype html>
 <!--
-  Integrasi Dashboard · Week 24 · Domain Archive
+  Collaboration Dashboard · Alur Kerja (Workflow) · Week 24
   Reveal.js v5.1.0 — self-contained .html, desain kaya-visual (PPTX-style).
-  Catatan: sengaja TIDAK pakai _template.html / aturan CLAUDE.md (di-override
-  atas permintaan user). Engine tetap Reveal.js.
+  Konten = Presentasi_Collaboration_Dashboard_Workflow (arsitektur + 5 alur).
+  Catatan: sengaja TIDAK pakai _template.html (di-override atas permintaan user).
 -->
 <html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>Integrasi Dashboard · Week 24</title>
+  <title>Collaboration Dashboard · Alur Kerja · Week 24</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
@@ -23,90 +23,93 @@
       --emerald:#10b981; --emerald-soft:#10b9811f; --emerald-line:#10b98147;
       --teal:#2dd4bf; --sky:#38bdf8; --sky-soft:#38bdf81f;
       --amber:#f59e0b; --amber-soft:#f59e0b1f; --red:#ef4444; --red-soft:#ef44441f;
-      --purple:#a78bfa;
+      --purple:#a78bfa; --purple-soft:#a78bfa1f;
       --text:#e7ebf0; --muted:#9aa6b6; --faint:#5d6b7d;
     }
     .reveal{font-family:'Inter',system-ui,sans-serif;font-size:26px;color:var(--text);}
     .reveal .slides{text-align:left;}
     .reveal .slides section{padding:30px 54px;height:100%;box-sizing:border-box;}
     html,body,.reveal{background:radial-gradient(ellipse at top right,#0e1626 0%,var(--bg) 55%,var(--bg2) 100%)!important;}
-    .reveal h1,.reveal h2,.reveal h3,.reveal h4{font-family:'Inter',system-ui;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0 0 14px;text-transform:none;}
+    .reveal h1,.reveal h2,.reveal h3,.reveal h4{font-family:'Inter',system-ui;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0 0 12px;text-transform:none;}
     .reveal h1{font-size:2.5em;line-height:1.08;}
-    .reveal h2{font-size:1.6em;line-height:1.14;}
-    .reveal h3{font-size:1.06em;line-height:1.25;}
+    .reveal h2{font-size:1.55em;line-height:1.14;}
+    .reveal h3{font-size:1.02em;line-height:1.25;}
     .reveal p{line-height:1.5;margin:0 0 10px;}
-    .reveal code{background:#0008;padding:1px 7px;border-radius:5px;font-size:0.84em;color:var(--emerald);border:1px solid var(--line);font-family:'JetBrains Mono',monospace;}
-    .reveal ul{line-height:1.5;margin:6px 0 12px 1.15em;} .reveal li{margin:5px 0;}
+    .reveal code{background:#0008;padding:1px 7px;border-radius:5px;font-size:0.82em;color:var(--emerald);border:1px solid var(--line);font-family:'JetBrains Mono',monospace;}
     .grad{background:linear-gradient(120deg,#fff 10%,var(--emerald) 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 
-    /* eyebrow */
-    .eyebrow{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--emerald);padding:4px 11px;background:var(--emerald-soft);border:1px solid var(--emerald-line);border-radius:999px;margin-bottom:16px;}
+    .eyebrow{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--emerald);padding:4px 11px;background:var(--emerald-soft);border:1px solid var(--emerald-line);border-radius:999px;margin-bottom:14px;}
     .eyebrow.red{color:#fca5a5;background:var(--red-soft);border-color:#ef444455;}
     .eyebrow.amber{color:#fcd34d;background:var(--amber-soft);border-color:#f59e0b55;}
     .eyebrow.sky{color:#7dd3fc;background:var(--sky-soft);border-color:#38bdf855;}
+    .eyebrow.purple{color:#c4b5fd;background:var(--purple-soft);border-color:#a78bfa55;}
     .muted{color:var(--muted);} .faint{color:var(--faint);}
 
-    /* cards / grids */
-    .grid{display:grid;gap:14px;} .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr 1fr;} .g4{grid-template-columns:repeat(4,1fr);}
-    .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:0 6px 26px #0006;}
-    .card.acc{border-left:3px solid var(--emerald);}
-    .card.red{border-left:3px solid var(--red);} .card.amber{border-left:3px solid var(--amber);} .card.sky{border-left:3px solid var(--sky);}
-    .card h3{font-size:0.96em;margin-bottom:6px;} .card p{font-size:0.8em;color:var(--muted);margin:0;}
-    .ko{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);margin-bottom:6px;}
-    .big{font-size:1.5em;font-weight:800;color:#fff;}
+    .grid{display:grid;gap:13px;} .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr 1fr;} .g4{grid-template-columns:repeat(4,1fr);}
+    .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:0 6px 26px #0006;}
+    .card.acc{border-left:3px solid var(--emerald);} .card.sky{border-left:3px solid var(--sky);}
+    .card.amber{border-left:3px solid var(--amber);} .card.red{border-left:3px solid var(--red);} .card.purple{border-left:3px solid var(--purple);}
+    .card h3{font-size:.92em;margin-bottom:7px;} .card p{font-size:.78em;color:var(--muted);margin:0;}
+    .card ul{margin:4px 0 0 1.05em;font-size:.72em;color:var(--muted);line-height:1.5;} .card li{margin:3px 0;}
+    .ko{font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--emerald);margin-bottom:6px;}
 
-    /* stats */
-    .stat{text-align:center;padding:6px;}
-    .stat .num{font-size:2.5em;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--emerald),#6ee7b7 70%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
-    .stat .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+    .stat{text-align:center;padding:5px;}
+    .stat .num{font-size:2.4em;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--emerald),#6ee7b7 70%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+    .stat .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
 
-    /* takeaway */
-    .takeaway{margin-top:20px;padding:11px 17px;background:var(--emerald-soft);border-left:3px solid var(--emerald);border-radius:0 10px 10px 0;font-size:.82em;color:#c7f9e5;}
+    .takeaway{margin-top:18px;padding:11px 17px;background:var(--emerald-soft);border-left:3px solid var(--emerald);border-radius:0 10px 10px 0;font-size:.8em;color:#c7f9e5;}
     .takeaway::before{content:'★ ';color:var(--emerald);font-weight:800;}
 
-    /* flow (horizontal nodes + arrows) */
+    /* flow */
     .flow{display:flex;align-items:stretch;gap:0;width:100%;}
-    .fnode{flex:1;min-width:0;padding:13px 12px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);border:1px solid var(--line);border-radius:12px;text-align:center;}
+    .fnode{flex:1;min-width:0;padding:12px 10px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);border:1px solid var(--line);border-radius:12px;text-align:center;}
     .fnode.acc{border-color:var(--emerald-line);background:linear-gradient(180deg,var(--emerald-soft),var(--panel2));}
-    .fnode .t{font-weight:800;color:#fff;font-size:.82em;} .fnode .s{font-size:.64em;color:var(--muted);margin-top:3px;}
-    .farr{display:flex;align-items:center;color:var(--emerald);font-size:1.1em;padding:0 7px;font-weight:800;}
-    .fdn{color:var(--emerald);text-align:center;font-size:1.2em;font-weight:800;margin:2px 0;}
+    .fnode.sky{border-color:#38bdf855;background:linear-gradient(180deg,var(--sky-soft),var(--panel2));}
+    .fnode.red{border-color:#ef444455;background:linear-gradient(180deg,var(--red-soft),var(--panel2));}
+    .fnode.amber{border-color:#f59e0b55;background:linear-gradient(180deg,var(--amber-soft),var(--panel2));}
+    .fnode.grey{border-color:var(--line2);}
+    .fnode .t{font-weight:800;color:#fff;font-size:.8em;} .fnode .s{font-size:.62em;color:var(--muted);margin-top:3px;}
+    .farr{display:flex;align-items:center;color:var(--emerald);font-size:1.05em;padding:0 6px;font-weight:800;}
 
-    /* architecture 3-col */
-    .arch{display:flex;align-items:stretch;gap:0;margin-top:14px;}
+    /* architecture */
+    .arch{display:flex;align-items:stretch;gap:0;margin-top:12px;}
     .acol{flex:1;min-width:0;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);border:1px solid var(--line);border-radius:14px;padding:0 0 12px;overflow:hidden;}
-    .acol .ah{padding:10px 14px;font-weight:800;color:#fff;font-size:.82em;text-align:center;}
+    .acol .ah{padding:9px 14px;font-weight:800;color:#fff;font-size:.78em;text-align:center;}
     .acol.fe .ah{background:var(--emerald-soft);border-bottom:1px solid var(--emerald-line);color:#a7f3d0;}
     .acol.be .ah{background:var(--sky-soft);border-bottom:1px solid #38bdf855;color:#bae6fd;}
     .acol.ex .ah{background:var(--amber-soft);border-bottom:1px solid #f59e0b55;color:#fde68a;}
-    .acol ul{margin:10px 14px 0;padding-left:1.05em;font-size:.66em;color:var(--muted);line-height:1.45;}
+    .acol ul{margin:9px 14px 0;padding-left:1em;font-size:.64em;color:var(--muted);line-height:1.45;}
     .aarr{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--emerald);font-weight:800;padding:0 8px;}
-    .aarr .l{font-size:1.4em;line-height:1;} .aarr .c{font-size:.5em;color:var(--faint);margin-top:4px;text-transform:uppercase;letter-spacing:.1em;text-align:center;}
+    .aarr .l{font-size:1.35em;line-height:1;} .aarr .c{font-size:.46em;color:var(--faint);margin-top:4px;text-transform:uppercase;letter-spacing:.08em;text-align:center;}
 
-    /* layer stack */
-    .layers{display:grid;gap:9px;margin-top:14px;}
-    .lyr{display:flex;align-items:center;gap:13px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);}
-    .lyr .dot{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05em;flex-shrink:0;}
-    .lyr .h{font-weight:700;color:#fff;font-size:.9em;} .lyr .d{color:var(--muted);font-size:.72em;margin-top:1px;}
-    .lyr .tag{margin-left:auto;font-size:.62em;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 9px;background:#fff0a;}
+    /* sidebar mockup */
+    .smock{display:flex;gap:16px;margin-top:12px;}
+    .sbar{width:280px;flex-shrink:0;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:13px 14px;}
+    .sbar .brand{color:#fff;font-weight:800;font-size:.78em;margin-bottom:8px;}
+    .sbar .sec{color:var(--emerald);font-size:.58em;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:9px 0 3px;}
+    .sbar .it{color:var(--muted);font-size:.7em;padding:2px 0 2px 8px;}
+    .sgrp{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start;}
 
-    /* before/after */
-    .ba{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
-    .bacol{padding:15px 18px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);}
-    .bacol h4{font-size:.72em;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
-    .bef h4{color:#fca5a5;} .bef{border-top:2px solid var(--red);} .aft h4{color:var(--emerald);} .aft{border-top:2px solid var(--emerald);}
-    .bacol ul{margin:0;padding-left:1.15em;font-size:.78em;} .bacol li{color:var(--muted);margin:5px 0;}
+    /* layers */
+    .layers{display:grid;gap:8px;margin-top:12px;}
+    .lyr{display:flex;align-items:center;gap:12px;padding:10px 15px;border:1px solid var(--line);border-radius:11px;background:linear-gradient(180deg,var(--panel) 0,var(--panel2) 100%);}
+    .lyr .dot{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1em;flex-shrink:0;}
+    .lyr .h{font-weight:700;color:#fff;font-size:.86em;} .lyr .d{color:var(--muted);font-size:.7em;margin-top:1px;}
 
-    /* chips (scattered tools) */
-    .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px;}
-    .chip{padding:8px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--panel3);font-size:.7em;font-weight:700;color:#cbd5e1;}
+    /* table */
+    .tbl{width:100%;border-collapse:collapse;font-size:.7em;margin-top:12px;}
+    .tbl th{background:var(--panel3);color:#fff;text-align:left;padding:8px 13px;border:1px solid var(--line);font-weight:700;}
+    .tbl td{padding:7px 13px;border:1px solid var(--line);color:var(--muted);}
+    .tbl td:first-child{color:#fff;font-weight:600;}
+    .tbl tr:nth-child(even) td{background:#ffffff06;}
 
-    /* title / divider / closing */
+    /* badges */
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+    .bdg{font-size:.6em;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line2);background:var(--panel3);color:#cbd5e1;}
+
     .center{display:flex;flex-direction:column;justify-content:center;height:100%;}
-    .title h1{font-size:3em;margin-bottom:10px;} .title .sub{font-size:1.05em;color:var(--muted);margin-bottom:26px;}
-    .meta{display:flex;gap:22px;font-size:.62em;color:var(--faint);text-transform:uppercase;letter-spacing:.09em;} .meta strong{color:var(--text);}
-    .dvd .n{font-family:'JetBrains Mono',monospace;font-size:5em;color:var(--emerald);opacity:.35;font-weight:800;line-height:1;margin-bottom:6px;}
-    .dvd h2{font-size:2.4em;} .dvd .d{color:var(--muted);max-width:720px;margin-top:10px;}
+    .title h1{font-size:3em;margin-bottom:10px;} .title .sub{font-size:1.02em;color:var(--muted);margin-bottom:24px;}
+    .meta{display:flex;gap:22px;font-size:.6em;color:var(--faint);text-transform:uppercase;letter-spacing:.09em;} .meta strong{color:var(--text);}
     .dots{position:absolute;inset:0;background-image:radial-gradient(circle,#ffffff0a 1px,transparent 1px);background-size:24px 24px;mask-image:radial-gradient(ellipse at top right,#000 0,transparent 70%);pointer-events:none;}
     .reveal .slide-number{background:transparent;color:var(--faint);font-family:'JetBrains Mono',monospace;font-size:11px;}
     .reveal .progress{color:var(--emerald);}
@@ -119,266 +122,185 @@
   <section><div class="dots"></div>
     <div class="center title">
       <div class="eyebrow">Engineering Report · Week 24 · 2026</div>
-      <h1 class="grad">Integrasi Dashboard</h1>
-      <p class="sub">Menyatukan banyak tool & layanan provider yang tadinya terpisah → satu platform Domain Archive.</p>
+      <h1 class="grad">Collaboration Dashboard</h1>
+      <p class="sub">Alur Kerja (Workflow) — bagaimana platform bekerja dari login sampai data tampil, lengkap dengan kolaborasi & integrasi.</p>
       <div class="meta">
         <span><strong>Project</strong> · Domain Archive</span>
-        <span><strong>Scope</strong> · Integrasi Platform</span>
+        <span><strong>Scope</strong> · Alur Kerja Sistem</span>
         <span><strong>Status</strong> · Berjalan &amp; Stabil</span>
       </div>
     </div>
   </section>
 
-  <!-- DIVIDER 01 -->
-  <section><div class="dots"></div><div class="center dvd">
-    <div class="n">01</div><div class="eyebrow">Konteks</div>
-    <h2 class="grad">Banyak Tool, Satu Tujuan</h2>
-    <p class="d">Mengelola portfolio domain melibatkan banyak layanan berbeda — dan justru di situ titik awal masalahnya.</p>
-  </div></section>
-
-  <!-- KONTEKS: asal-usul + chips -->
+  <!-- RINGKASAN SISTEM -->
   <section>
-    <div class="eyebrow">Asal-usul</div>
-    <h2>Dulu: Kerja Tersebar di Banyak Tempat</h2>
-    <p class="muted" style="font-size:.84em;max-width:980px;">Tiap pekerjaan domain ada di tool berbeda — beli/perpanjang di registrar, atur DNS di tempat lain, cek SEO di layanan lain. Tim lompat-lompat seharian.</p>
-    <div class="chips">
-      <span class="chip">Namecheap</span><span class="chip">Dynadot</span><span class="chip">Cloudflare</span>
-      <span class="chip">Vercel</span><span class="chip">Ahrefs</span><span class="chip">DataForSEO</span>
-      <span class="chip">Search Console</span><span class="chip">+ spreadsheet manual</span>
+    <div class="eyebrow">Ringkasan Sistem</div>
+    <h2>Apa Itu &amp; Terbuat dari Apa</h2>
+    <div class="grid g4" style="margin-top:12px;">
+      <div class="card acc"><div class="ko">Fungsi Inti</div>
+        <ul><li>Kelola &amp; cari domain (realtime)</li><li>Metrik authority &amp; backlink</li><li>Riset keyword &amp; top pages</li><li>Renewals &amp; nameserver</li><li>Disavow backlink</li></ul></div>
+      <div class="card sky"><div class="ko" style="color:var(--sky);">Teknologi</div>
+        <ul><li>React + Vite + Tailwind</li><li>React Router (lazy page)</li><li>Supabase Auth + Postgres</li><li>Realtime + Edge Functions</li><li>Recharts, xlsx</li></ul></div>
+      <div class="card amber"><div class="ko" style="color:var(--amber);">Integrasi API</div>
+        <ul><li>Ahrefs, DataForSEO</li><li>Namecheap, Dynadot</li><li>Cloudflare, Vercel</li><li>Google Search Console</li></ul></div>
+      <div class="card purple"><div class="ko" style="color:var(--purple);">Kolaborasi</div>
+        <ul><li>Multi-user + role admin</li><li>Inbox approval</li><li>Activity log &amp; audit</li><li>Login lockout, anti-snoop</li></ul></div>
     </div>
-    <div class="grid g3" style="margin-top:16px;">
-      <div class="card acc"><div class="ko">Realita Lama</div><div class="big">5–7</div><div class="muted" style="font-size:.76em;">layanan dipakai bergantian</div></div>
-      <div class="card acc"><div class="ko">Beban Harian</div><div class="big">Login berulang</div><div class="muted" style="font-size:.76em;">tiap tool akun & tampilan sendiri</div></div>
-      <div class="card acc"><div class="ko">Pemicu</div><div class="big">Copy-paste</div><div class="muted" style="font-size:.76em;">data dipindah manual, rawan salah</div></div>
-    </div>
-    <div class="takeaway">Konteks kerja yang terpecah di banyak tool jadi pemicunya: tim butuh satu tempat terpadu.</div>
+    <div class="takeaway">Satu platform: kelola domain, pantau SEO, dan kolaborasi tim — dengan banyak integrasi provider.</div>
   </section>
 
-  <!-- KONTEKS: profil & visi -->
+  <!-- ARSITEKTUR -->
   <section>
-    <div class="eyebrow">Profil Sistem &amp; Visi</div>
-    <h2>Domain Archive sebagai <span class="grad">Command Center</span></h2>
-    <p class="muted" style="font-size:.84em;max-width:980px;">Target: satu pintu untuk seluruh siklus hidup domain — beli, atur DNS, pantau SEO, sampai perpanjang/pensiun.</p>
-    <div class="grid g3" style="margin-top:18px;">
-      <div class="stat"><div class="num">16</div><div class="lbl">Modul dalam 1 app</div></div>
-      <div class="stat"><div class="num">7</div><div class="lbl">Provider terintegrasi</div></div>
-      <div class="stat"><div class="num">1</div><div class="lbl">Login tunggal</div></div>
-    </div>
-    <div class="takeaway">Visi: satu platform untuk seluruh siklus hidup domain — bukan kumpulan tool terpisah.</div>
-  </section>
-
-  <!-- DIVIDER 02 -->
-  <section><div class="dots"></div><div class="center dvd">
-    <div class="n" style="color:var(--red);opacity:.4;">02</div><div class="eyebrow red">Masalah</div>
-    <h2 class="grad">Konteks yang Terpecah</h2>
-    <p class="d">Tool & layanan terpisah membuat kerja lambat, rawan salah, dan sulit diaudit.</p>
-  </div></section>
-
-  <!-- MASALAH: 4 pain -->
-  <section>
-    <div class="eyebrow red">Akar Masalah</div>
-    <h2>4 Titik Nyeri Utama</h2>
-    <div class="grid g2" style="margin-top:14px;">
-      <div class="card red"><h3 style="color:#fca5a5;">🔁 Login &amp; buka berulang</h3><p>Tiap layanan punya akun, alamat, dan tampilan sendiri — waktu habis berpindah-pindah.</p></div>
-      <div class="card red"><h3 style="color:#fca5a5;">🧩 Data tidak nyambung</h3><p>Data registrar, DNS, dan SEO tidak terhubung; disatukan manual lewat copy-paste.</p></div>
-      <div class="card red"><h3 style="color:#fca5a5;">🕵️ Audit tidak terpusat</h3><p>Sulit menjawab "siapa mengubah apa, kapan" karena jejak tersebar.</p></div>
-      <div class="card red"><h3 style="color:#fca5a5;">🔑 Integrasi provider rawan</h3><p>API key tersebar — berisiko bocor bila dipanggil dari sisi browser.</p></div>
-    </div>
-    <div class="takeaway">Dibiarkan: kerja makin lambat dan risiko salah/keamanan naik seiring portfolio bertambah.</div>
-  </section>
-
-  <!-- MASALAH: goals & constraints -->
-  <section>
-    <div class="eyebrow">Tujuan Proyek</div>
-    <h2>Goal &amp; Constraint</h2>
-    <div class="grid g2" style="margin-top:14px;">
-      <div class="card acc"><h3 style="color:var(--emerald);">🎯 Goals</h3>
-        <ul style="font-size:.8em;color:var(--muted);"><li>Satu platform untuk semua modul</li><li>Satu login (SSO) untuk seluruh fitur</li><li>Integrasi provider yang aman &amp; terpusat</li><li>Audit aktivitas di satu tempat</li></ul></div>
-      <div class="card amber"><h3 style="color:var(--amber);">⚠️ Constraints</h3>
-        <ul style="font-size:.8em;color:var(--muted);"><li>API key tidak boleh ke browser</li><li>Ikut stack existing: React + Supabase</li><li>Bertahap, tanpa ganggu yang jalan</li><li>Tetap ringan walau modul bertambah</li></ul></div>
-    </div>
-    <div class="takeaway">Sasaran jelas: satu pintu yang aman & terpusat, dibangun bertahap di atas yang sudah ada.</div>
-  </section>
-
-  <!-- DIVIDER 03 -->
-  <section><div class="dots"></div><div class="center dvd">
-    <div class="n" style="color:var(--sky);opacity:.4;">03</div><div class="eyebrow sky">Pendekatan</div>
-    <h2 class="grad">Satu Platform Terpadu</h2>
-    <p class="d">Satu aplikasi modular yang menampung semua modul sekaligus menjembatani semua provider.</p>
-  </div></section>
-
-  <!-- PENDEKATAN: prinsip (layers) -->
-  <section>
-    <div class="eyebrow sky">Prinsip Kerja</div>
-    <h2>4 Prinsip Integrasi</h2>
-    <div class="layers">
-      <div class="lyr"><div class="dot" style="background:var(--emerald-soft);color:var(--emerald);">▤</div><div><div class="h">Modular Monolith</div><div class="d">Satu aplikasi, banyak modul — bukan 10 aplikasi terpisah.</div></div><span class="tag">inti</span></div>
-      <div class="lyr"><div class="dot" style="background:var(--sky-soft);color:var(--sky);">⚡</div><div><div class="h">Edge Function sebagai jembatan</div><div class="d">Panggilan ke provider dilakukan di server — API key aman.</div></div></div>
-      <div class="lyr"><div class="dot" style="background:var(--amber-soft);color:var(--amber);">🔐</div><div><div class="h">Auth &amp; RBAC terpusat</div><div class="d">Satu login, satu tempat mengatur siapa boleh akses apa.</div></div></div>
-      <div class="lyr"><div class="dot" style="background:var(--emerald-soft);color:var(--emerald);">🧾</div><div><div class="h">Audit &amp; Realtime</div><div class="d">Semua aksi tercatat; perubahan data langsung tersinkron ke UI.</div></div></div>
-    </div>
-    <div class="takeaway">Unified dipilih karena pas dengan skala & stack existing — bukan over-engineering.</div>
-  </section>
-
-  <!-- PENDEKATAN: ARSITEKTUR (diagram 3-kolom) -->
-  <section>
-    <div class="eyebrow sky">Peta Solusi</div>
-    <h2>Arsitektur Integrasi</h2>
+    <div class="eyebrow sky">Gambaran Besar</div>
+    <h2>Arsitektur Sistem</h2>
     <div class="arch">
-      <div class="acol fe"><div class="ah">FRONTEND · React (16 modul)</div>
-        <ul><li>Satu tampilan + sidebar</li><li>AuthGate (login wajib)</li><li>Realtime di UI</li></ul></div>
+      <div class="acol fe"><div class="ah">FRONTEND · React</div>
+        <ul><li>AuthGate (login wajib)</li><li>Pages (modul fitur)</li><li>Context: Auth/Domains/Theme</li><li>Activity logging tiap aksi</li><li>UI Tailwind + Recharts</li></ul></div>
       <div class="aarr"><div class="l">⇄</div><div class="c">query /<br>realtime</div></div>
-      <div class="acol be"><div class="ah">SUPABASE (Backend)</div>
-        <ul><li>Auth + RBAC</li><li>Postgres + RLS</li><li>18 Edge Function</li><li>Realtime</li></ul></div>
+      <div class="acol be"><div class="ah">SUPABASE · Backend</div>
+        <ul><li>Auth (Google + admin)</li><li>Postgres skema datadomain</li><li>RLS (keamanan baris)</li><li>Realtime (postgres_changes)</li><li>18 Edge Function · Storage</li></ul></div>
       <div class="aarr"><div class="l">→</div><div class="c">API call<br>(server-side)</div></div>
-      <div class="acol ex"><div class="ah">7 PROVIDER</div>
-        <ul><li>Namecheap · Dynadot</li><li>Cloudflare · Vercel</li><li>Ahrefs · DataForSEO</li><li>Search Console</li></ul></div>
+      <div class="acol ex"><div class="ah">API EKSTERNAL</div>
+        <ul><li>Ahrefs · DataForSEO</li><li>Namecheap · Dynadot</li><li>Cloudflare · Vercel</li><li>Google Search Console</li></ul></div>
     </div>
-    <div class="takeaway">UI tidak pernah memanggil provider langsung — selalu lewat Edge Function di tengah.</div>
+    <div class="takeaway">UI ↔ Supabase ↔ Provider — panggilan ke provider selalu lewat Edge Function (server-side).</div>
   </section>
 
-  <!-- DIVIDER 04 -->
-  <section><div class="dots"></div><div class="center dvd">
-    <div class="n">04</div><div class="eyebrow">Implementasi</div>
-    <h2 class="grad">Eksekusi Integrasi</h2>
-    <p class="d">Tiga lapis: konsolidasi modul, integrasi provider, dan penyatuan akses.</p>
-  </div></section>
-
-  <!-- IMPL lapis 1: modul -->
+  <!-- PETA MENU -->
   <section>
-    <div class="eyebrow">Lapis 1 · Modul</div>
-    <h2>Konsolidasi 16 Modul jadi 1 App</h2>
+    <div class="eyebrow">Struktur Aplikasi</div>
+    <h2>Peta Menu / Navigasi</h2>
+    <div class="smock">
+      <div class="sbar">
+        <div class="brand">☰ Domain Archive</div>
+        <div class="it">• Domains</div><div class="it">• Configuration</div>
+        <div class="sec">Statistics</div><div class="it">• Domain Statistics</div><div class="it">• Metric History</div>
+        <div class="sec">Data &amp; Keyword</div><div class="it">• Keyword Explorer</div><div class="it">• Organic Keyword</div><div class="it">• Top Pages · Ahrefs Data</div>
+        <div class="sec">Tools</div><div class="it">• API Jobs · Bulk · Disavow</div>
+        <div class="sec">Admin</div><div class="it">• Admin · Activity · Debug</div>
+      </div>
+      <div class="sgrp">
+        <div class="card acc"><h3>Utama</h3><p>Domains (inti) &amp; Configuration</p></div>
+        <div class="card sky"><h3 style="color:var(--sky);">Statistics</h3><p>Ringkasan &amp; riwayat metrik portfolio</p></div>
+        <div class="card amber"><h3 style="color:var(--amber);">Data &amp; Keyword</h3><p>Riset keyword, top pages, data Ahrefs</p></div>
+        <div class="card purple"><h3 style="color:var(--purple);">Tools</h3><p>API Jobs (antrian), Bulk Domain, Disavow</p></div>
+        <div class="card"><h3 class="muted">Admin</h3><p>Kelola user, audit aktivitas, debug</p></div>
+      </div>
+    </div>
+    <div class="takeaway">5 kelompok menu dalam satu sidebar — semua fitur diakses dari satu tempat.</div>
+  </section>
+
+  <!-- ALUR 1: LOGIN -->
+  <section>
+    <div class="eyebrow">Alur 1 · Workflow</div>
+    <h2>Login &amp; Keamanan</h2>
     <div class="flow" style="margin-top:14px;">
-      <div class="fnode"><div class="t">Utama</div><div class="s">Domains · Configuration</div></div>
-      <div class="farr">·</div>
-      <div class="fnode"><div class="t">Statistics</div><div class="s">Stats · Metric History</div></div>
-      <div class="farr">·</div>
-      <div class="fnode"><div class="t">Data &amp; Keyword</div><div class="s">Keyword · Top Pages · Ahrefs</div></div>
-      <div class="farr">·</div>
-      <div class="fnode"><div class="t">Tools</div><div class="s">API Jobs · Bulk · Disavow</div></div>
-      <div class="farr">·</div>
-      <div class="fnode acc"><div class="t">Admin</div><div class="s">User · Audit · Debug</div></div>
+      <div class="fnode sky"><div class="t">1. Buka App</div><div class="s">akses dashboard</div></div><div class="farr">→</div>
+      <div class="fnode amber"><div class="t">2. AuthGate</div><div class="s">cek status login</div></div><div class="farr">→</div>
+      <div class="fnode acc"><div class="t">3. Login Modal</div><div class="s">Google / email admin</div></div><div class="farr">→</div>
+      <div class="fnode amber"><div class="t">4. Verifikasi</div><div class="s">lockout + anti-snoop</div></div><div class="farr">→</div>
+      <div class="fnode acc"><div class="t">5. Masuk</div><div class="s">→ /domains</div></div>
     </div>
     <div class="grid g2" style="margin-top:16px;">
-      <div class="card acc"><h3>Routing + Keep-Alive</h3><p>Tiap fitur = satu rute (<code>/domains</code>…); modul tetap "hidup" setelah dibuka → pindah instan.</p></div>
-      <div class="card acc"><h3>Sidebar 5 Grup</h3><p>Semua modul tampil dalam satu navigasi — pengguna tak perlu "buka sana-sini".</p></div>
+      <div class="card red"><h3 style="color:#fca5a5;">Belum login?</h3><p><code>AuthGate</code> menahan dengan LoginModal yang tidak bisa ditutup — seluruh halaman terkunci sampai berhasil login.</p></div>
+      <div class="card acc"><h3>Tercatat otomatis</h3><p><code>auth.login</code> / <code>login_failed</code> / <code>logout</code> &amp; tiap kunjungan halaman → <code>activity_log</code> (audit).</p></div>
     </div>
-    <div class="takeaway">Dari banyak dashboard terpisah → satu navigasi, satu tampilan.</div>
+    <div class="takeaway">Inilah "Role Method" sebenarnya: keamanan diatur di SATU tempat, bukan di tiap modul.</div>
   </section>
 
-  <!-- IMPL lapis 2: provider -->
+  <!-- ALUR 2: OPERASI DOMAIN -->
   <section>
-    <div class="eyebrow">Lapis 2 · Provider</div>
-    <h2>7 Provider lewat 18 Edge Function</h2>
-    <div class="grid g4" style="margin-top:14px;">
-      <div class="card sky"><div class="ko" style="color:var(--sky);">Registrar</div><div style="font-weight:800;color:#fff;font-size:.92em;">Namecheap · Dynadot</div><p style="margin-top:4px;">sync domain, perpanjang, nameserver</p></div>
-      <div class="card sky"><div class="ko" style="color:var(--sky);">DNS / Hosting</div><div style="font-weight:800;color:#fff;font-size:.92em;">Cloudflare · Vercel</div><p style="margin-top:4px;">add zone, attach domain, redirect</p></div>
-      <div class="card sky"><div class="ko" style="color:var(--sky);">SEO / Metrik</div><div style="font-weight:800;color:#fff;font-size:.92em;">Ahrefs · DataForSEO</div><p style="margin-top:4px;">authority, backlink, SERP/keyword</p></div>
-      <div class="card sky"><div class="ko" style="color:var(--sky);">Search</div><div style="font-weight:800;color:#fff;font-size:.92em;">Search Console</div><p style="margin-top:4px;">OAuth + daftar properti (GSC)</p></div>
-    </div>
-    <div class="flow" style="margin-top:16px;">
-      <div class="fnode"><div class="t">Modul UI</div><div class="s">klik aksi</div></div><div class="farr">→</div>
-      <div class="fnode acc"><div class="t">Edge Function</div><div class="s">server-side, key=secret</div></div><div class="farr">→</div>
-      <div class="fnode"><div class="t">Provider API</div><div class="s">ambil/kirim data</div></div><div class="farr">→</div>
-      <div class="fnode"><div class="t">Postgres</div><div class="s">simpan hasil</div></div><div class="farr">→</div>
-      <div class="fnode"><div class="t">Realtime → UI</div><div class="s">tampil otomatis</div></div>
-    </div>
-    <div class="takeaway">API key disimpan sebagai <code>secret</code> di server — tidak pernah dikirim ke browser.</div>
-  </section>
-
-  <!-- IMPL lapis 3: akses -->
-  <section>
-    <div class="eyebrow">Lapis 3 · Akses</div>
-    <h2>Satu Login untuk Semua Modul</h2>
+    <div class="eyebrow">Alur 2 · Workflow</div>
+    <h2>Operasi Domain (Pengguna)</h2>
     <div class="flow" style="margin-top:14px;">
-      <div class="fnode"><div class="t">Buka App</div><div class="s">akses dashboard</div></div><div class="farr">→</div>
-      <div class="fnode"><div class="t">AuthGate</div><div class="s">cek status login</div></div><div class="farr">→</div>
-      <div class="fnode acc"><div class="t">Login</div><div class="s">Google / admin</div></div><div class="farr">→</div>
-      <div class="fnode"><div class="t">Cek Role</div><div class="s">akses per modul</div></div><div class="farr">→</div>
-      <div class="fnode"><div class="t">Masuk</div><div class="s">/domains</div></div>
+      <div class="fnode"><div class="t">Halaman Domains</div><div class="s">list realtime</div></div><div class="farr">→</div>
+      <div class="fnode acc"><div class="t">Pilih Operasi</div><div class="s">tambah/sync/fetch/renew/disavow</div></div><div class="farr">→</div>
+      <div class="fnode sky"><div class="t">Simpan</div><div class="s">Postgres datadomain</div></div><div class="farr">→</div>
+      <div class="fnode acc"><div class="t">Realtime</div><div class="s">UI auto-update</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">Activity Log</div><div class="s">audit</div></div>
     </div>
-    <div class="grid g2" style="margin-top:16px;">
-      <div class="card acc"><h3>SSO + Admin Roles</h3><p>Login via Google OAuth atau akun admin; role menentukan akses; kelola user terpusat.</p></div>
-      <div class="card acc"><h3>Proteksi</h3><p><code>AuthGate</code> kunci app sebelum login · login lockout · anti-snoop di produksi.</p></div>
-    </div>
-    <div class="takeaway">Satu gerbang masuk: keamanan & hak akses diatur di satu tempat, bukan di tiap tool.</div>
-  </section>
-
-  <!-- TANTANGAN before/after -->
-  <section>
-    <div class="eyebrow amber">Tantangan</div>
-    <h2>API Key Tidak Boleh Bocor</h2>
-    <div class="ba">
-      <div class="bacol bef"><h4>❌ Kalau dipanggil dari browser</h4>
-        <ul><li>API key provider terekspos di klien</li><li>Kuota/biaya bisa disalahgunakan</li><li>Tiap tool kelola key sendiri</li></ul></div>
-      <div class="bacol aft"><h4>✓ Lewat Edge Function</h4>
-        <ul><li>Semua panggilan berjalan di server</li><li>Key jadi secret, tak pernah ke browser</li><li>Satu tempat kelola kredensial &amp; biaya</li></ul></div>
-    </div>
-    <div class="takeaway">Pelajaran: integrasi provider wajib server-side — keamanan jadi syarat, bukan opsi.</div>
-  </section>
-
-  <!-- DIVIDER 05 -->
-  <section><div class="dots"></div><div class="center dvd">
-    <div class="n">05</div><div class="eyebrow">Hasil</div>
-    <h2 class="grad">Satu Pintu untuk Semua</h2>
-    <p class="d">Portfolio domain kini dikelola dari satu tempat — modul, provider, dan akses menyatu.</p>
-  </div></section>
-
-  <!-- NUMBERS -->
-  <section>
-    <div class="eyebrow">Numbers</div>
-    <h2>Capaian Integrasi</h2>
-    <div class="grid g4" style="margin-top:22px;">
-      <div class="stat"><div class="num">16</div><div class="lbl">Modul terintegrasi</div></div>
-      <div class="stat"><div class="num">7</div><div class="lbl">Provider eksternal</div></div>
-      <div class="stat"><div class="num">18</div><div class="lbl">Edge Function</div></div>
-      <div class="stat"><div class="num">5</div><div class="lbl">Grup menu</div></div>
-    </div>
-    <div class="grid g4" style="margin-top:22px;">
-      <div class="stat"><div class="num">34</div><div class="lbl">Migrasi DB</div></div>
-      <div class="stat"><div class="num">12</div><div class="lbl">Tabel data</div></div>
-      <div class="stat"><div class="num">1</div><div class="lbl">Login tunggal</div></div>
-      <div class="stat"><div class="num">100%</div><div class="lbl">Aksi teraudit</div></div>
-    </div>
-    <div class="takeaway">Dari kumpulan tool terpisah → satu platform terintegrasi dengan jejak audit penuh.</div>
-  </section>
-
-  <!-- DAMPAK before/after -->
-  <section>
-    <div class="eyebrow">Dampak untuk Pengguna</div>
-    <h2>Sebelum vs Sesudah</h2>
-    <div class="ba">
-      <div class="bacol bef"><h4>❌ Sebelum</h4>
-        <ul><li>Buka 5–7 tool, login berulang</li><li>Pindah data antar tool (copy-paste)</li><li>Jejak perubahan tersebar</li><li>Kredensial provider tercecer</li></ul></div>
-      <div class="bacol aft"><h4>✓ Sesudah</h4>
-        <ul><li>1 platform, 1 login, semua modul di sidebar</li><li>Data tersinkron otomatis (realtime)</li><li>Audit terpusat: "siapa, apa, kapan"</li><li>API key aman di server</li></ul></div>
-    </div>
-    <div class="takeaway">Untuk tim: kerja lebih cepat, lebih sedikit salah, lebih mudah dipertanggungjawabkan.</div>
-  </section>
-
-  <!-- PEMBELAJARAN -->
-  <section>
-    <div class="eyebrow">Pembelajaran</div>
-    <h2>Insight Teknis &amp; Operasional</h2>
     <div class="grid g3" style="margin-top:16px;">
-      <div class="card acc"><h3>🔑 Provider = server-side</h3><p>Edge Function bukan sekadar gaya — ia melindungi API key & memusatkan biaya.</p></div>
-      <div class="card acc"><h3>🧩 Modular monolith cukup</h3><p>Untuk skala ini, satu app modular lebih sederhana & murah dari micro-frontend.</p></div>
-      <div class="card acc"><h3>🧾 Audit sejak awal</h3><p>Mencatat aktivitas dari hari pertama bikin telusur masalah jauh lebih mudah.</p></div>
+      <div class="card acc"><h3>Tambah / Import</h3><p>domain manual atau bulk import</p></div>
+      <div class="card sky"><h3 style="color:var(--sky);">Sync &amp; Fetch</h3><p>Namecheap, nameserver, authority, ref domains</p></div>
+      <div class="card amber"><h3 style="color:var(--amber);">Renewals &amp; Disavow</h3><p>perpanjang domain, kelola backlink buruk</p></div>
     </div>
-    <div class="takeaway">Integrasi yang baik bukan cuma "nyambung", tapi aman, terpusat, dan bisa diaudit.</div>
+    <div class="takeaway">Tiap operasi tersimpan, langsung tampil (realtime), dan tercatat di audit.</div>
   </section>
 
-  <!-- ROADMAP -->
+  <!-- ALUR 3: API JOBS -->
   <section>
-    <div class="eyebrow">Roadmap</div>
-    <h2>Pengembangan Selanjutnya</h2>
-    <div class="grid g2" style="margin-top:16px;">
-      <div class="card sky"><h3 style="color:var(--sky);">Short-term (1–2 minggu)</h3>
-        <ul style="font-size:.8em;color:var(--muted);"><li>Integrasi penuh provider Dynadot</li><li>Sidebar khusus Provider &amp; Renewals</li><li>Retention policy untuk data lama</li></ul></div>
-      <div class="card acc"><h3 style="color:var(--emerald);">Mid-term (1–3 bulan)</h3>
-        <ul style="font-size:.8em;color:var(--muted);"><li>Trigger server-side untuk aksi berisiko tinggi</li><li>RBAC lebih granular per modul</li><li>Tambah provider baru (registrar/DNS lain)</li><li>Panel provider terpadu (saldo, kredit, status)</li></ul></div>
+    <div class="eyebrow amber">Alur 3 · Workflow Inti</div>
+    <h2>API Jobs — Worker Async</h2>
+    <div class="flow" style="margin-top:12px;">
+      <div class="fnode"><div class="t">UI: pilih domain</div><div class="s">+ tipe analisa</div></div><div class="farr">→</div>
+      <div class="fnode sky"><div class="t">SEED</div><div class="s">isi antrian api_jobs</div></div><div class="farr">→</div>
+      <div class="fnode amber"><div class="t">process-api-jobs</div><div class="s">Edge Function (batch)</div></div><div class="farr">→</div>
+      <div class="fnode purple"><div class="t">Ahrefs API</div><div class="s">ambil data</div></div>
     </div>
-    <div class="takeaway">Arah berikutnya: perdalam integrasi provider & perketat kontrol akses untuk aksi berisiko.</div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <span class="muted" style="font-size:.74em;font-weight:700;">Siklus status:</span>
+      <div class="flow" style="flex:1;min-width:420px;">
+        <div class="fnode grey"><div class="t">pending</div></div><div class="farr">→</div>
+        <div class="fnode sky"><div class="t">running</div></div><div class="farr">→</div>
+        <div class="fnode acc"><div class="t">done</div></div><div class="farr" style="color:var(--red);">↘</div>
+        <div class="fnode red"><div class="t">failed</div><div class="s">retry_failed → pending</div></div>
+      </div>
+    </div>
+    <div class="takeaway">Hasil di-insert ke Postgres + biaya (kredit) dicatat → tampil di halaman <code>Credit Usage</code>.</div>
+  </section>
+
+  <!-- ALUR 4: INBOX & APPROVAL -->
+  <section>
+    <div class="eyebrow purple">Alur 4 · Kolaborasi</div>
+    <h2>Inbox &amp; Approval</h2>
+    <div class="flow" style="margin-top:14px;">
+      <div class="fnode sky"><div class="t">Member / User</div><div class="s">ajukan: extend, catatan</div></div><div class="farr">→</div>
+      <div class="fnode amber"><div class="t">domain_inbox</div><div class="s">antrian permintaan</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">Admin tinjau</div><div class="s">baca &amp; putuskan</div></div><div class="farr">→</div>
+      <div style="flex:1;display:grid;gap:6px;">
+        <div class="fnode acc" style="padding:7px;"><div class="t">✓ Approve</div></div>
+        <div class="fnode red" style="padding:7px;"><div class="t">✕ Reject</div></div>
+        <div class="fnode grey" style="padding:7px;"><div class="t">Dismiss</div></div>
+      </div>
+    </div>
+    <div class="card purple" style="margin-top:16px;"><p style="font-size:.82em;">Banyak pengguna bekerja di satu dashboard; permintaan berisiko (perpanjangan, catatan, hapus massal) melewati <strong style="color:#fff;">inbox &amp; persetujuan admin</strong>, lalu terekam di <code>activity_log</code> + <code>admin_audit_log</code>. Status: read / resolved / dismissed.</p></div>
+    <div class="takeaway">Inilah sisi "collaboration": kerja bersama dengan kontrol persetujuan & jejak audit.</div>
+  </section>
+
+  <!-- ALUR 5: REALTIME -->
+  <section>
+    <div class="eyebrow sky">Alur 5 · Data</div>
+    <h2>Sinkronisasi Realtime</h2>
+    <div class="flow" style="margin-top:14px;">
+      <div class="fnode amber"><div class="t">Perubahan data</div><div class="s">insert/update/delete</div></div><div class="farr">→</div>
+      <div class="fnode sky"><div class="t">Supabase Realtime</div><div class="s">postgres_changes</div></div><div class="farr">→</div>
+      <div class="fnode acc"><div class="t">Refetch (debounced)</div><div class="s">get_domains_page()</div></div><div class="farr">→</div>
+      <div class="fnode"><div class="t">UI update</div><div class="s">tabel ter-refresh</div></div>
+    </div>
+    <div class="layers">
+      <div class="lyr"><div class="dot" style="background:var(--emerald-soft);color:var(--emerald);">⚙</div><div><div class="h">Pagination di sisi server</div><div class="d"><code>get_domains_page()</code> → tabel tetap ringan walau data besar.</div></div></div>
+      <div class="lyr"><div class="dot" style="background:var(--sky-soft);color:var(--sky);">≈</div><div><div class="h">Refetch di-debounce</div><div class="d">Banyak event beruntun tidak bikin tabel berkedip (anti-flicker).</div></div></div>
+      <div class="lyr"><div class="dot" style="background:var(--amber-soft);color:var(--amber);">◐</div><div><div class="h">Mode "silent" saat operasi massal</div><div class="d">Loading tidak muncul tiap event.</div></div></div>
+    </div>
+    <div class="takeaway">Perubahan langsung terlihat, tapi tetap mulus & hemat — bukan refresh manual.</div>
+  </section>
+
+  <!-- RINGKASAN FITUR -->
+  <section>
+    <div class="eyebrow">Referensi</div>
+    <h2>Ringkasan Fitur per-Menu</h2>
+    <table class="tbl">
+      <tr><th style="width:34%;">Menu</th><th>Fungsi</th></tr>
+      <tr><td>Domains</td><td>Lihat/kelola semua domain (paginated + realtime), catatan, renewals</td></tr>
+      <tr><td>Configuration</td><td>Pengaturan API key &amp; opsi sistem</td></tr>
+      <tr><td>Domain Statistics / Metric History</td><td>Ringkasan metrik portfolio &amp; riwayat snapshot</td></tr>
+      <tr><td>Keyword / Organic / Top Pages</td><td>Riset &amp; data keyword (DataForSEO / Ahrefs)</td></tr>
+      <tr><td>Ahrefs Data</td><td>Viewer data Ahrefs: backlinks, anchors, metrik</td></tr>
+      <tr><td>API Jobs</td><td>Antrian &amp; proses job API (Ahrefs) + pencatatan biaya</td></tr>
+      <tr><td>Bulk Domain · Disavow</td><td>Operasi massal &amp; kelola/ekspor disavow backlink</td></tr>
+      <tr><td>Admin / Activity / Debug</td><td>Kelola user &amp; peran, audit aktivitas, log teknis</td></tr>
+    </table>
+    <div class="takeaway">16 modul, 5 grup menu — semua dalam satu aplikasi & satu login.</div>
   </section>
 
   <!-- CLOSING -->
@@ -386,10 +308,10 @@
     <div class="center title">
       <div class="eyebrow">Terima Kasih</div>
       <h1 class="grad">Pertanyaan?</h1>
-      <p class="sub">Integrasi platform berjalan &amp; stabil — semua tool kini dalam satu pintu.</p>
+      <p class="sub">Workflow ini disusun dari pembacaan kode nyata pada repository.</p>
       <div class="meta">
         <span><strong>Project</strong> · Domain Archive</span>
-        <span><strong>Task</strong> · Integrate Dashboard</span>
+        <span><strong>Scope</strong> · Alur Kerja</span>
         <span><strong>Week</strong> · 24 · 2026</span>
       </div>
     </div>
