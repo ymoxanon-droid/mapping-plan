@@ -1,0 +1,591 @@
+<!doctype html>
+<!--
+  Week 25 · Sistem Backup Database Otomatis (off-site, terenkripsi → Google Drive)
+  Dibuat dari template _template.html — design system tidak diubah.
+-->
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Sistem Backup Database Otomatis · Week 25</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+
+  <style>
+    /* ═══ Design tokens — JANGAN diubah supaya tetap konsisten ═══ */
+    :root {
+      --accent: #10b981;
+      --accent-soft: #10b98122;
+      --accent-line: #10b98144;
+      --amber: #f59e0b;
+      --amber-soft: #f59e0b22;
+      --red: #ef4444;
+      --red-soft: #ef444422;
+      --sky: #38bdf8;
+      --sky-soft: #38bdf822;
+      --bg: #0a0c12;
+      --bg-card: #13151d;
+      --bg-card-hover: #181b25;
+      --border: #ffffff14;
+      --border-strong: #ffffff24;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-faint: #64748b;
+    }
+
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
+    body, html, .reveal { background: var(--bg) !important; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
+    .reveal p { line-height: 1.55; margin: 0 0 12px; }
+    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.85em; color: var(--accent); border: 1px solid var(--border); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .reveal a { color: var(--accent); }
+    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
+    .reveal ul li, .reveal ol li { margin: 6px 0; }
+
+    /* Atoms */
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
+    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
+    .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
+    .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
+
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-amber  { border-left: 3px solid var(--amber);  }
+    .card-red    { border-left: 3px solid var(--red);    }
+    .card-sky    { border-left: 3px solid var(--sky);    }
+
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+    .pill.ok { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+
+    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
+    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
+    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
+    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
+    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
+    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+
+    .layer-stack { display: grid; gap: 10px; }
+    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
+    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .layer .ico svg { width: 18px; height: 18px; stroke-width: 2; }
+    .layer .body { flex: 1; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
+
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .ba-before h4 { color: var(--red); }
+    .ba-after  h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
+    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+
+    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
+    .tl-row { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row.win { border-color: var(--accent-line); background: linear-gradient(90deg, var(--accent-soft), var(--bg-card)); }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.1em; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; }
+    .tl-row.win .prob { color: var(--accent); }
+    .tl-row .fix  { color: var(--text-muted); }
+
+    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+    .title-slide .subtitle { font-size: 1.1em; color: var(--text-muted); margin-bottom: 32px; }
+    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+    .title-slide .meta strong { color: var(--text); font-weight: 700; }
+
+    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
+
+    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 700px; margin-top: 12px; }
+
+    /* email mock (khusus slide origin) */
+    .mail { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.7em; border: 1px solid var(--red-soft); border-left: 3px solid var(--red); border-radius: 10px; background: #1a1216; padding: 14px 18px; color: #fca5a5; }
+    .mail .from { color: var(--text-faint); font-size: 0.9em; margin-bottom: 6px; }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ═══════════════ COVER ═══════════════ -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Engineering Report · Week 25 · 2026</div>
+          <h1>Sistem Backup<br/>Database Otomatis</h1>
+          <p class="subtitle">Dari satu email "backup gagal" → disaster recovery terenkripsi &amp; off-site ke Google Drive.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · EmojiRoket (Domain Archive)</span>
+            <span><strong>Scope</strong> · Backup &amp; DR</span>
+            <span><strong>Status</strong> · ✅ Live (run #43 hijau)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 1: KONTEKS ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">01</div>
+          <div class="eyebrow">Konteks</div>
+          <h2>Backup yang tak pernah selesai</h2>
+          <p class="desc">Sebuah email kegagalan membuka audit sistem cadangan yang ternyata belum pernah benar-benar jalan — dan database yang jauh lebih besar dari dugaan.</p>
+        </div>
+      </section>
+
+      <!-- Origin story -->
+      <section>
+        <div class="eyebrow">Asal-usul</div>
+        <h2>Berawal dari 1 email gagal</h2>
+        <div class="mail" style="margin-top: 12px;">
+          <div class="from">ymoxanon-droid · notifications@github.com · 10:04</div>
+          [ojokesusu/dashboard-domain] <strong>Run failed: Backup database harian</strong><br/>
+          <span style="color:#ef4444;">✗ Backup database harian: All jobs have failed</span>
+        </div>
+        <div class="flow" style="margin-top: 18px;">
+          <div class="flow-node"><div class="title">Email gagal</div><div class="sub">muncul tiap hari di inbox</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><div class="title">Investigasi</div><div class="sub">cron jalan tiap hari, gagal terus</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node accent"><div class="title">Temuan</div><div class="sub">setup backup belum pernah kelar</div></div>
+        </div>
+        <div class="takeaway">Cron sudah menyala sejak lama, tapi tujuan &amp; kredensial tak pernah dipasang — jadi gagal &amp; spam email setiap hari. Backup gagal ≠ DB rusak, tapi rasa aman-nya palsu.</div>
+      </section>
+
+      <!-- System profile -->
+      <section>
+        <div class="eyebrow">Profil Sistem</div>
+        <h2>Apa yang harus dilindungi</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Database prod</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">3,15 GB</div>
+            <div class="muted" style="font-size: 0.8em;">Postgres 17 · org "EmojiRoket" (plan Pro)</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Isi</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">47 tabel</div>
+            <div class="muted" style="font-size: 0.8em;">6,3 juta baris (schema <code>datadomain</code>)</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Data inti</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">Ahrefs</div>
+            <div class="muted" style="font-size: 0.8em;">anchors 1,4 GB + ref_domains 878 MB</div>
+          </div>
+        </div>
+        <div class="takeaway">Data backlink Ahrefs = 73% volume. Aset inti yang tak tergantikan → wajib punya cadangan yang andal &amp; teruji.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 2: MASALAH ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">02</div>
+          <div class="eyebrow red">Masalah</div>
+          <h2>Empat tembok sekaligus</h2>
+          <p class="desc">Bukan satu bug — tapi rentetan hambatan dari operasional sampai keterbatasan infrastruktur.</p>
+        </div>
+      </section>
+
+      <!-- Masalah 4 quadrant -->
+      <section>
+        <div class="eyebrow red">Pain Points</div>
+        <h2>Kenapa backup belum jalan</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🔁 Gagal tiap hari</h3>
+            <p class="muted" style="font-size: 0.85em;">Cron menyala tapi selalu gagal → spam email kegagalan ke inbox setiap pagi.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🧩 Setup tak kelar</h3>
+            <p class="muted" style="font-size: 0.85em;">Tujuan penyimpanan &amp; 5+ secret tak pernah disiapkan — pipeline berhenti di tengah jalan.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">📦 Data kegedean</h3>
+            <p class="muted" style="font-size: 0.85em;">Dump ~174 MB/hari (terkompresi). Banyak storage gratis tak sanggup menampung ukuran &amp; retensi-nya.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🔒 RDP blok DB</h3>
+            <p class="muted" style="font-size: 0.85em;">Outbound TCP (port 5432/6543) diblok → dump/tes tak bisa dijalankan dari komputer lokal.</p>
+          </div>
+        </div>
+        <div class="takeaway">Tanpa diberesin: data prod 3,15 GB cuma bergantung pada satu vendor, tanpa cadangan off-site yang teruji.</div>
+      </section>
+
+      <!-- Goals & Constraints -->
+      <section>
+        <div class="eyebrow">Tujuan Proyek</div>
+        <h2>Goal &amp; Constraint</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">🎯 Goals</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Backup harian <strong>otomatis</strong> (set &amp; forget)</li>
+              <li><strong>Terenkripsi</strong> end-to-end (AES-256)</li>
+              <li><strong>Off-site</strong> — beda vendor dari DB prod</li>
+              <li>Bisa di-<strong>restore</strong> &amp; benar-benar teruji</li>
+              <li>Gratis / nyaris nol biaya</li>
+            </ul>
+          </div>
+          <div class="card card-amber">
+            <h3 style="font-size: 0.95em; color: var(--amber);">⚠️ Constraints</h3>
+            <ul style="font-size: 0.82em;">
+              <li>RDP blok TCP keluar → tes <strong>via CI</strong>, bukan lokal</li>
+              <li>Dataset besar (174 MB/hari, terus tumbuh)</li>
+              <li>Tanpa nambah dependency berat / SDK baru</li>
+              <li><code>gh</code> CLI tak tersedia di mesin</li>
+              <li>Tak boleh mengganggu branch kerja lain</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SECTION 3: PENDEKATAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">03</div>
+          <div class="eyebrow sky">Pendekatan</div>
+          <h2>Pipeline ramping &amp; off-site</h2>
+          <p class="desc">Jalankan di server CI (lolos blok RDP), dump hemat memori, enkripsi, lalu kirim ke storage off-site yang independen dari vendor utama.</p>
+        </div>
+      </section>
+
+      <!-- Arsitektur layer-stack -->
+      <section>
+        <div class="eyebrow sky">Arsitektur</div>
+        <h2>Tiga lapis alur</h2>
+        <div class="layer-stack" style="margin-top: 18px;">
+          <div class="layer">
+            <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
+            </div>
+            <div class="body">
+              <div class="head">GitHub Actions — cron harian 09:00 WIB</div>
+              <div class="desc">Pemicu terjadwal. Jaringan server bebas → lolos blok RDP. Bisa juga di-trigger manual.</div>
+            </div>
+            <span class="pill ok">lolos RDP</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            </div>
+            <div class="body">
+              <div class="head">Dump streaming + enkripsi</div>
+              <div class="desc"><code>datadomain</code> → SQL bertahap → gzip → AES-256-GCM (salt + iv + tag per file).</div>
+            </div>
+            <span class="pill ok">hemat memori</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 18 18H7z"/></svg>
+            </div>
+            <div class="body">
+              <div class="head">Google Drive — off-site</div>
+              <div class="desc">Resumable upload via REST · folder otomatis · retensi 30 hari · auto-prune yang lama.</div>
+            </div>
+            <span class="pill ok">beda vendor</span>
+          </div>
+        </div>
+        <div class="takeaway">Kunci visi: tujuan backup sengaja di <strong>vendor berbeda</strong> dari DB prod — supaya selamat walau akun/vendor utama bermasalah.</div>
+      </section>
+
+      <!-- Komponen flow -->
+      <section>
+        <div class="eyebrow sky">Aliran Data</div>
+        <h2>Komponen pipeline</h2>
+        <div class="flow" style="margin-top: 24px;">
+          <div class="flow-node"><div class="title">Postgres</div><div class="sub">datadomain</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><div class="title">Dump streaming</div><div class="sub">1 SELECT/tabel</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><div class="title">gzip + AES-256</div><div class="sub">terkompres &amp; terkunci</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node accent"><div class="title">Google Drive</div><div class="sub">.sql.gz.enc</div></div>
+        </div>
+        <div class="grid grid-3" style="margin-top: 28px;">
+          <div class="stat"><div class="num">1</div><div class="lbl">File script</div></div>
+          <div class="stat"><div class="num">0</div><div class="lbl">SDK baru</div></div>
+          <div class="stat"><div class="num">AES-256</div><div class="lbl">Enkripsi</div></div>
+        </div>
+        <div class="takeaway">Upload Drive ditulis pakai <code>fetch</code> bawaan Node — tanpa menambah dependency, jadi <code>npm ci</code> tetap ramping.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 4: IMPLEMENTASI & TANTANGAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">04</div>
+          <div class="eyebrow">Implementasi</div>
+          <h2>Eksekusi &amp; tantangan</h2>
+          <p class="desc">Empat percobaan run sebelum hijau — tiap kegagalan menyingkap kendala baru yang lebih dalam.</p>
+        </div>
+      </section>
+
+      <!-- Implementasi 2 kolom -->
+      <section>
+        <div class="eyebrow">Detail Teknis</div>
+        <h2>Dua komponen kunci</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🌊 Dump streaming (hemat memori)</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Baca <strong>1 SELECT per tabel</strong>, tulis SQL bertahap ke gzip stream</li>
+              <li>Teks semua-tabel <strong>tak ditumpuk</strong> di memori</li>
+              <li><code>NODE_OPTIONS=--max-old-space-size=4096</code> + timeout 20m</li>
+              <li>Memori puncak ≈ 1 tabel, bukan seluruh DB</li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">☁️ Upload Drive (REST, tanpa SDK)</h3>
+            <ul style="font-size: 0.78em;">
+              <li>OAuth2 <strong>refresh-token</strong> → access token</li>
+              <li><strong>Resumable upload</strong> (wajib utk file besar)</li>
+              <li>Folder "Database Backups" dibuat otomatis</li>
+              <li>Prune file &gt; 30 hari · scope minimal <code>drive.file</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Enkripsi AES-256-GCM dipertahankan sama di semua versi → backup lama tetap kompatibel saat restore.</div>
+      </section>
+
+      <!-- Tantangan #1 before/after (destination pivot) -->
+      <section>
+        <div class="eyebrow amber">Tantangan #1 · Tujuan Penyimpanan</div>
+        <h2>Supabase Free → Google Drive</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>❌ Supabase Free (gagal)</h4>
+            <ul>
+              <li>Storage cuma <strong>1 GB</strong> · limit file 50 MB</li>
+              <li>Upload 174 MB ditolak → <code>EntityTooLarge</code></li>
+              <li>30 hari × 174 MB ≈ 5 GB → tak muat</li>
+              <li>Vendor <strong>sama</strong> dengan DB prod (bukan off-site sejati)</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>✓ Google Drive (jalan)</h4>
+            <ul>
+              <li><strong>15 GB</strong> gratis · tanpa limit file 50 MB</li>
+              <li>174 MB/hari, ~5 GB/30 hari → muat lega</li>
+              <li>Pakai akun Gmail yang sudah ada (0 biaya)</li>
+              <li><strong>Off-site</strong> — beda vendor dari Supabase ✅</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Ukuran data nyata (3,15 GB DB) baru ketahuan saat dump pertama berhasil — memaksa pivot tujuan ke storage yang lebih lega &amp; benar-benar off-site.</div>
+      </section>
+
+      <!-- Tantangan #2 timeline iterative -->
+      <section>
+        <div class="eyebrow amber">Tantangan #2 · Debugging Iteratif</div>
+        <h2>Empat run menuju hijau</h2>
+        <div class="timeline" style="margin-top: 14px;">
+          <div class="tl-row">
+            <div class="num">#1</div>
+            <div class="prob">JS heap out of memory (OOM)</div>
+            <div class="fix">→ dump streaming, jangan muat semua di RAM</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">#2</div>
+            <div class="prob">Cursor per-batch terlalu lambat → timeout</div>
+            <div class="fix">→ balik ke 1 SELECT/tabel + heap 4 GB + timeout 20m</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">#3</div>
+            <div class="prob">EntityTooLarge (Supabase 1 GB)</div>
+            <div class="fix">→ pindah tujuan ke Google Drive (15 GB, off-site)</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">#4</div>
+            <div class="prob">OAuth "Access blocked" (app testing)</div>
+            <div class="fix">→ publish app + scope drive.file</div>
+          </div>
+          <div class="tl-row win">
+            <div class="num">#43</div>
+            <div class="prob">✓ Backup → Google Drive</div>
+            <div class="fix">→ HIJAU · 6,3 jt baris terenkripsi terkirim</div>
+          </div>
+        </div>
+        <div class="takeaway">Tiap kegagalan bukan jalan buntu — tapi menyingkap kendala nyata berikutnya (memori → kecepatan → ukuran → auth).</div>
+      </section>
+
+      <!-- Keamanan & isolasi -->
+      <section>
+        <div class="eyebrow sky">Keamanan &amp; Isolasi</div>
+        <h2>Aman walau berbagi repo</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🔐 Enkripsi at-rest</h3>
+            <p class="muted" style="font-size: 0.78em;">AES-256-GCM, salt + iv acak per file. File yang dicuri pun tak terbaca tanpa passphrase.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🛡️ Repo guard</h3>
+            <p class="muted" style="font-size: 0.78em;"><code>if: github.repository == ...</code> — cron menyala di 2 repo tapi job <strong>hanya jalan di repo user</strong> (yang punya secret).</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🔑 Secret minimal</h3>
+            <p class="muted" style="font-size: 0.78em;">5 secret di GitHub, scope OAuth paling sempit (<code>drive.file</code> — hanya file buatan app).</p>
+          </div>
+        </div>
+        <div class="takeaway">Repo di-push ke dua remote (user &amp; atasan), tapi backup hanya berjalan di satu — file identik, tetap <code>pub</code>-safe, tanpa spam di repo atasan.</div>
+      </section>
+
+      <!-- ═══════════════ SECTION 5: HASIL & REFLEKSI ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">05</div>
+          <div class="eyebrow">Hasil</div>
+          <h2>Live &amp; terbukti</h2>
+          <p class="desc">Backup harian otomatis berjalan sendiri — dan sudah diverifikasi bisa dibuka kembali.</p>
+        </div>
+      </section>
+
+      <!-- Stats grid -->
+      <section>
+        <div class="eyebrow">Numbers</div>
+        <h2>Capaian Proyek</h2>
+        <div class="grid grid-4" style="margin-top: 30px;">
+          <div class="stat"><div class="num">47</div><div class="lbl">Tabel</div></div>
+          <div class="stat"><div class="num">6,3JT</div><div class="lbl">Baris / backup</div></div>
+          <div class="stat"><div class="num">174MB</div><div class="lbl">Per hari (enc)</div></div>
+          <div class="stat"><div class="num">30</div><div class="lbl">Hari retensi</div></div>
+        </div>
+        <div class="grid grid-4" style="margin-top: 26px;">
+          <div class="stat"><div class="num">2</div><div class="lbl">Lapis backup</div></div>
+          <div class="stat"><div class="num">$0</div><div class="lbl">Biaya tambahan</div></div>
+          <div class="stat"><div class="num">4&times;</div><div class="lbl">Iterasi → hijau</div></div>
+          <div class="stat"><div class="num">100%</div><div class="lbl">Restore terverifikasi</div></div>
+        </div>
+        <div class="takeaway">Decrypt diuji nyata: file 174 MB dibuka kembali → 1,4 GB SQL data asli terbaca. Backup bukan cuma "ada", tapi <strong>terbukti bisa dipulihkan</strong>.</div>
+      </section>
+
+      <!-- Value: 2 lapis defense-in-depth -->
+      <section>
+        <div class="eyebrow">Nilai</div>
+        <h2>Dua lapis pertahanan</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-sky">
+            <h3 style="font-size: 0.95em; color: var(--sky);">Supabase Pro (bawaan)</h3>
+            <ul class="muted" style="font-size: 0.8em;">
+              <li>Retensi <strong>7 hari</strong></li>
+              <li>Tersimpan di Supabase (on-site)</li>
+              <li>⚠️ Ikut hilang kalau akun/vendor bermasalah</li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">Google Drive (kita bangun)</h3>
+            <ul class="muted" style="font-size: 0.8em;">
+              <li>Retensi <strong>30 hari</strong></li>
+              <li><strong>Off-site</strong> — vendor berbeda</li>
+              <li>✅ Selamat walau akun Supabase di-suspend/hapus</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Sebelum: data 3,15 GB cuma bergantung satu vendor. Sesudah: dua lapis independen — lapis off-site inilah yang menyelamatkan saat skenario terburuk.</div>
+      </section>
+
+      <!-- Lessons learned -->
+      <section>
+        <div class="eyebrow">Pembelajaran</div>
+        <h2>Insight Teknis &amp; Operasional</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🧠 Rasa aman palsu</h3>
+            <p class="muted" style="font-size: 0.78em;">Backup gagal ≠ DB rusak — tapi backup yang "belum kelar" lebih bahaya: terlihat ada, padahal tak berfungsi.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🌊 Streaming &gt; muat-semua</h3>
+            <p class="muted" style="font-size: 0.78em;">Dataset besar tak boleh diserap ke RAM sekaligus. Streaming bertahap = memori stabil, tahan pertumbuhan data.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🌍 Off-site itu wajib</h3>
+            <p class="muted" style="font-size: 0.78em;">Backup di vendor yang sama = satu titik kegagalan. Cadangan beda vendor adalah inti disaster recovery.</p>
+          </div>
+        </div>
+        <div class="takeaway">RDP yang memblok DB justru memaksa arsitektur lebih sehat: backup berjalan di CI, bukan di mesin rapuh seseorang.</div>
+      </section>
+
+      <!-- Next steps -->
+      <section>
+        <div class="eyebrow">Roadmap</div>
+        <h2>Pengembangan Selanjutnya</h2>
+        <div class="grid grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--sky);">Short-term (1-2 minggu)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>🔒 <strong>Rotate</strong> kredensial Google (hindari secret yang sempat tampil)</li>
+              <li>🔄 Script <strong>restore dari Drive</strong> (saat ini baru R2/Supabase)</li>
+              <li>📄 Update <code>RECOVERY.md</code> &amp; <code>BACKUP-SETUP.md</code> ke jalur Drive</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Mid-term (1-3 bulan)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>🧪 <strong>Quarterly restore drill</strong> — uji pulih tiap 3 bulan</li>
+              <li>🔔 Notifikasi sukses (bukan cuma email saat gagal)</li>
+              <li>🗂️ Opsi tujuan ke-2 (redundansi) bila perlu</li>
+              <li>📤 Exporter tabel → CSV untuk audit data ad-hoc</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Terima Kasih</div>
+          <h1>Pertanyaan?</h1>
+          <p class="subtitle">Backup harian otomatis — live sejak run #43, jalan sendiri tiap 09:00 WIB, terenkripsi &amp; off-site.</p>
+          <div class="meta">
+            <span><strong>Repo</strong> · ymoxanon-droid/dashboard-domain</span>
+            <span><strong>Project</strong> · EmojiRoket / Domain Archive</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      controls: true,
+      progress: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade',
+      center: false,
+      width: 1280,
+      height: 800,
+      margin: 0.04,
+    });
+  </script>
+</body>
+</html>
