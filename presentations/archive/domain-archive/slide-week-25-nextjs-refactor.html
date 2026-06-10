@@ -1,0 +1,608 @@
+<!doctype html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  WEEK 25 — Migrasi ke Next.js · Domain Archive
+  Dibuat dari _template.html (5-babak emerald). Jangan ubah design token.
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Migrasi ke Next.js · Week 25</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+
+  <style>
+    /* ═══ Design tokens — JANGAN diubah supaya tetap konsisten ═══ */
+    :root {
+      --accent: #10b981;
+      --accent-soft: #10b98122;
+      --accent-line: #10b98144;
+      --amber: #f59e0b;
+      --amber-soft: #f59e0b22;
+      --red: #ef4444;
+      --red-soft: #ef444422;
+      --sky: #38bdf8;
+      --sky-soft: #38bdf822;
+      --bg: #0a0c12;
+      --bg-card: #13151d;
+      --bg-card-hover: #181b25;
+      --border: #ffffff14;
+      --border-strong: #ffffff24;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-faint: #64748b;
+    }
+
+    .reveal { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 28px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 32px 56px; height: 100%; box-sizing: border-box; }
+    body, html, .reveal { background: var(--bg) !important; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin: 0 0 14px; text-transform: none; }
+    .reveal h1 { font-size: 2.4em; line-height: 1.1; }
+    .reveal h2 { font-size: 1.65em; line-height: 1.15; }
+    .reveal h3 { font-size: 1.15em; line-height: 1.25; }
+    .reveal p { line-height: 1.55; margin: 0 0 12px; }
+    .reveal code { background: #00000044; padding: 1px 7px; border-radius: 5px; font-size: 0.85em; color: var(--accent); border: 1px solid var(--border); }
+    .reveal a { color: var(--accent); }
+    .reveal ul, .reveal ol { line-height: 1.6; margin: 8px 0 16px 1.2em; }
+    .reveal ul li, .reveal ol li { margin: 6px 0; }
+
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; margin-bottom: 18px; }
+    .eyebrow.amber { color: var(--amber); background: var(--amber-soft); border-color: #f59e0b44; }
+    .eyebrow.red   { color: var(--red);   background: var(--red-soft);   border-color: #ef444444; }
+    .eyebrow.sky   { color: var(--sky);   background: var(--sky-soft);   border-color: #38bdf844; }
+
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-amber  { border-left: 3px solid var(--amber);  }
+    .card-red    { border-left: 3px solid var(--red);    }
+    .card-sky    { border-left: 3px solid var(--sky);    }
+
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.5em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 4px; }
+    .stat .lbl { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7em; padding: 3px 9px; border-radius: 999px; background: var(--bg-card-hover); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+
+    .takeaway { margin-top: 24px; padding: 12px 18px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; font-size: 0.85em; color: #d1fae5; }
+    .takeaway::before { content: '★ '; color: var(--accent); font-weight: 800; }
+
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; font-size: 0.78em; width: 100%; }
+    .flow-node { flex: 1; padding: 14px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; text-align: center; min-width: 0; }
+    .flow-node .title { font-weight: 800; color: #fff; font-size: 1em; margin-bottom: 4px; }
+    .flow-node .sub { font-size: 0.85em; color: var(--text-muted); }
+    .flow-node.accent { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-card) 100%); }
+    .flow-arrow { padding: 0 8px; color: var(--text-faint); font-size: 1.2em; }
+
+    .layer-stack { display: grid; gap: 10px; }
+    .layer { padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; gap: 14px; }
+    .layer .ico { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .layer .ico svg { width: 18px; height: 18px; stroke-width: 2; }
+    .layer .body { flex: 1; }
+    .layer .head { font-weight: 700; color: #fff; font-size: 0.95em; }
+    .layer .desc { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; }
+
+    .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ba-col { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+    .ba-col h4 { font-size: 0.78em; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .ba-before h4 { color: var(--red); }
+    .ba-after  h4 { color: var(--accent); }
+    .ba-col ul { margin: 0; padding-left: 1.2em; font-size: 0.85em; }
+    .ba-col ul li { margin: 6px 0; color: var(--text-muted); }
+
+    .timeline { display: grid; gap: 8px; font-size: 0.78em; }
+    .tl-row { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-card); align-items: center; }
+    .tl-row .num { font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.1em; }
+    .tl-row .prob { color: #fca5a5; font-weight: 600; }
+    .tl-row .fix  { color: var(--text-muted); }
+
+    .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .title-slide h1 { font-size: 3em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
+    .title-slide .subtitle { font-size: 1.1em; color: var(--text-muted); margin-bottom: 32px; }
+    .title-slide .meta { display: flex; gap: 24px; font-size: 0.7em; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+    .title-slide .meta strong { color: var(--text); font-weight: 700; }
+
+    .bg-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%); }
+
+    .reveal .slide-number { background: transparent; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    .section-divider { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; }
+    .section-divider .num { font-family: 'JetBrains Mono', monospace; font-size: 5em; color: var(--accent); opacity: 0.4; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .section-divider h2 { font-size: 2.5em; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-divider .desc { color: var(--text-muted); font-size: 1em; max-width: 700px; margin-top: 12px; }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ═══════════════ COVER ═══════════════ -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Engineering Report · Week 25 · 2026</div>
+          <h1>Migrasi ke Next.js<br/>Modernisasi Stack Domain Archive</h1>
+          <p class="subtitle">Pindah dari Vite ke Next.js — standarisasi dengan tim, plus hardening type-safety &amp; lint. Live di production, nol regresi fungsi.</p>
+          <div class="meta">
+            <span><strong>Project</strong> · Domain Archive</span>
+            <span><strong>Scope</strong> · Frontend (Vite → Next)</span>
+            <span><strong>Status</strong> · Live ✓</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ 01 · KONTEKS ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">01</div>
+          <div class="eyebrow">Konteks</div>
+          <h2>Kenapa Pindah ke Next.js?</h2>
+          <p class="desc">Dashboard internal pengelola 4.564 domain — dibangun di Vite, sementara seluruh tim sudah pindah ke Next.js.</p>
+        </div>
+      </section>
+
+      <!-- Origin + Audience + Vision -->
+      <section>
+        <div class="eyebrow">Asal-usul &amp; Tujuan</div>
+        <h2>Bukan karena Vite jelek</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Pemicu</div>
+            <div style="font-size: 1.25em; font-weight: 800; color: #fff;">Mandat atasan</div>
+            <div class="muted" style="font-size: 0.8em;">Standarisasi: semua tim pakai Next.js. App ini jangan jadi "pulau sendiri".</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Untuk siapa</div>
+            <div style="font-size: 1.25em; font-weight: 800; color: #fff;">Tim engineer</div>
+            <div class="muted" style="font-size: 0.8em;">Dokumentasi keputusan arsitektur + status, biar kolega bisa maintain bareng.</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Visi</div>
+            <div style="font-size: 1.25em; font-weight: 800; color: #fff;">Scalable &amp; modern</div>
+            <div class="muted" style="font-size: 0.8em;">Pondasi dashboard buat tumbuh — buka pintu fitur Next (SSR dll) ke depan.</div>
+          </div>
+        </div>
+        <div class="takeaway">Tujuannya: satu stack dengan tim + pondasi yang siap berkembang — bukan sekadar ganti framework.</div>
+      </section>
+
+      <!-- Profil sistem -->
+      <section>
+        <div class="eyebrow">Profil Sistem</div>
+        <h2>Domain Archive</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Skala</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">4.564</div>
+            <div class="muted" style="font-size: 0.8em;">domain dikelola, 92 halaman tabel</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Sifat</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">Internal</div>
+            <div class="muted" style="font-size: 0.8em;">di belakang 3-lapis auth (password + TOTP + IP)</div>
+          </div>
+          <div class="card card-accent">
+            <div class="eyebrow" style="margin: 0 0 8px;">Stack lama</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff;">Vite</div>
+            <div class="muted" style="font-size: 0.8em;">React + TypeScript + react-router</div>
+          </div>
+        </div>
+        <div class="takeaway">App produktif yang dipakai harian — migrasi wajib mulus, nol downtime fungsi.</div>
+      </section>
+
+      <!-- ═══════════════ 02 · MASALAH ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">02</div>
+          <div class="eyebrow red">Masalah</div>
+          <h2>Aman di Permukaan, Debt di Dalam</h2>
+          <p class="desc">App jalan normal — tapi beberapa hal penting diam-diam menumpuk karena Vite tak pernah mengecek.</p>
+        </div>
+      </section>
+
+      <!-- Masalah 4-quadrant -->
+      <section>
+        <div class="eyebrow red">Pain Point</div>
+        <h2>4 Masalah Inti</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🏝️ Pulau sendiri</h3>
+            <p class="muted" style="font-size: 0.85em;">Tim pakai Next, app ini Vite — beda stack, susah maintain &amp; onboarding bareng.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🔍 Tak ada type-check</h3>
+            <p class="muted" style="font-size: 0.85em;">Vite (esbuild) buang tipe TANPA mengeceknya → error tipe tak pernah ketahuan saat build.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">🚦 Tak ada lint-gate</h3>
+            <p class="muted" style="font-size: 0.85em;">ESLint cuma manual &amp; jarang dijalankan — warning numpuk diam-diam.</p>
+          </div>
+          <div class="card card-red">
+            <h3 style="color: #fca5a5; font-size: 1em;">📦 Hidden debt</h3>
+            <p class="muted" style="font-size: 0.85em;">76 type-error + 72 lint-warning sudah ada dari dulu — cuma ketutup karena tak ada yang mengecek.</p>
+          </div>
+        </div>
+        <div class="takeaway">Analogi: "aman" di Vite = lampu indikator dasbor dicopot, bukan mesinnya lebih sehat.</div>
+      </section>
+
+      <!-- Goals & Constraints -->
+      <section>
+        <div class="eyebrow">Tujuan Proyek</div>
+        <h2>Goal &amp; Constraint</h2>
+        <div class="grid grid-2" style="margin-top: 18px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.95em; color: var(--accent);">🎯 Goals</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Pindah ke Next.js (App Router)</li>
+              <li>Nyalakan type-safety penuh saat build</li>
+              <li>ESLint bersih → 0 warning</li>
+              <li>Pasang gate anti-regresi (pre-push)</li>
+            </ul>
+          </div>
+          <div class="card card-amber">
+            <h3 style="font-size: 0.95em; color: var(--amber);">⚠️ Constraints</h3>
+            <ul style="font-size: 0.82em;">
+              <li>Backend Supabase (25 edge fn + DB) HARAM tersentuh</li>
+              <li>Hot-path god-file NamecheapPage (~5.500 baris) dijaga</li>
+              <li>RDP blokir outbound TCP → deploy via proxy</li>
+              <li>Keep-alive (cold-load 13 dtk) tak boleh hilang</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ 03 · PENDEKATAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">03</div>
+          <div class="eyebrow sky">Pendekatan</div>
+          <h2>Lift-and-Shift: Next Shell + SPA di Dalam</h2>
+          <p class="desc">Pertahankan yang sudah jalan, ganti hanya "pembungkus"-nya — React tetap, Vite &amp; routing diganti Next.</p>
+        </div>
+      </section>
+
+      <!-- Arsitektur layer-stack -->
+      <section>
+        <div class="eyebrow sky">Arsitektur</div>
+        <h2>Catch-all Shell, <code>ssr:false</code></h2>
+        <div class="layer-stack" style="margin-top: 18px;">
+          <div class="layer">
+            <div class="ico" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </div>
+            <div class="body">
+              <div class="head"><code>app/layout.tsx</code> — Root layout Next</div>
+              <div class="desc">Pengganti index.html: metadata, theme FOUC script, font.</div>
+            </div>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--amber-soft); color: var(--amber); border: 1px solid #f59e0b44;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18z" /></svg>
+            </div>
+            <div class="body">
+              <div class="head"><code>app/[[...slug]]/page.tsx</code> — Catch-all</div>
+              <div class="desc">Satu route melayani semua path; mount ClientRoot via <code>dynamic(ssr:false)</code>.</div>
+            </div>
+            <span class="pill">kunci keep-alive</span>
+          </div>
+          <div class="layer">
+            <div class="ico" style="background: var(--sky-soft); color: var(--sky); border: 1px solid #38bdf844;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div class="body">
+              <div class="head"><code>src/ClientRoot.tsx</code> — SPA shell</div>
+              <div class="desc">react-router + keep-alive (dipindah dari main.tsx). Next tak unmount apa pun.</div>
+            </div>
+          </div>
+        </div>
+        <div class="takeaway"><code>ssr:false</code> melarutkan masalah 34 file yang pakai window/localStorage — &amp; keep-alive tetap utuh.</div>
+      </section>
+
+      <!-- Stack flow -->
+      <section>
+        <div class="eyebrow sky">Teknologi</div>
+        <h2>Yang Ganti Cuma "Pembungkus"</h2>
+        <div class="flow" style="margin-top: 24px;">
+          <div class="flow-node">
+            <div class="title">React</div>
+            <div class="sub">Library UI — TETAP (komponen &amp; hooks tak berubah)</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node accent">
+            <div class="title">Next.js 16</div>
+            <div class="sub">Ganti Vite + build react-router</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="title">Vercel</div>
+            <div class="sub">Deploy (lewat git-proxy, lolos blokir RDP)</div>
+          </div>
+        </div>
+        <div class="grid grid-3" style="margin-top: 28px;">
+          <div class="stat"><div class="num">~80%</div><div class="lbl">Kode tak berubah</div></div>
+          <div class="stat"><div class="num">0</div><div class="lbl">Backend disentuh</div></div>
+          <div class="stat"><div class="num">25</div><div class="lbl">Edge function aman</div></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ 04 · IMPLEMENTASI & TANTANGAN ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">04</div>
+          <div class="eyebrow">Implementasi</div>
+          <h2>Eksekusi: Migrasi + Hardening</h2>
+          <p class="desc">Dua fase — pindahkan dulu agar jalan di Next, lalu beresin kualitas yang selama ini ketutup.</p>
+        </div>
+      </section>
+
+      <!-- Implementasi 2-kolom -->
+      <section>
+        <div class="eyebrow">Eksekusi</div>
+        <h2>2 Fase Pengerjaan</h2>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Fase 1 · Migrasi inti</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Catch-all shell <code>ssr:false</code> (keep-alive utuh)</li>
+              <li>Env: <code>import.meta.env</code> → <code>process.env.NEXT_PUBLIC_</code></li>
+              <li><code>src/pages</code> → <code>src/screens</code> (Next reserve "pages/")</li>
+              <li>Helper <code>assetUrl</code> (normalisasi import gambar)</li>
+            </ul>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">Fase 2 · Hardening</h3>
+            <ul style="font-size: 0.78em;">
+              <li>Buang <code>ignoreBuildErrors</code> → type-check penuh (76→0)</li>
+              <li>ESLint 72→0 bertahap (S1–S6, tiap tahap di-tag)</li>
+              <li>Gate <code>pub</code>: typecheck + lint sebelum push</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Migrasi = sehari kerja; tapi menyalakan "rem" (type + lint) yang Vite tak punya = nilai jangka panjang.</div>
+      </section>
+
+      <!-- Tantangan #1 — Keep-alive -->
+      <section>
+        <div class="eyebrow amber">Tantangan #1</div>
+        <h2>Keep-alive Routing</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>❌ Masalah</h4>
+            <ul>
+              <li>App Router Next unmount halaman tiap navigasi</li>
+              <li>NamecheapPage cold-load 13 dtk tiap balik ke /domains</li>
+              <li>Fitur keep-alive (nahan halaman tetap hidup) hilang</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>✓ Solusi</h4>
+            <ul>
+              <li>Catch-all <code>[[...slug]]</code> + <code>ssr:false</code></li>
+              <li>react-router di dalam → Next tak unmount apa pun</li>
+              <li>Cold-load 13 dtk dibayar sekali per sesi</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Trade-off keep-alive vs idiom Next murni — dipilih catch-all biar UX cold-load 13 dtk tak kembali.</div>
+      </section>
+
+      <!-- Tantangan #2 — Type-safety -->
+      <section>
+        <div class="eyebrow amber">Tantangan #2</div>
+        <h2>76 Error, Ternyata 1 Akar</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>❌ Gejala</h4>
+            <ul>
+              <li>Buang <code>ignoreBuildErrors</code> → 76 error Supabase muncul</li>
+              <li>Terlihat seperti bug library <code>supabase-js</code> v2.103</li>
+              <li>Regen <code>database.types.ts</code> tak menolong</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>✓ Akar &amp; fix</h4>
+            <ul>
+              <li><code>process.env.*</code> = <code>string | undefined</code></li>
+              <li>Arg <code>createClient</code> error → TS drop inferensi generic → schema jatuh ke "public"</li>
+              <li>Fix 3 baris <code>?? ""</code> → 76 → 0</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Jangan langsung menyalahkan library — 76 error ternyata satu akar sepele (env var bertipe longgar).</div>
+      </section>
+
+      <!-- Tantangan #3 — Deploy gotchas timeline -->
+      <section>
+        <div class="eyebrow amber">Tantangan #3</div>
+        <h2>Deploy Gotchas (Iteratif)</h2>
+        <div class="timeline" style="margin-top: 14px;">
+          <div class="tl-row">
+            <div class="num">1</div>
+            <div class="prob">App blank di 127.0.0.1</div>
+            <div class="fix">→ tambah <code>allowedDevOrigins</code> (Next 16 blokir cross-origin dev)</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">2</div>
+            <div class="prob">Icon / logo putus</div>
+            <div class="fix">→ helper <code>assetUrl</code> (Next balikin objek, bukan string URL)</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">3</div>
+            <div class="prob">"Invalid supabaseUrl"</div>
+            <div class="fix">→ env <code>NEXT_PUBLIC_</code> JANGAN di-flag "Sensitive" di Vercel</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">4</div>
+            <div class="prob">Semua route 404</div>
+            <div class="fix">→ hapus <code>vercel.json</code> (rewrite SPA Vite) + preset Vite→Next</div>
+          </div>
+          <div class="tl-row">
+            <div class="num">5</div>
+            <div class="prob">Preview 401</div>
+            <div class="fix">→ matikan Vercel Deployment Protection</div>
+          </div>
+        </div>
+        <div class="takeaway">Tiap gotcha kecil tapi sangat spesifik environment (RDP + Next 16 + Vercel) — bukan bug app.</div>
+      </section>
+
+      <!-- ESLint 72→0 bertahap -->
+      <section>
+        <div class="eyebrow amber">Tantangan #4</div>
+        <h2>ESLint 72 → 0, Bertahap</h2>
+        <div class="timeline" style="margin-top: 14px;">
+          <div class="tl-row"><div class="num">S1</div><div class="prob">no-empty (catch kosong)</div><div class="fix">→ config <code>allowEmptyCatch</code> · 72→57</div></div>
+          <div class="tl-row"><div class="num">S2</div><div class="prob">useless-escape (regex)</div><div class="fix">→ hapus backslash, makna identik · 57→48</div></div>
+          <div class="tl-row"><div class="num">S3</div><div class="prob">useless-assignment</div><div class="fix">→ buang init mati · 48→43</div></div>
+          <div class="tl-row"><div class="num">S4</div><div class="prob">3 fungsi/komponen mati</div><div class="fix">→ hapus dead code · 43→40</div></div>
+          <div class="tl-row"><div class="num">S6</div><div class="prob">exhaustive-deps (17)</div><div class="fix">→ <code>// eslint-disable</code> + alasan, dep tak diubah · 40→14</div></div>
+          <div class="tl-row"><div class="num">S5</div><div class="prob">dead-code god-file (cascade)</div><div class="fix">→ hapus + verify tiap batch · 14→0</div></div>
+        </div>
+        <div class="takeaway">Tiap tahap di-tag (titik rollback) &amp; di-verify tsc + build — pelan tapi aman.</div>
+      </section>
+
+      <!-- ═══════════════ 05 · HASIL & REFLEKSI ═══════════════ -->
+      <section>
+        <div class="section-divider">
+          <div class="num">05</div>
+          <div class="eyebrow">Hasil</div>
+          <h2>Live di Production</h2>
+          <p class="desc">Semua tujuan tercapai — dan codebase justru lebih sehat dari sebelum migrasi.</p>
+        </div>
+      </section>
+
+      <!-- Stats grid -->
+      <section>
+        <div class="eyebrow">Numbers</div>
+        <h2>Capaian Proyek</h2>
+        <div class="grid grid-4" style="margin-top: 28px;">
+          <div class="stat"><div class="num">76→0</div><div class="lbl">Type error</div></div>
+          <div class="stat"><div class="num">72→0</div><div class="lbl">Lint warning</div></div>
+          <div class="stat"><div class="num">-210</div><div class="lbl">Baris god-file</div></div>
+          <div class="stat"><div class="num">0</div><div class="lbl">Backend disentuh</div></div>
+        </div>
+        <div class="grid grid-4" style="margin-top: 26px;">
+          <div class="stat"><div class="num">100%</div><div class="lbl">Live production</div></div>
+          <div class="stat"><div class="num">~1</div><div class="lbl">Hari kerja</div></div>
+          <div class="stat"><div class="num">6</div><div class="lbl">Tahap lint (ke-tag)</div></div>
+          <div class="stat"><div class="num">5</div><div class="lbl">Agen audit</div></div>
+        </div>
+        <div class="takeaway">Migrasi + hardening tuntas, diverifikasi audit adversarial 5-agen → verdict: fungsi utuh, nol regresi.</div>
+      </section>
+
+      <!-- Value before/after -->
+      <section>
+        <div class="eyebrow">Value</div>
+        <h2>Apa yang Berubah</h2>
+        <div class="ba" style="margin-top: 16px;">
+          <div class="ba-col ba-before">
+            <h4>Sebelum (Vite)</h4>
+            <ul>
+              <li>Stack beda dari tim — "pulau sendiri"</li>
+              <li>Tak ada rem (type / lint) saat build</li>
+              <li>Debt ketutup, god-file makin gemuk</li>
+            </ul>
+          </div>
+          <div class="ba-col ba-after">
+            <h4>Sesudah (Next.js)</h4>
+            <ul>
+              <li>Satu stack dengan tim — maintain bareng</li>
+              <li>"Rem otomatis" nyala: type + lint gate tiap push</li>
+              <li>Kode bersih &amp; ter-gate → pondasi fitur baru lebih cepat</li>
+            </ul>
+          </div>
+        </div>
+        <div class="takeaway">Buat user: app sama persis. Buat tim: lebih mudah, lebih aman, &amp; lebih cepat mengembangkan fitur.</div>
+      </section>
+
+      <!-- Lessons -->
+      <section>
+        <div class="eyebrow">Pembelajaran</div>
+        <h2>Insight Teknis &amp; Operasional</h2>
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🚗 Aman ≠ Sehat</h3>
+            <p class="muted" style="font-size: 0.78em;">"Aman" di Vite karena lampu indikator dicopot. Nyalakan type + lint = lihat PR lama yang selama ini ketutup.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🔬 Cek akar dulu</h3>
+            <p class="muted" style="font-size: 0.78em;">76 type-error ternyata 1 akar (env var <code>string|undefined</code> bikin TS drop inferensi) — jangan buru-buru menyalahkan library.</p>
+          </div>
+          <div class="card card-accent">
+            <h3 style="font-size: 0.9em;">🛡️ Audit adversarial</h3>
+            <p class="muted" style="font-size: 0.78em;">Untuk yakin god-file tak rusak: 5 agen + 1 skeptic, pakai tsc/diff/grep — bukan sekadar "percaya".</p>
+          </div>
+        </div>
+        <div class="takeaway">Migrasi yang baik = nol regresi + dapat "rem otomatis" sebagai bonus untuk masa depan.</div>
+      </section>
+
+      <!-- Roadmap -->
+      <section>
+        <div class="eyebrow">Roadmap</div>
+        <h2>Pengembangan Selanjutnya</h2>
+        <div class="grid grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--sky);">Short-term (1–2 minggu)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Smoke-test runtime per halaman (konfirmasi visual)</li>
+              <li>Konfirmasi versi Next yang dipakai tim (samakan pin)</li>
+              <li>Manfaatkan gate <code>pub</code> untuk CI</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 0.9em; color: var(--accent);">Mid-term (1–3 bulan)</h3>
+            <ul style="font-size: 0.8em;">
+              <li>Pecah god-file NamecheapPage (~5.500 baris) — dead-code sudah dipangkas duluan</li>
+              <li>Routing per-halaman idiomatik (kalau tim mau App Router penuh)</li>
+              <li>SSR untuk halaman publik / SEO bila diperlukan</li>
+              <li>Rapikan sisa type debt yang non-blocking</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing -->
+      <section>
+        <div class="bg-dots"></div>
+        <div class="title-slide">
+          <div class="eyebrow">Terima Kasih</div>
+          <h1>Pertanyaan?</h1>
+          <p class="subtitle">Domain Archive sekarang di Next.js — live, type-safe, lint-clean, ter-gate. Backend utuh, nol regresi.</p>
+          <div class="meta">
+            <span><strong>Repo</strong> · ymoxanon-droid/dashboard-domain</span>
+            <span><strong>Project</strong> · Domain Archive</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      controls: true,
+      progress: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade',
+      center: false,
+      width: 1280,
+      height: 800,
+      margin: 0.04,
+    });
+  </script>
+</body>
+</html>
