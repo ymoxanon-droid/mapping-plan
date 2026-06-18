@@ -1,0 +1,230 @@
+name: Clone DB sumber -> DB atasan (dedicated, manual)
+
+# Clone schema public (struktur + data) dari DB SUMBER (SOURCE_URL) ke project
+# Supabase KOSONG DEDICATED milik atasan (TARGET_URL). Manual-only.
+#
+# Konteks repo "mapping-plan" (workflow-dashboard):
+#  - Schema user = "public" (5 tabel: jobs, tasks, task_events, members, presentations).
+#  - Target = project Supabase DEDICATED penuh & KOSONG dari atasan. Hanya untuk first-run
+#    ke target kosong (ada GUARD anti re-run sebelum restore).
+#  - GUARD 3 (anti-tabrak nama schema) DI-OMIT sengaja: "public" SELALU ada di tiap DB.
+#    Proteksi salah-target lewat GUARD 1 (FORBIDDEN ref sumber) + GUARD 2 (EXPECTED ref
+#    target), dicocokkan ke connection string PENUH (Supabase pooler taruh ref di USERNAME).
+#  - Trigger event-sourcing "trg_tasks_audit" dibuat di fase post-data (SETELAH COPY data),
+#    jadi tak fire saat restore -> task_events tidak dobel. Parity-check di Verifikasi
+#    membuktikannya (source count == target count per-tabel).
+#  - Clone FAITHFUL: ACL/GRANT/RLS ikut (target Supabase punya role anon/authenticated/
+#    service_role yang sama). TANPA --no-privileges, TANPA --enable-row-security (role
+#    postgres owner-exempt -> dump semua baris; kalau role lemah -> fail-loud, bukan senyap).
+#
+# ASUMSI: SOURCE quiescent selama run (tak ada tulis baru). Parity-check membandingkan
+#  baseline count sumber (ditangkap tepat sebelum pg_dump) dengan hasil target. Kalau ada
+#  tulisan baru ke sumber di tengah run, parity bisa false-RED (fail-loud, arah aman).
+#
+# KEAMANAN:
+#  - Connection string HANYA dari GitHub Secrets (SOURCE_URL, TARGET_URL). Jangan
+#    pernah ditulis di file ini / di-commit / di-echo.
+#  - Nilai hasil swap port & host (SESSION_URL/TGT/HOST) TIDAK auto-mask GitHub ->
+#    `echo "::add-mask::$VAR"` tepat setelah tiap derivasi. Jangan hapus.
+#  - Pakai connection string SESSION POOLER (aws-*.pooler.supabase.com). Direct
+#    db.<ref>.supabase.co IPv6-only -> tak reachable dari GitHub runner (IPv4). Di-enforce.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PGSSLMODE: require            # Supabase WAJIB SSL
+
+jobs:
+  migrate:
+    # Batasi hanya jalan di repo anggota ini (cegah jalan di fork).
+    if: github.repository == 'ymoxanon-droid/mapping-plan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container: postgres:17       # >= versi Postgres server Supabase sumber & target
+    steps:
+      - name: Dump dari SUMBER (struktur + data, faithful)
+        env:
+          SOURCE_URL: ${{ secrets.SOURCE_URL }}
+        run: |
+          if [ -z "$SOURCE_URL" ]; then
+            echo "❌ Secret SOURCE_URL belum di-set. Pasang dulu (lihat instruksi)."; exit 1
+          fi
+          # Swap port ANCHORED ke '@host:6543' saja (tak pernah sentuh password). pg_dump
+          # butuh koneksi SESSION (5432), bukan transaction pooler (6543).
+          SESSION_URL=$(printf '%s' "$SOURCE_URL" | sed -E 's#(@[^:/]+:)6543#\15432#')
+          echo "::add-mask::$SESSION_URL"   # hasil transform TIDAK auto-mask GitHub
+
+          # Host = segmen setelah '@' TERAKHIR (robust ke password ber-'@' bila tak ter-encode).
+          SRC_HOST=$(printf '%s' "$SESSION_URL" | sed -E 's#^[a-z]+://.*@([^:/]+).*#\1#')
+          echo "::add-mask::$SRC_HOST"
+          # Enforce host pooler (IPv4). Direct host IPv6-only -> hang dari runner.
+          case "$SRC_HOST" in
+            *.pooler.supabase.com) : ;;
+            *) echo "❌ SOURCE bukan host pooler (aws-*.pooler.supabase.com). Pakai 'Session pooler' di dashboard."; exit 1 ;;
+          esac
+          # Guard simetris: pastikan SOURCE memang ref sumber yang diharapkan (defense-in-depth).
+          case "$SESSION_URL" in
+            *peggjqzwoujhwyqlwcva*) : ;;
+            *) echo "❌ ABORT: SOURCE bukan ref sumber yang diharapkan (peggjqzwoujhwyqlwcva)."; exit 1 ;;
+          esac
+
+          # Baseline count per-tabel dari SUMBER, DITANGKAP SEBELUM pg_dump (read-only) ->
+          # window drift minimal pada source quiescent. Fail-loud per tabel.
+          echo "⸺ Baseline count sumber:"
+          : > /tmp/src_counts.txt
+          for T in jobs tasks task_events members presentations; do
+            C=$(psql "$SESSION_URL" -tAc "SELECT count(*) FROM public.$T;") \
+              || { echo "❌ gagal count public.$T di sumber (koneksi/SCRAM?)."; exit 1; }
+            case "$C" in ''|*[!0-9]*) echo "❌ count public.$T tidak valid ('$C')."; exit 1 ;; esac
+            echo "$T $C" >> /tmp/src_counts.txt
+            echo "  $T = $C"
+          done
+
+          echo "⸺ Dumping schema public (struktur + data)…"
+          # --schema=public : HANYA schema user (managed Supabase auth/storage/dst di-skip)
+          # --no-owner      : objek diadopsi role target (postgres) saat restore
+          # -Fc             : custom format. ACL/GRANT/RLS IKUT (faithful).
+          # TANPA --enable-row-security: role postgres owner-exempt -> dump SEMUA baris;
+          #   kalau role koneksi lemah (non-exempt), pg_dump ERROR (fail-loud) — jauh lebih
+          #   aman daripada dump baris tidak lengkap secara senyap.
+          pg_dump "$SESSION_URL" \
+            --schema=public \
+            --no-owner \
+            -Fc -f /tmp/source.dump
+          echo "  ✔ Dump selesai:"; ls -lh /tmp/source.dump
+
+      - name: GUARD target + pre-flight (anti salah-target, anti re-run, tanpa drop)
+        env:
+          TARGET_URL: ${{ secrets.TARGET_URL }}
+        run: |
+          if [ -z "$TARGET_URL" ]; then
+            echo "❌ Secret TARGET_URL belum di-set (dari atasan). Pasang dulu."; exit 1
+          fi
+          TGT=$(printf '%s' "$TARGET_URL" | sed -E 's#(@[^:/]+:)6543#\15432#')
+          echo "::add-mask::$TGT"
+
+          HOST=$(printf '%s' "$TGT" | sed -E 's#^[a-z]+://.*@([^:/]+).*#\1#')
+          echo "::add-mask::$HOST"
+          # Enforce host pooler (IPv4) — sama seperti SOURCE.
+          case "$HOST" in
+            *.pooler.supabase.com) : ;;
+            *) echo "❌ TARGET bukan host pooler. Pakai 'Session pooler'. Host direct IPv6-only tak reachable dari runner."; exit 1 ;;
+          esac
+
+          # Token cocok ke HOST (direct) atau URL PENUH (pooler -> ref di username). Auto-pilih.
+          if echo "$HOST" | grep -qF "hrrrevwtjeueirpalmeu"; then
+            MATCH="$HOST"
+          else
+            MATCH="$TGT"
+          fi
+
+          # 🛑 GUARD 1 — ABORT kalau target malah nunjuk ref SUMBER (peggjqzwoujhwyqlwcva).
+          case "$MATCH" in
+            *peggjqzwoujhwyqlwcva*)
+              echo "❌ ABORT: target nunjuk ref SUMBER (terlarang). Dibatalin SEBELUM apa pun."; exit 1 ;;
+          esac
+
+          # 🛑 GUARD 2 — target WAJIB = ref dedicated atasan yang diharapkan.
+          case "$MATCH" in
+            *hrrrevwtjeueirpalmeu*)
+              echo "✔ Target = ref dedicated atasan yang diharapkan." ;;
+            *)
+              echo "❌ ABORT: target BUKAN ref dedicated yang diharapkan. Dibatalin demi keamanan."; exit 1 ;;
+          esac
+
+          # 🛑 GUARD roles — pastikan target benar2 project Supabase (punya role anon/
+          # authenticated/service_role). Fail-closed pada query error / hasil tak valid.
+          R=$(psql "$TGT" -tAc "SELECT count(*) FROM pg_roles WHERE rolname IN ('anon','authenticated','service_role');") \
+            || { echo "❌ ABORT: gagal cek role target (koneksi/SCRAM?)."; exit 1; }
+          case "$R" in ''|*[!0-9]*) echo "❌ ABORT: hasil cek role tidak valid ('$R')."; exit 1 ;; esac
+          if [ "$R" -ne 3 ]; then
+            echo "❌ ABORT: target tidak punya role Supabase lengkap (anon/authenticated/service_role: $R/3)."; exit 1
+          fi
+          echo "✔ Target = project Supabase (role lengkap)."
+
+          # 🛑 GUARD anti re-run — HANYA untuk target KOSONG. FAIL-CLOSED: query error / hasil
+          # kosong/non-numerik => ABORT (jangan andalkan default 0 yang justru = 'aman lanjut').
+          EXIST=$(psql "$TGT" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('jobs','tasks','task_events','members','presentations');") \
+            || { echo "❌ ABORT: gagal cek isi target public (koneksi/error). Batalin demi keamanan."; exit 1; }
+          case "$EXIST" in ''|*[!0-9]*) echo "❌ ABORT: hasil cek isi target tidak valid ('$EXIST'). Batalin demi keamanan."; exit 1 ;; esac
+          if [ "$EXIST" -ne 0 ]; then
+            echo "❌ ABORT: target 'public' sudah berisi tabel user ($EXIST/5). Workflow ini hanya untuk project KOSONG."
+            echo "   Re-run bersih: pakai project Supabase baru, atau restore manual 'pg_restore --clean --if-exists'."
+            exit 1
+          fi
+          echo "✔ Target public kosong (0 tabel user). Aman restore."
+
+          # GUARD 3 (anti-tabrak nama schema) DI-OMIT: schema "public" selalu ada; target
+          # dedicated penuh. Lihat header file.
+
+          # Pastikan pgcrypto ada (best-effort). gen_random_uuid() core di PG13+ jadi tetap
+          # jalan walau ini di-skip; ini cuma jaring pengaman bila dump merujuk pgcrypto.
+          psql "$TGT" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" \
+            || echo "⚠️ prep pgcrypto di-skip (mungkin sudah ada / tanpa izin) — lanjut restore"
+
+      - name: Restore ke TARGET
+        env:
+          TARGET_URL: ${{ secrets.TARGET_URL }}
+        run: |
+          TGT=$(printf '%s' "$TARGET_URL" | sed -E 's#(@[^:/]+:)6543#\15432#')
+          echo "::add-mask::$TGT"
+          echo "⸺ Restoring (struktur + data) ke TARGET…"
+          # pg_restore sering exit != 0 untuk hal WAJAR (GRANT/objek managed di-skip,
+          # extension sudah ada). Itu BUKAN kegagalan. Sukses dinilai dari step Verifikasi
+          # (parity-check), BUKAN dari exit code ini. Target dijamin kosong oleh GUARD
+          # sebelumnya -> tak ada dup-PK; trigger post-data tak menggandakan task_events.
+          set +e
+          pg_restore --no-owner -d "$TGT" /tmp/source.dump
+          echo "  pg_restore exit code: $? (!= 0 BISA wajar; Verifikasi yang memutuskan)"
+          set -e
+
+      - name: Verifikasi hasil di TARGET (parity-check)
+        env:
+          TARGET_URL: ${{ secrets.TARGET_URL }}
+        run: |
+          TGT=$(printf '%s' "$TARGET_URL" | sed -E 's#(@[^:/]+:)6543#\15432#')
+          echo "::add-mask::$TGT"
+
+          # (1) Struktur: WAJIB tepat 5 tabel inti (bukan sekadar > 0). Fail-closed.
+          N=$(psql "$TGT" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name IN ('jobs','tasks','task_events','members','presentations');") \
+            || { echo "❌ gagal cek struktur target."; exit 1; }
+          echo "jumlah_tabel_inti=$N"
+          if [ "${N:-0}" -ne 5 ]; then
+            echo "❌ Expected 5 tabel inti (jobs,tasks,task_events,members,presentations), dapat $N -> restore TIDAK lengkap (cek SCRAM/SSL/port/versi)."
+            exit 1
+          fi
+
+          # (2) Data: parity per-tabel source vs target. Baseline WAJIB ada & 5 baris.
+          [ -s /tmp/src_counts.txt ] || { echo "❌ baseline /tmp/src_counts.txt hilang -> step Dump gagal."; exit 1; }
+          LINES=$(wc -l < /tmp/src_counts.txt)
+          [ "$LINES" -eq 5 ] || { echo "❌ baseline tidak lengkap ($LINES/5 tabel)."; exit 1; }
+
+          echo "⸺ Parity source vs target:"
+          FAIL=0
+          while read -r T SRC; do
+            TGTCNT=$(psql "$TGT" -tAc "SELECT count(*) FROM public.$T;") \
+              || { echo "  ❌ $T: query target gagal (koneksi/relasi)."; FAIL=1; continue; }
+            if [ "${TGTCNT:-x}" = "$SRC" ]; then
+              echo "  ✔ $T: $TGTCNT (source $SRC)"
+            else
+              echo "  ❌ $T: target=$TGTCNT  source=$SRC  -> MISMATCH"
+              FAIL=1
+            fi
+          done < /tmp/src_counts.txt
+          if [ "$FAIL" -ne 0 ]; then
+            echo "❌ Parity GAGAL: jumlah baris target tidak sama dengan sumber. Clone tidak faithful."
+            exit 1
+          fi
+          echo "✔ Parity OK: semua tabel cocok (termasuk task_events -> tidak dobel)."
+
+          # (3) Info: cek pgcrypto terpasang (gen_random_uuid core PG13+ tetap jalan kalau tidak).
+          psql "$TGT" -c "SELECT CASE WHEN count(*)>0 THEN 'pgcrypto: terpasang' ELSE 'pgcrypto: TIDAK ada (gen_random_uuid core PG13+ tetap jalan)' END FROM pg_extension WHERE extname='pgcrypto';"
+
+          echo "✅ MIGRASI BERHASIL & terverifikasi (struktur + data + parity)."
