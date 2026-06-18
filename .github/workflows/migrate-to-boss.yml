@@ -119,7 +119,7 @@ jobs:
           esac
 
           # Token cocok ke HOST (direct) atau URL PENUH (pooler -> ref di username). Auto-pilih.
-          if echo "$HOST" | grep -qF "hrrrevwtjeueirpalmeu"; then
+          if echo "$HOST" | grep -qF "llpwjyfnykgyujfupqyn"; then
             MATCH="$HOST"
           else
             MATCH="$TGT"
@@ -133,7 +133,7 @@ jobs:
 
           # 🛑 GUARD 2 — target WAJIB = ref dedicated atasan yang diharapkan.
           case "$MATCH" in
-            *hrrrevwtjeueirpalmeu*)
+            *llpwjyfnykgyujfupqyn*)
               echo "✔ Target = ref dedicated atasan yang diharapkan." ;;
             *)
               echo "❌ ABORT: target BUKAN ref dedicated yang diharapkan. Dibatalin demi keamanan."; exit 1 ;;
